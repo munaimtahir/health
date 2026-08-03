@@ -19,4 +19,7 @@ interface HealthEventDao {
 
     @Query("UPDATE health_events SET archived = 1, updatedAtEpochMillis = :updatedAt WHERE id = :id")
     suspend fun archive(id: String, updatedAt: Long)
+
+    @Query("DELETE FROM health_events WHERE id = :id")
+    suspend fun delete(id: String)
 }

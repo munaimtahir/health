@@ -8,5 +8,7 @@ android { namespace = "pk.vexel.healthpassport.security"; compileSdk = 36
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     lint { abortOnError = true }
 }
-dependencies { api(project(":core:domain")) }
-
+dependencies {
+    api(project(":core:domain"))
+    testImplementation(libs.junit)
+}

@@ -10,6 +10,8 @@ import javax.inject.Singleton
 import pk.vexel.healthpassport.core.database.DatabaseProvider
 import pk.vexel.healthpassport.core.database.HealthDatabase
 import pk.vexel.healthpassport.core.datastore.PreferencesStore
+import pk.vexel.healthpassport.core.files.LocalSecureFileStore
+import pk.vexel.healthpassport.core.files.SecureFileStore
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,4 +25,9 @@ object AppModule {
     @Singleton
     fun providePreferencesStore(@ApplicationContext context: Context): PreferencesStore =
         PreferencesStore(context)
+
+    @Provides
+    @Singleton
+    fun provideSecureFileStore(@ApplicationContext context: Context): SecureFileStore =
+        LocalSecureFileStore(context)
 }

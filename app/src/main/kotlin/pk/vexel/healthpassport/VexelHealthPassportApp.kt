@@ -56,6 +56,8 @@ import pk.vexel.healthpassport.core.database.ProfileEntity
 import pk.vexel.healthpassport.core.datastore.PreferencesStore
 import pk.vexel.healthpassport.core.designsystem.InformationCard
 import pk.vexel.healthpassport.core.designsystem.VexelHealthPassportTheme
+import pk.vexel.healthpassport.core.model.SymptomDraft
+import pk.vexel.healthpassport.core.model.validationErrors
 
 private data class Destination(val label: String, val icon: ImageVector)
 private val destinations = listOf(
@@ -81,6 +83,7 @@ class PassportViewModel @Inject constructor(
         database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), title, details, kind, now, now, now, "ACTIVE", severity))
     }
     fun archive(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().archive(event.id, System.currentTimeMillis()) }
+    fun delete(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().delete(event.id) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,13 +145,22 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
 @Composable private fun TimelineScreen(vm: PassportViewModel, modifier: Modifier) {
     val events by vm.events.collectAsState()
     var showAdd by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var pendingDelete by remember { mutableStateOf<HealthEventEntity?>(null) }
+    val visibleEvents = events.filter { event -> query.isBlank() || event.title.contains(query, ignoreCase = true) || event.details.contains(query, ignoreCase = true) }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Health timeline", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } }
-        if (events.isEmpty()) Text("Your health events will appear here.") else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(events, key = { it.id }) { event ->
-            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); TextButton({ vm.archive(event) }) { Text("Archive") } } }
+        OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Search timeline") }, singleLine = true)
+        if (events.isEmpty()) Text("Your health events will appear here.")
+        else if (visibleEvents.isEmpty()) Text("No events match your search.")
+        else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(visibleEvents, key = { it.id }) { event ->
+            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ vm.archive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
         } }
     }
     if (showAdd) CaptureDialog("OTHER", "Add health event", { showAdd = false }, vm::addEvent)
+    pendingDelete?.let { event ->
+        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete event?") }, text = { Text("This removes the selected user-entered event from the timeline.") }, confirmButton = { Button({ vm.delete(event); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
+    }
 }
 
 @Composable private fun CaptureScreen(vm: PassportViewModel, kind: String, heading: String, modifier: Modifier) {
@@ -161,6 +173,12 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
 }
 
 @Composable private fun CaptureDialog(kind: String, heading: String, onDismiss: () -> Unit, onSave: (String, String, String, Int?) -> Unit) {
-    var title by remember { mutableStateOf("") }; var details by remember { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(heading) }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedTextField(title, { title = it }, label = { Text("Title") }); OutlinedTextField(details, { details = it }, label = { Text("Notes (optional)") }) } }, confirmButton = { Button({ if (title.isNotBlank()) { onSave(kind, title, details, null); onDismiss() } }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+    var title by remember { mutableStateOf("") }; var details by remember { mutableStateOf("") }; var severityText by remember { mutableStateOf("") }
+    val severity = severityText.toIntOrNull()
+    val errors = SymptomDraft(title, if (kind == "SYMPTOM") severity else null, details).validationErrors()
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(heading) }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(title, { title = it }, label = { Text(if (kind == "SYMPTOM") "Symptom" else "Title") }, isError = errors.containsKey("name"))
+        if (kind == "SYMPTOM") OutlinedTextField(severityText, { severityText = it.filter(Char::isDigit) }, label = { Text("Severity (0–10, optional)") }, isError = errors.containsKey("severity"), supportingText = { errors["severity"]?.let { Text(it) } })
+        OutlinedTextField(details, { details = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"), supportingText = { errors["notes"]?.let { Text(it) } })
+    } }, confirmButton = { Button({ if (errors.isEmpty()) { onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null); onDismiss() } }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
