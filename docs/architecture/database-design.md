@@ -2,5 +2,4 @@
 
 Status: Canonical. Purpose: define Room preparation.
 
-Room database version 1 is scaffolded with provider, constants, converter, DAO, and entity packages. The conceptual model covers profile, allergy, diagnosis/condition, procedure, symptom, health event, medical document, medication/regimen, consultation, reminder, appointment, report, and backup metadata. Every future schema change requires a non-destructive migration and migration test.
-
+Room database version 2 is implemented with `profile` and `health_events` tables. Profile values and user-entered event records are local and archiveable; event kinds include symptoms, medications, records, reminders, and other health events. A non-destructive 1→2 migration preserves the original event rows. The broader conceptual model covers future document, consultation, report, and backup metadata; every future schema change requires a migration and migration test.

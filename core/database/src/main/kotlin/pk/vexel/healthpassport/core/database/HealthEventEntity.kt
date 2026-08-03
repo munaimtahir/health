@@ -7,6 +7,12 @@ import androidx.room.PrimaryKey
 data class HealthEventEntity(
     @PrimaryKey val id: String,
     val title: String,
+    val details: String = "",
+    val kind: String = "OTHER",
+    val effectiveAtEpochMillis: Long? = null,
     val createdAtEpochMillis: Long,
+    val updatedAtEpochMillis: Long = createdAtEpochMillis,
+    val status: String = "ACTIVE",
+    val severity: Int? = null,
+    val archived: Boolean = false,
 )
-

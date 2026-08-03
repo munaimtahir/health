@@ -62,6 +62,7 @@ dependencies {
     implementation(project(":feature:reports"))
     implementation(project(":feature:settings"))
     testImplementation(libs.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

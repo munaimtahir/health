@@ -6,7 +6,7 @@ The repository is technically named `health`; the public application name is **V
 
 ## Status
 
-The current implementation is a runnable foundation shell. It provides Home, Timeline, Records, Plan, and Profile placeholders, a reusable Material 3 design system, Room version 1 infrastructure, DataStore preferences, security/file abstractions, tests, and CI. Production feature workflows are intentionally deferred.
+The current implementation is a runnable offline-first MVP slice. It provides first-run privacy acknowledgement, persisted profile fields, event capture for symptoms, medications, records, and reminders, an archiveable Room-backed timeline, theme persistence, migration version 1→2, tests, lint, and CI. Document vault binary import, biometric/PIN lock, scheduled notification delivery, PDF generation, and backup/restore remain release blockers and are explicitly tracked in the delivery report.
 
 ## Stack and structure
 
@@ -14,7 +14,7 @@ Kotlin, Jetpack Compose, Material 3, Navigation Compose, Hilt, Room, DataStore, 
 
 ## Build and verify
 
-Requires JDK 21, Android SDK 36, and the included Gradle wrapper.
+Requires JDK 17, Android SDK 36, and the included Gradle wrapper.
 
 ```bash
 ./gradlew assembleDebug
@@ -36,4 +36,3 @@ Start at [docs/README.md](docs/README.md). Canonical requirements, architecture,
 ## Roadmap
 
 The next development phase is Sprint 1 — onboarding, privacy consent, personal health profile, and application lock. Do not start production feature work without updating the applicable canonical docs and gates.
-

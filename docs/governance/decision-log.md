@@ -9,4 +9,5 @@ Status: Canonical. Purpose: record material decisions and resolved contradiction
 | D-003 | Initial scaffold is shell-only; production feature flows remain deferred to Sprint 1 onward. | Scope protection prevents fake health functionality. | Approved |
 | D-004 | Original numbered documents are archived verbatim before canonical consolidation. | Source material must remain recoverable and auditable. | Approved |
 | D-005 | Feature modules do not depend on one another; navigation is owned by `app`. | Prevents circular dependencies and preserves boundaries. | Approved |
-
+| D-006 | The first executable MVP slice stores user-entered profile and health events locally through Room/DataStore; binary documents, authentication, scheduling, reports, and backup remain separate delivery items. | Keeps current behavior honest and avoids presenting placeholder clinical or security behavior as complete. | Approved |
+| D-007 | Gradle wrapper is upgraded to 8.9 to match AGP 8.7.3. | The previous 8.7 wrapper could not configure the project. | Approved |

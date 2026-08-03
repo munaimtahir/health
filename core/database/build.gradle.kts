@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android { namespace = "pk.vexel.healthpassport.database"; compileSdk = 36
@@ -9,6 +10,4 @@ android { namespace = "pk.vexel.healthpassport.database"; compileSdk = 36
     lint { abortOnError = true }
 }
 dependencies { api(project(":core:model")) }
-plugins { alias(libs.plugins.ksp) }
 dependencies { implementation(libs.androidx.room.runtime); implementation(libs.androidx.room.ktx); ksp(libs.androidx.room.compiler) }
-
