@@ -12,6 +12,8 @@ import pk.vexel.healthpassport.core.database.HealthDatabase
 import pk.vexel.healthpassport.core.datastore.PreferencesStore
 import pk.vexel.healthpassport.core.files.LocalSecureFileStore
 import pk.vexel.healthpassport.core.files.SecureFileStore
+import pk.vexel.healthpassport.core.security.KeystorePinMaterialCipher
+import pk.vexel.healthpassport.core.security.PinMaterialCipher
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -30,4 +32,8 @@ object AppModule {
     @Singleton
     fun provideSecureFileStore(@ApplicationContext context: Context): SecureFileStore =
         LocalSecureFileStore(context)
+
+    @Provides
+    @Singleton
+    fun providePinMaterialCipher(): PinMaterialCipher = KeystorePinMaterialCipher()
 }

@@ -2,5 +2,4 @@
 
 Status: Canonical. Purpose: define safe document handling.
 
-Future PDF/image/camera/SAF/share intake copies bytes into app-private storage under opaque identifiers, preserves originals, validates MIME and size, stores metadata in Room, and uses checksums for duplicate detection. Original files are never silently rewritten and are not exposed through public storage.
-
+The current `LocalSecureFileStore` copies approved PDF/JPEG/PNG bytes into app-private `files/documents` under UUID identifiers, preserves originals, validates MIME and a 50 MiB limit, and computes SHA-256 while copying. Invalid identifiers cannot be opened or deleted. Room metadata, SAF intake, FileProvider sharing, preview, and cleanup integration remain incomplete.

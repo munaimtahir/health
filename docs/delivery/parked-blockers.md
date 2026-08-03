@@ -1,14 +1,14 @@
 # Parked blockers
 
-## BLK-001 — Physical device or emulator unavailable
+## BLK-001 — Physical device or emulator unavailable (resolved)
 
 - Sprint: 0/11
-- Issue: `adb devices` returned no device, so connected tests and visual/runtime verification were not executable.
+- Issue: `adb devices` previously returned no device, so connected tests and visual/runtime verification were not executable.
 - Completed: JVM tests, compile, packaging, lint, Room KSP, and manifest checks.
-- Remains: `./gradlew connectedCheck` and manual onboarding/timeline verification.
+- Resolution: authorized TECNO CH6i and emulator are now visible to ADB; connected tests and current-build smoke verification remain to be rerun.
 - Safe assumption: local JVM and static gates are authoritative for this environment.
 - Recommended resolution: connect an API 26+ emulator/device and run `./gradlew connectedCheck`.
-- Release effect: blocks environmental verification only.
+- Release effect: historical blocker resolved; remaining device verification is active work.
 
 ## BLK-002 — Core MVP workflows still need implementation
 

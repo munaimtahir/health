@@ -6,7 +6,7 @@ The repository is technically named `health`; the public application name is **V
 
 ## Status
 
-The current implementation is a runnable offline-first MVP slice. It provides first-run privacy acknowledgement, persisted profile fields, event capture for symptoms, medications, records, and reminders, an archiveable Room-backed timeline, theme persistence, migration version 1→2, tests, lint, and CI. Document vault binary import, biometric/PIN lock, scheduled notification delivery, PDF generation, and backup/restore remain release blockers and are explicitly tracked in the delivery report.
+The current implementation is a runnable offline-first development build. It provides first-run privacy acknowledgement, persisted profile fields, validated symptom capture with optional severity, searchable/archiveable/deletable Room timeline events, theme persistence, salted PIN verification with Keystore-protected material, private document-byte preservation, migration version 1→2, tests, lint, and CI. Biometric authentication, complete document metadata/SAF workflows, scheduled notifications, PDF generation, backup/restore, and complete export/deletion remain release blockers and are tracked in verification documentation.
 
 ## Stack and structure
 

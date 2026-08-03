@@ -22,7 +22,7 @@ The Compose shell, onboarding acknowledgement, profile persistence, generic even
 
 ## Implemented in this work cycle
 
-Symptom drafts now validate required names, optional 0–10 severity, and note length. Timeline entries can be searched, archived, and permanently deleted after confirmation. A private file-store implementation preserves approved PDF/JPEG/PNG originals with opaque IDs, size limits, SHA-256 hashes, and path validation.
+Symptom drafts now validate required names, optional 0–10 severity, and note length. Timeline entries can be searched, archived, and permanently deleted after confirmation. A private file-store implementation preserves approved PDF/JPEG/PNG originals with opaque IDs, size limits, SHA-256 hashes, and path validation. A salted PBKDF2 PIN verifier and lifecycle-gated PIN UI are now present; biometric authentication, Keystore wrapping, and end-to-end lock verification remain open.
 
 ## Incomplete mandatory components
 

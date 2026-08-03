@@ -30,6 +30,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,8 +38,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -58,6 +67,8 @@ import pk.vexel.healthpassport.core.designsystem.InformationCard
 import pk.vexel.healthpassport.core.designsystem.VexelHealthPassportTheme
 import pk.vexel.healthpassport.core.model.SymptomDraft
 import pk.vexel.healthpassport.core.model.validationErrors
+import pk.vexel.healthpassport.core.security.PinVerifier
+import pk.vexel.healthpassport.core.security.PinMaterialCipher
 
 private data class Destination(val label: String, val icon: ImageVector)
 private val destinations = listOf(
@@ -70,7 +81,9 @@ private val destinations = listOf(
 class PassportViewModel @Inject constructor(
     private val database: HealthDatabase,
     private val preferences: PreferencesStore,
+    private val pinMaterialCipher: PinMaterialCipher,
 ) : ViewModel() {
+    private val pinVerifier = PinVerifier()
     val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val profile = database.profileDao().observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), pk.vexel.healthpassport.core.datastore.UserPreferences())
@@ -84,6 +97,17 @@ class PassportViewModel @Inject constructor(
     }
     fun archive(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().archive(event.id, System.currentTimeMillis()) }
     fun delete(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().delete(event.id) }
+    fun savePin(pin: String, confirmation: String): Boolean {
+        if (pin != confirmation || pin.length !in 4..12 || pin.any { !it.isDigit() }) return false
+        val record = pinVerifier.create(pin.toCharArray())
+        viewModelScope.launch { preferences.setPinMaterial(pinMaterialCipher.encrypt(record)) }
+        return true
+    }
+    fun verifyPin(pin: String, prefs: pk.vexel.healthpassport.core.datastore.UserPreferences): Boolean {
+        if (!prefs.lockEnabled) return true
+        return runCatching { pinVerifier.matches(pin.toCharArray(), pinMaterialCipher.decrypt(prefs.pinMaterial)) }.getOrDefault(false)
+    }
+    fun disablePin() = viewModelScope.launch { preferences.clearPinMaterial() }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,12 +120,13 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
         if (!prefs.onboardingComplete) {
             OnboardingScreen(onComplete = viewModel::completeOnboarding)
         } else {
-            Scaffold(
+            LockGate(prefs, viewModel) {
+                Scaffold(
                 topBar = { TopAppBar(title = { Text("Vexel Health Passport") }) },
                 bottomBar = { NavigationBar { destinations.forEachIndexed { index, destination ->
                     NavigationBarItem(index == selectedIndex, { selectedIndex = index }, icon = { Icon(destination.icon, destination.label) }, label = { Text(destination.label) })
                 } } },
-            ) { padding ->
+                ) { padding ->
                 when (selectedIndex) {
                     0 -> HomeScreen(viewModel, profile, Modifier.padding(padding))
                     1 -> TimelineScreen(viewModel, Modifier.padding(padding))
@@ -109,9 +134,40 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                     3 -> CaptureScreen(viewModel, "REMINDER", "Add a follow-up reminder", Modifier.padding(padding))
                     else -> ProfileScreen(viewModel, profile, Modifier.padding(padding))
                 }
+                }
             }
         }
     }
+}
+
+@Composable
+private fun LockGate(prefs: pk.vexel.healthpassport.core.datastore.UserPreferences, vm: PassportViewModel, content: @Composable () -> Unit) {
+    var unlocked by rememberSaveable(prefs.lockEnabled) { mutableStateOf(!prefs.lockEnabled) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, prefs.lockEnabled) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP && prefs.lockEnabled) unlocked = false }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    if (unlocked || !prefs.lockEnabled) content() else PinUnlockDialog(prefs, vm) { unlocked = true }
+}
+
+@Composable
+private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPreferences, vm: PassportViewModel, onUnlocked: () -> Unit) {
+    var pin by rememberSaveable { mutableStateOf("") }
+    var error by rememberSaveable { mutableStateOf(false) }
+    val activity = LocalContext.current as? FragmentActivity
+    val canUseBiometric = activity != null && BiometricManager.from(activity).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+    val biometricPrompt = remember(activity) {
+        activity?.let { host ->
+            BiometricPrompt(host, ContextCompat.getMainExecutor(host), object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = onUnlocked()
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) { error = false }
+            })
+        }
+    }
+    val promptInfo = remember { BiometricPrompt.PromptInfo.Builder().setTitle("Unlock Vexel Health Passport").setSubtitle("Authenticate to view your private health information").setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL).build() }
+    AlertDialog(onDismissRequest = {}, title = { Text("Unlock Vexel Health Passport") }, text = { OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12); error = false }, label = { Text("PIN") }, isError = error, supportingText = { if (error) Text("Incorrect PIN") }) }, confirmButton = { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (canUseBiometric) TextButton({ biometricPrompt?.authenticate(promptInfo) }) { Text("Use device authentication") }; Button({ if (vm.verifyPin(pin, prefs)) onUnlocked() else error = true }) { Text("Unlock") } } })
 }
 
 @Composable private fun OnboardingScreen(onComplete: () -> Unit) {
@@ -168,8 +224,21 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
 }
 
 @Composable private fun ProfileScreen(vm: PassportViewModel, profile: ProfileEntity?, modifier: Modifier) {
-    var name by remember(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by remember(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by remember(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }; val prefs by vm.settings.collectAsState()
-    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }); OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") }); OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Diagnoses or conditions") }); Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }) { Text("Save profile") }; TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") } }
+    var name by remember(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by remember(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by remember(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }; val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
+    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }); OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") }); OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Diagnoses or conditions") }); Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }) { Text("Save profile") }; TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }; TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") } }
+    if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
+}
+
+@Composable
+private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
+    var pin by rememberSaveable { mutableStateOf("") }
+    var confirmation by rememberSaveable { mutableStateOf("") }
+    var error by rememberSaveable { mutableStateOf("") }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Set up PIN lock") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Use 4–12 digits. The PIN is never stored as plaintext.")
+        OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12) }, label = { Text("PIN") }, isError = error.isNotBlank())
+        OutlinedTextField(confirmation, { confirmation = it.filter(Char::isDigit).take(12) }, label = { Text("Confirm PIN") }, isError = error.isNotBlank(), supportingText = { if (error.isNotBlank()) Text(error) })
+    } }, confirmButton = { Button({ if (pin != confirmation) error = "PINs do not match" else if (pin.length !in 4..12) error = "Use 4–12 digits" else if (vm.savePin(pin, confirmation)) onDismiss() }) { Text("Enable") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable private fun CaptureDialog(kind: String, heading: String, onDismiss: () -> Unit, onSave: (String, String, String, Int?) -> Unit) {

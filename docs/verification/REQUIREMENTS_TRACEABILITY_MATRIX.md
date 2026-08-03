@@ -11,6 +11,8 @@
 | F-017 | Timeline search | handoff §23 | 3 | `TimelineScreen` | Deferred | IMPLEMENTED | Build passed |
 | F-014 | Confirmed event deletion | handoff §23 | 2 | `HealthEventDao.delete`, timeline dialog | Deferred | IMPLEMENTED | Build passed |
 | F-026 | PIN lock | handoff §23 | 5 | Not implemented | None | NOT STARTED | — |
+| F-026a | Salted PIN verification and lock gate | handoff §15 | 5 | `PinVerifier`, `LockGate`, `KeystorePinMaterialCipher` | `PinVerifierTest` | TESTED | Targeted security tests and debug build passed; physical flow pending |
+| F-027 | Biometric/device authentication entry point | handoff §23 | 5 | `PinUnlockDialog` / Android Biometric API | None | IMPLEMENTED | Build passed; enrolled-biometric runtime path pending |
 | F-028 | Private document import | handoff §23 | 6 | `LocalSecureFileStore` | None | IN PROGRESS | Build passed; UI/metadata pending |
 | F-030 | Scheduled reminders | handoff §23 | 7 | Contract only | None | NOT STARTED | — |
 | F-032 | PDF report | handoff §23 | 8 | Not implemented | None | NOT STARTED | — |
