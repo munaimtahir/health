@@ -1,0 +1,19 @@
+{
+  "product": "Vexel Health Passport",
+  "package": "pk.vexel.healthpassport",
+  "files": [
+    "00_README.md",
+    "01_PRODUCT_REQUIREMENTS.md",
+    "02_UX_SCREEN_SPEC.md",
+    "03_TECHNICAL_ARCHITECTURE.md",
+    "04_DATA_MODEL.md",
+    "05_SPRINT_PLAN_AND_GATES.md",
+    "06_QA_TEST_STRATEGY.md",
+    "07_SECURITY_PRIVACY.md",
+    "08_PLAY_STORE_RELEASE_CHECKLIST.md",
+    "09_BRAND_AND_NAME.md",
+    "10_MASTER_AI_AGENT_PROMPT.md",
+    "11_MARKET_POSITIONING_SUMMARY.md",
+    "12_VISUAL_MARKET_AND_UI_CONCEPT.png"
+  ]
+}
