@@ -5,9 +5,12 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.app.PendingIntent
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -63,7 +66,8 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             .setPriority(NotificationCompat.PRIORITY_DEFAULT).setAutoCancel(true)
             .setContentIntent(PendingIntent.getActivity(applicationContext, 0, applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)?.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             .build()
-        if (Build.VERSION.SDK_INT < 33 || NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) NotificationManagerCompat.from(applicationContext).notify(id.hashCode(), notification)
+        val permitted = Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        if (permitted && NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) NotificationManagerCompat.from(applicationContext).notify(id.hashCode(), notification)
         if (reminder.recurrence == "ONCE") database.reminderDao().setStatus(id, "MISSED", System.currentTimeMillis())
         database.close()
         return Result.success()
