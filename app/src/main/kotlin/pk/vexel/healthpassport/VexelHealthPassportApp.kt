@@ -61,11 +61,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import pk.vexel.healthpassport.core.database.HealthDatabase
 import pk.vexel.healthpassport.core.database.HealthEventEntity
+import pk.vexel.healthpassport.core.database.MedicationEntity
 import pk.vexel.healthpassport.core.database.ProfileEntity
 import pk.vexel.healthpassport.core.datastore.PreferencesStore
 import pk.vexel.healthpassport.core.designsystem.InformationCard
 import pk.vexel.healthpassport.core.designsystem.VexelHealthPassportTheme
 import pk.vexel.healthpassport.core.model.SymptomDraft
+import pk.vexel.healthpassport.core.model.MedicationDraft
 import pk.vexel.healthpassport.core.model.validationErrors
 import pk.vexel.healthpassport.core.security.PinVerifier
 import pk.vexel.healthpassport.core.security.PinMaterialCipher
@@ -86,6 +88,7 @@ class PassportViewModel @Inject constructor(
     private val pinVerifier = PinVerifier()
     val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val profile = database.profileDao().observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val medications = database.medicationDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), pk.vexel.healthpassport.core.datastore.UserPreferences())
 
     fun completeOnboarding() = viewModelScope.launch { preferences.setOnboardingComplete(true) }
@@ -97,6 +100,11 @@ class PassportViewModel @Inject constructor(
     }
     fun archive(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().archive(event.id, System.currentTimeMillis()) }
     fun delete(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().delete(event.id) }
+    fun addMedication(draft: MedicationDraft) = viewModelScope.launch {
+        val now = System.currentTimeMillis()
+        database.medicationDao().insert(MedicationEntity(UUID.randomUUID().toString(), draft.name.trim(), strength = draft.strength.trim(), dose = draft.dose.trim(), route = draft.route.trim(), frequency = draft.frequency.trim(), notes = draft.notes.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
+        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), listOf(draft.strength, draft.dose, draft.frequency).filter { it.isNotBlank() }.joinToString(" · "), "MEDICATION", now, now, now, "ACTIVE"))
+    }
     fun savePin(pin: String, confirmation: String): Boolean {
         if (pin != confirmation || pin.length !in 4..12 || pin.any { !it.isDigit() }) return false
         val record = pinVerifier.create(pin.toCharArray())
@@ -128,7 +136,7 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 } } },
                 ) { padding ->
                 when (selectedIndex) {
-                    0 -> HomeScreen(viewModel, profile, Modifier.padding(padding))
+                    0 -> HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, Modifier.padding(padding))
                     1 -> TimelineScreen(viewModel, Modifier.padding(padding))
                     2 -> CaptureScreen(viewModel, "RECORD", "Add a medical record", Modifier.padding(padding))
                     3 -> CaptureScreen(viewModel, "REMINDER", "Add a follow-up reminder", Modifier.padding(padding))
@@ -182,19 +190,25 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
     }
 }
 
-@Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, modifier: Modifier) {
+@Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, medications: List<MedicationEntity>, modifier: Modifier) {
     var showSymptom by rememberSaveable { mutableStateOf(false) }
     var showMedication by rememberSaveable { mutableStateOf(false) }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
         Text("Keep your records together and ready for your next appointment.")
         InformationCard("Privacy", "Stored on this device. No account required.")
+        if (medications.isNotEmpty()) {
+            Text("Current medications", style = MaterialTheme.typography.titleMedium)
+            medications.filter { it.status == "CURRENT" }.take(3).forEach { medication ->
+                Text("• ${medication.name}${medication.strength.takeIf { it.isNotBlank() }?.let { " — $it" } ?: ""}")
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button({ showSymptom = true }, Modifier.weight(1f)) { Text("Log symptom") }
             Button({ showMedication = true }, Modifier.weight(1f)) { Text("Add medication") }
         }
         if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent)
-        if (showMedication) CaptureDialog("MEDICATION", "Add medication", { showMedication = false }, vm::addEvent)
+        if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
     }
 }
 
@@ -250,4 +264,31 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
         if (kind == "SYMPTOM") OutlinedTextField(severityText, { severityText = it.filter(Char::isDigit) }, label = { Text("Severity (0–10, optional)") }, isError = errors.containsKey("severity"), supportingText = { errors["severity"]?.let { Text(it) } })
         OutlinedTextField(details, { details = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"), supportingText = { errors["notes"]?.let { Text(it) } })
     } }, confirmButton = { Button({ if (errors.isEmpty()) { onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null); onDismiss() } }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+}
+
+@Composable
+private fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) -> Unit) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var strength by rememberSaveable { mutableStateOf("") }
+    var dose by rememberSaveable { mutableStateOf("") }
+    var route by rememberSaveable { mutableStateOf("") }
+    var frequency by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    val draft = MedicationDraft(name, strength, dose, route, frequency, notes)
+    val errors = draft.validationErrors()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add medication") },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(name, { name = it }, label = { Text("Medication name") }, isError = errors.containsKey("name"))
+            OutlinedTextField(strength, { strength = it }, label = { Text("Strength") })
+            OutlinedTextField(dose, { dose = it }, label = { Text("Dose") })
+            OutlinedTextField(route, { route = it }, label = { Text("Route (optional)") })
+            OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency (optional)") })
+            OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"))
+            errors.values.firstOrNull()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        } },
+        confirmButton = { Button(enabled = errors.isEmpty(), onClick = { onSave(draft); onDismiss() }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
