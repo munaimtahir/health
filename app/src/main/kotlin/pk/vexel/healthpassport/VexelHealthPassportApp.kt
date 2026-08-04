@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
+import android.graphics.Color
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -223,6 +226,17 @@ class PassportViewModel @Inject constructor(
         (data.optJSONArray("medications") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val m = array.getJSONObject(i); database.medicationDao().insert(MedicationEntity(m.getString("id"), m.optString("name"), m.optString("genericName"), m.optString("strength"), m.optString("dose"), m.optString("unit"), m.optString("route"), m.optString("frequency"), m.optString("startDate"), m.optString("stopDate"), m.optString("status", "CURRENT"), m.optString("indication"), m.optString("physician"), m.optString("notes"), System.currentTimeMillis(), System.currentTimeMillis())) } }
         restoredDocuments.forEach { database.documentDao().insert(it) }
         (data.optJSONArray("reminders") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val r = array.getJSONObject(i); val reminder = ReminderEntity(r.getString("id"), r.optString("title"), r.optString("type", "CUSTOM"), r.optString("notes"), r.optLong("dueAtEpochMillis"), r.optString("recurrence", "ONCE"), r.optString("status", "SCHEDULED"), createdAtEpochMillis = System.currentTimeMillis(), updatedAtEpochMillis = System.currentTimeMillis()); database.reminderDao().insert(reminder); if (reminder.status == "SCHEDULED") reminderScheduler.schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence) } } }
+    fun createPdfReport(context: Context, uri: Uri) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val lines = mutableListOf("Vexel Health Passport", "Appointment report · generated ${DateFormat.getDateTimeInstance().format(Date())}", "User-recorded data; not a diagnosis or medical advice.", "")
+        profile.value?.let { lines += listOf("PROFILE", "Name: ${it.name}", "Allergies: ${it.allergies}", "Conditions: ${it.conditions}", "") }
+        lines += "HEALTH EVENTS"; events.value.forEach { lines += "${it.kind} · ${it.title} · ${it.details}" }
+        lines += "MEDICATIONS"; medications.value.forEach { lines += "${it.name} ${it.strength} · ${it.dose} · ${it.frequency}" }
+        lines += "DOCUMENTS"; documents.value.forEach { lines += "${it.title} · ${it.category} · ${it.originalFileName}" }
+        lines += "REMINDERS"; reminders.value.forEach { lines += "${it.title} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))} · ${it.status}" }
+        val pdf = PdfDocument(); val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 11f }; var pageNo = 0; var page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); var y = 48f
+        lines.forEach { raw -> raw.chunked(88).ifEmpty { listOf("") }.forEach { text -> if (y > 800f) { pdf.finishPage(page); page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); y = 48f }; paint.textSize = if (pageNo == 1 && y < 60f) 20f else 11f; page.canvas.drawText(text, 48f, y, paint); y += 18f } }
+        pdf.finishPage(page); context.contentResolver.openOutputStream(uri)?.use { pdf.writeTo(it) }; pdf.close()
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -441,7 +455,8 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
     }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.createBackup(context, uri) }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(context, uri) }
-    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }); OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") }); OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Diagnoses or conditions") }); Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }) { Text("Save profile") }; TextButton({ exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }; TextButton({ backupLauncher.launch("vexel-health-backup.vexel") }) { Text("Create local backup") }; TextButton({ restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }) { Text("Restore backup") }; TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }; TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") }; TextButton({ showDeleteAll = true }) { Text("Delete all local data", color = MaterialTheme.colorScheme.error) } }
+    val reportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri -> if (uri != null) vm.createPdfReport(context, uri) }
+    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }); OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") }); OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Diagnoses or conditions") }); Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }) { Text("Save profile") }; TextButton({ exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }; TextButton({ backupLauncher.launch("vexel-health-backup.vexel") }) { Text("Create local backup") }; TextButton({ restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }) { Text("Restore backup") }; TextButton({ reportLauncher.launch("vexel-health-report.pdf") }) { Text("Create PDF report") }; TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }; TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") }; TextButton({ showDeleteAll = true }) { Text("Delete all local data", color = MaterialTheme.colorScheme.error) } }
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
     if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
 }
