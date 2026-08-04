@@ -320,6 +320,7 @@ to this project's gradle.properties.
 > Task :feature:medications:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:medications:bundleLibRuntimeToDirRelease UP-TO-DATE
 > Task :feature:reminders:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:bundleReleaseResources
 > Task :feature:reminders:compileReleaseKotlin UP-TO-DATE
 > Task :feature:reminders:javaPreCompileRelease UP-TO-DATE
 > Task :feature:reminders:compileReleaseJavaWithJavac NO-SOURCE
@@ -381,7 +382,6 @@ to this project's gradle.properties.
 > Task :feature:settings:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:ui:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:designsystem:bundleLibRuntimeToJarRelease UP-TO-DATE
-> Task :app:bundleReleaseResources
 > Task :app:hiltAggregateDepsRelease UP-TO-DATE
 > Task :app:hiltJavaCompileRelease UP-TO-DATE
 > Task :app:transformReleaseClassesWithAsm UP-TO-DATE
@@ -576,5 +576,5 @@ to this project's gradle.properties.
 > Task :app:createReleaseBundleListingFileRedirect
 > Task :app:bundleRelease
 
-BUILD SUCCESSFUL in 16s
+BUILD SUCCESSFUL in 15s
 418 actionable tasks: 8 executed, 410 up-to-date

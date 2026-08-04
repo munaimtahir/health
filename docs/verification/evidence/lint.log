@@ -683,11 +683,11 @@ to this project's gradle.properties.
 > Task :feature:settings:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :core:ui:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :core:designsystem:bundleLibRuntimeToJarDebug UP-TO-DATE
-> Task :app:preDebugAndroidTestBuild SKIPPED
-> Task :app:generateDebugAndroidTestResValues
 > Task :app:hiltAggregateDepsDebug UP-TO-DATE
 > Task :app:hiltJavaCompileDebug UP-TO-DATE
 > Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues
 > Task :core:database:createFullJarDebug
 > Task :core:database:writeDebugLintModelMetadata
 > Task :core:datastore:createFullJarDebug
@@ -774,8 +774,8 @@ to this project's gradle.properties.
 > Task :core:ui:lintAnalyzeDebug
 > Task :feature:appointments:lintAnalyzeDebug
 > Task :feature:dashboard:lintAnalyzeDebug
-> Task :app:lintAnalyzeDebugAndroidTest
 > Task :feature:medications:lintAnalyzeDebug
+> Task :app:lintAnalyzeDebugAndroidTest
 > Task :feature:onboarding:lintAnalyzeDebug
 > Task :feature:profile:lintAnalyzeDebug
 > Task :feature:records:lintAnalyzeDebug
@@ -839,6 +839,7 @@ to this project's gradle.properties.
 > Task :feature:appointments:generateDebugAndroidTestLintModel
 > Task :feature:appointments:preDebugUnitTestBuild UP-TO-DATE
 > Task :feature:appointments:generateDebugUnitTestLintModel
+> Task :app:lintAnalyzeDebug
 > Task :feature:appointments:lintAnalyzeDebugAndroidTest
 > Task :feature:appointments:lintAnalyzeDebugUnitTest
 > Task :feature:dashboard:preDebugAndroidTestBuild UP-TO-DATE
@@ -867,7 +868,6 @@ to this project's gradle.properties.
 > Task :feature:profile:generateDebugAndroidTestLintModel
 > Task :feature:profile:preDebugUnitTestBuild UP-TO-DATE
 > Task :feature:profile:generateDebugUnitTestLintModel
-> Task :app:lintAnalyzeDebug
 > Task :feature:profile:lintAnalyzeDebugAndroidTest
 > Task :feature:profile:lintAnalyzeDebugUnitTest
 > Task :feature:records:preDebugAndroidTestBuild UP-TO-DATE
@@ -994,5 +994,5 @@ Wrote HTML report to file:///home/munaim/Documents/github/health/app/build/repor
 > Task :app:lintDebug
 > Task :app:lint
 
-BUILD SUCCESSFUL in 1m 39s
+BUILD SUCCESSFUL in 2m 1s
 758 actionable tasks: 243 executed, 515 up-to-date

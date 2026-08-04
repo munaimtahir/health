@@ -47,21 +47,21 @@ to this project's gradle.properties.
 > Task :core:designsystem:writeReleaseAarMetadata
 > Task :core:files:preBuild UP-TO-DATE
 > Task :core:files:preReleaseBuild UP-TO-DATE
-> Task :core:files:writeReleaseAarMetadata
 > Task :core:notifications:preBuild UP-TO-DATE
 > Task :core:notifications:preReleaseBuild UP-TO-DATE
-> Task :core:notifications:writeReleaseAarMetadata
+> Task :core:files:writeReleaseAarMetadata
 > Task :core:security:preBuild UP-TO-DATE
 > Task :core:security:preReleaseBuild UP-TO-DATE
-> Task :core:security:writeReleaseAarMetadata
+> Task :core:notifications:writeReleaseAarMetadata
 > Task :core:ui:preBuild UP-TO-DATE
 > Task :core:ui:preReleaseBuild UP-TO-DATE
+> Task :core:security:writeReleaseAarMetadata
 > Task :core:ui:writeReleaseAarMetadata
 > Task :feature:appointments:preBuild UP-TO-DATE
 > Task :feature:appointments:preReleaseBuild UP-TO-DATE
-> Task :feature:appointments:writeReleaseAarMetadata
 > Task :feature:dashboard:preBuild UP-TO-DATE
 > Task :feature:dashboard:preReleaseBuild UP-TO-DATE
+> Task :feature:appointments:writeReleaseAarMetadata
 > Task :feature:dashboard:writeReleaseAarMetadata
 > Task :feature:medications:preBuild UP-TO-DATE
 > Task :feature:medications:preReleaseBuild UP-TO-DATE
@@ -90,9 +90,9 @@ to this project's gradle.properties.
 > Task :feature:timeline:preBuild UP-TO-DATE
 > Task :feature:timeline:preReleaseBuild UP-TO-DATE
 > Task :feature:timeline:writeReleaseAarMetadata
+> Task :app:checkReleaseAarMetadata
 > Task :app:generateReleaseResValues
 > Task :core:database:generateReleaseResValues
-> Task :app:checkReleaseAarMetadata
 > Task :core:database:generateReleaseResources
 > Task :core:database:packageReleaseResources
 > Task :core:datastore:generateReleaseResValues
@@ -157,15 +157,15 @@ to this project's gradle.properties.
 > Task :core:datastore:extractDeepLinksRelease
 > Task :core:datastore:processReleaseManifest
 > Task :core:designsystem:extractDeepLinksRelease
-> Task :app:mergeReleaseResources
-> Task :core:files:extractDeepLinksRelease
 > Task :core:designsystem:processReleaseManifest
-> Task :core:notifications:extractDeepLinksRelease
+> Task :core:files:extractDeepLinksRelease
 > Task :core:files:processReleaseManifest
-> Task :core:security:extractDeepLinksRelease
+> Task :core:notifications:extractDeepLinksRelease
 > Task :core:notifications:processReleaseManifest
-> Task :core:ui:extractDeepLinksRelease
+> Task :core:security:extractDeepLinksRelease
 > Task :core:security:processReleaseManifest
+> Task :core:ui:extractDeepLinksRelease
+> Task :app:mergeReleaseResources
 > Task :feature:appointments:extractDeepLinksRelease
 > Task :core:ui:processReleaseManifest
 > Task :feature:dashboard:extractDeepLinksRelease
@@ -174,8 +174,8 @@ to this project's gradle.properties.
 > Task :feature:dashboard:processReleaseManifest
 > Task :feature:onboarding:extractDeepLinksRelease
 > Task :feature:medications:processReleaseManifest
-> Task :feature:onboarding:processReleaseManifest
 > Task :feature:profile:extractDeepLinksRelease
+> Task :feature:onboarding:processReleaseManifest
 > Task :feature:records:extractDeepLinksRelease
 > Task :feature:profile:processReleaseManifest
 > Task :feature:reminders:extractDeepLinksRelease
@@ -194,8 +194,8 @@ to this project's gradle.properties.
 > Task :app:processReleaseMainManifest
 > Task :app:processReleaseManifest
 > Task :app:processReleaseManifestForPackage
-> Task :core:database:generateReleaseRFile
 > Task :core:datastore:compileReleaseLibraryResources
+> Task :core:database:generateReleaseRFile
 > Task :core:datastore:parseReleaseLocalResources
 > Task :core:designsystem:compileReleaseLibraryResources
 > Task :core:datastore:generateReleaseRFile
@@ -214,34 +214,34 @@ to this project's gradle.properties.
 > Task :core:ui:parseReleaseLocalResources
 > Task :feature:appointments:compileReleaseLibraryResources
 > Task :core:ui:generateReleaseRFile
-> Task :feature:dashboard:compileReleaseLibraryResources
 > Task :feature:appointments:parseReleaseLocalResources
-> Task :feature:dashboard:parseReleaseLocalResources
+> Task :feature:dashboard:compileReleaseLibraryResources
 > Task :feature:appointments:generateReleaseRFile
-> Task :feature:dashboard:generateReleaseRFile
+> Task :feature:dashboard:parseReleaseLocalResources
 > Task :feature:medications:compileReleaseLibraryResources
-> Task :feature:onboarding:compileReleaseLibraryResources
+> Task :feature:dashboard:generateReleaseRFile
 > Task :feature:medications:parseReleaseLocalResources
-> Task :feature:onboarding:parseReleaseLocalResources
+> Task :feature:onboarding:compileReleaseLibraryResources
 > Task :feature:medications:generateReleaseRFile
+> Task :feature:onboarding:parseReleaseLocalResources
 > Task :feature:profile:compileReleaseLibraryResources
 > Task :feature:onboarding:generateReleaseRFile
 > Task :feature:profile:parseReleaseLocalResources
 > Task :feature:records:compileReleaseLibraryResources
 > Task :feature:profile:generateReleaseRFile
-> Task :feature:reminders:compileReleaseLibraryResources
 > Task :feature:records:parseReleaseLocalResources
-> Task :feature:reminders:parseReleaseLocalResources
+> Task :feature:reminders:compileReleaseLibraryResources
 > Task :feature:records:generateReleaseRFile
-> Task :feature:reminders:generateReleaseRFile
+> Task :feature:reminders:parseReleaseLocalResources
 > Task :feature:reports:compileReleaseLibraryResources
-> Task :feature:settings:compileReleaseLibraryResources
+> Task :feature:reminders:generateReleaseRFile
 > Task :feature:reports:parseReleaseLocalResources
+> Task :feature:settings:compileReleaseLibraryResources
 > Task :feature:reports:generateReleaseRFile
-> Task :feature:settings:parseReleaseLocalResources
 > Task :feature:symptoms:compileReleaseLibraryResources
-> Task :feature:settings:generateReleaseRFile
+> Task :feature:settings:parseReleaseLocalResources
 > Task :feature:symptoms:parseReleaseLocalResources
+> Task :feature:settings:generateReleaseRFile
 > Task :feature:timeline:compileReleaseLibraryResources
 > Task :feature:symptoms:generateReleaseRFile
 > Task :core:database:checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -276,20 +276,20 @@ to this project's gradle.properties.
 > Task :core:database:bundleLibCompileToJarRelease
 > Task :core:security:bundleLibCompileToJarRelease
 > Task :core:ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:ui:compileReleaseKotlin
+> Task :core:ui:javaPreCompileRelease
+> Task :core:ui:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:ui:bundleLibCompileToJarRelease
+> Task :feature:appointments:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:notifications:compileReleaseKotlin
 > Task :core:notifications:compileReleaseJavaWithJavac NO-SOURCE
 > Task :core:notifications:bundleLibCompileToJarRelease
-> Task :core:ui:javaPreCompileRelease
-> Task :feature:appointments:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:ui:compileReleaseKotlin
 > Task :feature:appointments:javaPreCompileRelease
-> Task :core:ui:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:dashboard:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:ui:bundleLibCompileToJarRelease
-> Task :feature:dashboard:javaPreCompileRelease
 > Task :feature:appointments:compileReleaseKotlin
 > Task :feature:appointments:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:appointments:bundleLibCompileToJarRelease
+> Task :feature:dashboard:javaPreCompileRelease
 > Task :feature:medications:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:dashboard:compileReleaseKotlin
 > Task :feature:dashboard:compileReleaseJavaWithJavac NO-SOURCE
@@ -345,10 +345,6 @@ to this project's gradle.properties.
 > Task :feature:onboarding:bundleLibRuntimeToJarRelease
 > Task :feature:dashboard:bundleLibRuntimeToJarRelease
 > Task :feature:profile:bundleLibRuntimeToJarRelease
-> Task :feature:timeline:compileReleaseKotlin
-> Task :feature:timeline:compileReleaseJavaWithJavac NO-SOURCE
-> Task :feature:timeline:bundleLibCompileToJarRelease
-> Task :feature:timeline:bundleLibRuntimeToJarRelease
 > Task :feature:symptoms:bundleLibRuntimeToJarRelease
 > Task :feature:records:bundleLibRuntimeToJarRelease
 > Task :feature:medications:bundleLibRuntimeToJarRelease
@@ -361,7 +357,11 @@ to this project's gradle.properties.
 > Task :core:database:processReleaseJavaRes
 > Task :core:database:createFullJarRelease
 > Task :core:database:extractProguardFiles
+> Task :feature:timeline:compileReleaseKotlin
 > Task :core:database:generateReleaseLintModel
+> Task :feature:timeline:compileReleaseJavaWithJavac NO-SOURCE
+> Task :feature:timeline:bundleLibCompileToJarRelease
+> Task :feature:timeline:bundleLibRuntimeToJarRelease
 > Task :core:database:prepareLintJarForPublish UP-TO-DATE
 > Task :core:datastore:processReleaseJavaRes
 > Task :core:datastore:createFullJarRelease
@@ -737,27 +737,27 @@ to this project's gradle.properties.
 > Task :core:designsystem:syncReleaseLibJars
 > Task :core:designsystem:bundleReleaseLocalLintAar
 > Task :app:kspReleaseKotlin
-> Task :core:database:lintVitalAnalyzeRelease
-> Task :core:database:writeReleaseLintModelMetadata
-> Task :core:datastore:lintVitalAnalyzeRelease
-> Task :core:datastore:writeReleaseLintModelMetadata
 > Task :app:compileReleaseKotlin
+> Task :core:database:lintVitalAnalyzeRelease
 > Task :app:compileReleaseJavaWithJavac
+> Task :core:database:writeReleaseLintModelMetadata
 > Task :app:hiltAggregateDepsRelease
-> Task :core:designsystem:lintVitalAnalyzeRelease
+> Task :core:datastore:lintVitalAnalyzeRelease
 > Task :app:hiltJavaCompileRelease
 > Task :app:generateReleaseLintVitalReportModel
+> Task :core:datastore:writeReleaseLintModelMetadata
 > Task :core:designsystem:writeReleaseLintModelMetadata
-> Task :core:files:writeReleaseLintModelMetadata
 > Task :core:files:lintVitalAnalyzeRelease
-> Task :core:notifications:writeReleaseLintModelMetadata
+> Task :core:files:writeReleaseLintModelMetadata
 > Task :core:notifications:lintVitalAnalyzeRelease
+> Task :core:notifications:writeReleaseLintModelMetadata
+> Task :core:designsystem:lintVitalAnalyzeRelease
 > Task :core:security:writeReleaseLintModelMetadata
 > Task :core:ui:lintVitalAnalyzeRelease
 > Task :core:ui:writeReleaseLintModelMetadata
-> Task :feature:appointments:lintVitalAnalyzeRelease
-> Task :feature:appointments:writeReleaseLintModelMetadata
 > Task :core:security:lintVitalAnalyzeRelease
+> Task :feature:appointments:writeReleaseLintModelMetadata
+> Task :feature:appointments:lintVitalAnalyzeRelease
 > Task :feature:dashboard:writeReleaseLintModelMetadata
 > Task :feature:dashboard:lintVitalAnalyzeRelease
 > Task :feature:medications:writeReleaseLintModelMetadata
@@ -783,6 +783,7 @@ to this project's gradle.properties.
 > Task :core:files:generateReleaseLintVitalModel
 > Task :core:notifications:generateReleaseLintVitalModel
 > Task :core:security:generateReleaseLintVitalModel
+> Task :feature:timeline:lintVitalAnalyzeRelease
 > Task :core:ui:generateReleaseLintVitalModel
 > Task :feature:appointments:generateReleaseLintVitalModel
 > Task :feature:dashboard:generateReleaseLintVitalModel
@@ -794,7 +795,6 @@ to this project's gradle.properties.
 > Task :feature:reports:generateReleaseLintVitalModel
 > Task :feature:settings:generateReleaseLintVitalModel
 > Task :feature:symptoms:generateReleaseLintVitalModel
-> Task :feature:timeline:lintVitalAnalyzeRelease
 > Task :feature:timeline:generateReleaseLintVitalModel
 > Task :app:mergeReleaseJniLibFolders
 > Task :core:database:copyReleaseJniLibsProjectOnly
@@ -846,6 +846,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
 > Task :app:mergeExtDexRelease
+> Task :app:lintVitalAnalyzeRelease
 > Task :app:mergeDexRelease
 > Task :app:mergeReleaseArtProfile
 > Task :app:mergeReleaseGlobalSynthetics
@@ -857,30 +858,30 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:compressReleaseAssets
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:processReleaseJavaRes
-> Task :app:lintVitalAnalyzeRelease
 > Task :app:mergeReleaseJavaResource
-> Task :app:lintVitalReportRelease
-> Task :app:lintVitalRelease
+> Task :app:optimizeReleaseResources
 > Task :app:collectReleaseDependencies
 > Task :app:sdkReleaseDependencyData
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
 > Task :core:database:bundleReleaseAar
 > Task :core:database:mapReleaseSourceSetPaths
 > Task :core:database:mergeReleaseResources
-> Task :app:optimizeReleaseResources
 > Task :core:database:verifyReleaseResources
 > Task :core:database:assembleRelease
 > Task :core:datastore:bundleReleaseAar
 > Task :core:datastore:mapReleaseSourceSetPaths
 > Task :core:datastore:mergeReleaseResources
 > Task :core:datastore:verifyReleaseResources
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:assembleRelease
 > Task :core:datastore:assembleRelease
 > Task :core:designsystem:bundleReleaseAar
 > Task :core:designsystem:mapReleaseSourceSetPaths
 > Task :core:designsystem:mergeReleaseResources
-> Task :core:designsystem:verifyReleaseResources
-> Task :core:designsystem:assembleRelease
 > Task :core:files:bundleReleaseAar
 > Task :core:files:mapReleaseSourceSetPaths
 > Task :core:files:mergeReleaseResources
@@ -888,10 +889,9 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:files:assembleRelease
 > Task :core:notifications:bundleReleaseAar
 > Task :core:notifications:mapReleaseSourceSetPaths
+> Task :core:designsystem:verifyReleaseResources
 > Task :core:notifications:mergeReleaseResources
-> Task :app:packageRelease
-> Task :app:createReleaseApkListingFileRedirect
-> Task :app:assembleRelease
+> Task :core:designsystem:assembleRelease
 > Task :core:security:bundleReleaseAar
 > Task :core:security:mapReleaseSourceSetPaths
 > Task :core:security:mergeReleaseResources
@@ -909,8 +909,8 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:ui:assembleRelease
 > Task :feature:dashboard:bundleReleaseAar
 > Task :feature:dashboard:mapReleaseSourceSetPaths
-> Task :feature:dashboard:mergeReleaseResources
 > Task :feature:appointments:verifyReleaseResources
+> Task :feature:dashboard:mergeReleaseResources
 > Task :feature:appointments:assembleRelease
 > Task :feature:medications:bundleReleaseAar
 > Task :feature:medications:mapReleaseSourceSetPaths
@@ -954,11 +954,11 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:settings:assembleRelease
 > Task :feature:timeline:bundleReleaseAar
 > Task :feature:timeline:mapReleaseSourceSetPaths
-> Task :feature:timeline:mergeReleaseResources
 > Task :feature:symptoms:verifyReleaseResources
+> Task :feature:timeline:mergeReleaseResources
 > Task :feature:symptoms:assembleRelease
 > Task :feature:timeline:verifyReleaseResources
 > Task :feature:timeline:assembleRelease
 
-BUILD SUCCESSFUL in 1m 27s
+BUILD SUCCESSFUL in 1m 52s
 762 actionable tasks: 665 executed, 97 up-to-date
