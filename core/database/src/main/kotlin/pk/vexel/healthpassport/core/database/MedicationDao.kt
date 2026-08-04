@@ -14,4 +14,5 @@ interface MedicationDao {
     @Insert suspend fun insert(medication: MedicationEntity)
     @Update suspend fun update(medication: MedicationEntity)
     @Query("DELETE FROM medications WHERE id = :id") suspend fun delete(id: String)
+    @Query("DELETE FROM medications") suspend fun deleteAll()
 }

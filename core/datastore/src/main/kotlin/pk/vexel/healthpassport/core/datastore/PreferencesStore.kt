@@ -40,4 +40,8 @@ class PreferencesStore(private val context: Context) {
             values.remove(pinMaterialKey)
         }
     }
+
+    suspend fun clearAll() {
+        context.preferencesDataStore.edit { values -> values.clear() }
+    }
 }

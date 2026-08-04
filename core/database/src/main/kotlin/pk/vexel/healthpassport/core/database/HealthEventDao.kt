@@ -22,4 +22,6 @@ interface HealthEventDao {
 
     @Query("DELETE FROM health_events WHERE id = :id")
     suspend fun delete(id: String)
+    @Query("DELETE FROM health_events")
+    suspend fun deleteAll()
 }

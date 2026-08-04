@@ -14,4 +14,5 @@ interface SecureFileStore {
     suspend fun preserveOriginal(input: InputStream, mimeType: String, displayName: String = "document"): PreservedDocument
     fun open(id: String): java.io.InputStream
     fun delete(id: String): Boolean
+    suspend fun deleteAll()
 }

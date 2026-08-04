@@ -12,4 +12,6 @@ interface ProfileDao {
 
     @Upsert
     suspend fun upsert(profile: ProfileEntity)
+    @Query("DELETE FROM profile")
+    suspend fun deleteAll()
 }

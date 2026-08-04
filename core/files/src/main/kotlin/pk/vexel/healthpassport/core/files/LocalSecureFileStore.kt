@@ -50,6 +50,12 @@ class LocalSecureFileStore(context: Context) : SecureFileStore {
         return File(root, id).delete()
     }
 
+    override suspend fun deleteAll() {
+        withContext(Dispatchers.IO) {
+            root.listFiles()?.forEach { file -> if (file.isFile) file.delete() }
+        }
+    }
+
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
     private companion object {

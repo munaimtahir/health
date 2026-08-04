@@ -64,6 +64,7 @@ import pk.vexel.healthpassport.core.database.HealthEventEntity
 import pk.vexel.healthpassport.core.database.MedicationEntity
 import pk.vexel.healthpassport.core.database.ProfileEntity
 import pk.vexel.healthpassport.core.datastore.PreferencesStore
+import pk.vexel.healthpassport.core.files.SecureFileStore
 import pk.vexel.healthpassport.core.designsystem.InformationCard
 import pk.vexel.healthpassport.core.designsystem.VexelHealthPassportTheme
 import pk.vexel.healthpassport.core.model.SymptomDraft
@@ -84,6 +85,7 @@ class PassportViewModel @Inject constructor(
     private val database: HealthDatabase,
     private val preferences: PreferencesStore,
     private val pinMaterialCipher: PinMaterialCipher,
+    private val secureFileStore: SecureFileStore,
 ) : ViewModel() {
     private val pinVerifier = PinVerifier()
     val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -116,6 +118,13 @@ class PassportViewModel @Inject constructor(
         return runCatching { pinVerifier.matches(pin.toCharArray(), pinMaterialCipher.decrypt(prefs.pinMaterial)) }.getOrDefault(false)
     }
     fun disablePin() = viewModelScope.launch { preferences.clearPinMaterial() }
+    fun deleteAllData() = viewModelScope.launch {
+        database.healthEventDao().deleteAll()
+        database.medicationDao().deleteAll()
+        database.profileDao().deleteAll()
+        secureFileStore.deleteAll()
+        preferences.clearAll()
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -239,8 +248,10 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
 
 @Composable private fun ProfileScreen(vm: PassportViewModel, profile: ProfileEntity?, modifier: Modifier) {
     var name by remember(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by remember(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by remember(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }; val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
-    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }); OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") }); OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Diagnoses or conditions") }); Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }) { Text("Save profile") }; TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }; TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") } }
+    var showDeleteAll by rememberSaveable { mutableStateOf(false) }
+    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }); OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") }); OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Diagnoses or conditions") }); Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }) { Text("Save profile") }; TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }; TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") }; TextButton({ showDeleteAll = true }) { Text("Delete all local data", color = MaterialTheme.colorScheme.error) } }
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
+    if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
 }
 
 @Composable
