@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.room.withTransaction
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -238,12 +239,39 @@ class PassportViewModel @Inject constructor(
             val preserved = secureFileStore.preserveOriginal(ByteArrayInputStream(bytes), source.getString("mimeType"), source.optString("originalFileName", "document"))
             restoredDocuments += DocumentEntity(preserved.id, source.optString("title"), source.optString("category", "OTHER"), source.optString("documentDate"), source.optString("notes"), source.optString("originalFileName", "document"), preserved.mimeType, preserved.byteCount, preserved.sha256, System.currentTimeMillis())
         }
-        database.healthEventDao().deleteAll(); database.medicationDao().deleteAll(); database.profileDao().deleteAll(); database.documentDao().deleteAll(); database.reminderDao().deleteAll()
-        data.optJSONObject("profile")?.let { p -> database.profileDao().upsert(ProfileEntity(name = p.optString("name"), dateOfBirth = p.optString("dateOfBirth"), bloodGroup = p.optString("bloodGroup"), allergies = p.optString("allergies"), conditions = p.optString("conditions"), emergencyContact = p.optString("emergencyContact"), updatedAtEpochMillis = System.currentTimeMillis())) }
-        (data.optJSONArray("events") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val e = array.getJSONObject(i); database.healthEventDao().insert(HealthEventEntity(e.getString("id"), e.optString("title"), e.optString("details"), e.optString("kind", "OTHER"), if (e.isNull("effectiveAtEpochMillis")) null else e.optLong("effectiveAtEpochMillis"), e.optLong("createdAtEpochMillis"), status = e.optString("status", "ACTIVE"), severity = if (e.isNull("severity")) null else e.optInt("severity"))) } }
-        (data.optJSONArray("medications") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val m = array.getJSONObject(i); database.medicationDao().insert(MedicationEntity(m.getString("id"), m.optString("name"), m.optString("genericName"), m.optString("strength"), m.optString("dose"), m.optString("unit"), m.optString("route"), m.optString("frequency"), m.optString("startDate"), m.optString("stopDate"), m.optString("status", "CURRENT"), m.optString("indication"), m.optString("physician"), m.optString("notes"), System.currentTimeMillis(), System.currentTimeMillis())) } }
-        restoredDocuments.forEach { database.documentDao().insert(it) }
-        (data.optJSONArray("reminders") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val r = array.getJSONObject(i); val reminder = ReminderEntity(r.getString("id"), r.optString("title"), r.optString("type", "CUSTOM"), r.optString("notes"), r.optLong("dueAtEpochMillis"), r.optString("recurrence", "ONCE"), r.optString("status", "SCHEDULED"), createdAtEpochMillis = System.currentTimeMillis(), updatedAtEpochMillis = System.currentTimeMillis()); database.reminderDao().insert(reminder); if (reminder.status == "SCHEDULED") reminderScheduler.schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence) } } }
+        val scheduledReminders = mutableListOf<ReminderEntity>()
+        try {
+            database.withTransaction {
+                database.healthEventDao().deleteAll(); database.medicationDao().deleteAll(); database.profileDao().deleteAll(); database.documentDao().deleteAll(); database.reminderDao().deleteAll()
+                data.optJSONObject("profile")?.let { p -> database.profileDao().upsert(ProfileEntity(name = p.optString("name"), dateOfBirth = p.optString("dateOfBirth"), bloodGroup = p.optString("bloodGroup"), allergies = p.optString("allergies"), conditions = p.optString("conditions"), emergencyContact = p.optString("emergencyContact"), updatedAtEpochMillis = System.currentTimeMillis())) }
+                (data.optJSONArray("events") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val e = array.getJSONObject(i); database.healthEventDao().insert(HealthEventEntity(e.getString("id"), e.optString("title"), e.optString("details"), e.optString("kind", "OTHER"), if (e.isNull("effectiveAtEpochMillis")) null else e.optLong("effectiveAtEpochMillis"), e.optLong("createdAtEpochMillis"), status = e.optString("status", "ACTIVE"), severity = if (e.isNull("severity")) null else e.optInt("severity"))) } }
+                (data.optJSONArray("medications") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val m = array.getJSONObject(i); database.medicationDao().insert(MedicationEntity(m.getString("id"), m.optString("name"), m.optString("genericName"), m.optString("strength"), m.optString("dose"), m.optString("unit"), m.optString("route"), m.optString("frequency"), m.optString("startDate"), m.optString("stopDate"), m.optString("status", "CURRENT"), m.optString("indication"), m.optString("physician"), m.optString("notes"), System.currentTimeMillis(), System.currentTimeMillis())) } }
+                restoredDocuments.forEach { database.documentDao().insert(it) }
+                val reminderData = data.optJSONArray("reminders") ?: JSONArray()
+                for (i in 0 until reminderData.length()) {
+                    val r = reminderData.getJSONObject(i)
+                    val reminder = ReminderEntity(
+                        id = r.getString("id"),
+                        title = r.optString("title"),
+                        type = r.optString("type", "CUSTOM"),
+                        notes = r.optString("notes"),
+                        dueAtEpochMillis = r.optLong("dueAtEpochMillis"),
+                        recurrence = r.optString("recurrence", "ONCE"),
+                        status = r.optString("status", "SCHEDULED"),
+                        createdAtEpochMillis = System.currentTimeMillis(),
+                        updatedAtEpochMillis = System.currentTimeMillis(),
+                    )
+                    database.reminderDao().insert(reminder)
+                    if (reminder.status == "SCHEDULED") scheduledReminders += reminder
+                }
+            }
+            reminders.value.forEach { reminderScheduler.cancel(it.id) }
+            scheduledReminders.forEach { reminderScheduler.schedule(it.id, it.dueAtEpochMillis, it.recurrence) }
+        } catch (error: Throwable) {
+            restoredDocuments.forEach { secureFileStore.delete(it.id) }
+            throw error
+        }
+    }
     fun createPdfReport(context: Context, uri: Uri) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
         val lines = mutableListOf("Vexel Health Passport", "Appointment report · generated ${DateFormat.getDateTimeInstance().format(Date())}", "User-recorded data; not a diagnosis or medical advice.", "")
         profile.value?.let { lines += listOf("PROFILE", "Name: ${it.name}", "Allergies: ${it.allergies}", "Conditions: ${it.conditions}", "") }
