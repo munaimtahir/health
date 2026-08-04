@@ -1,5 +1,10 @@
 package pk.vexel.healthpassport
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +42,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,6 +54,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -62,6 +70,7 @@ import kotlinx.coroutines.launch
 import pk.vexel.healthpassport.core.database.HealthDatabase
 import pk.vexel.healthpassport.core.database.HealthEventEntity
 import pk.vexel.healthpassport.core.database.MedicationEntity
+import pk.vexel.healthpassport.core.database.DocumentEntity
 import pk.vexel.healthpassport.core.database.ProfileEntity
 import pk.vexel.healthpassport.core.datastore.PreferencesStore
 import pk.vexel.healthpassport.core.files.SecureFileStore
@@ -91,6 +100,7 @@ class PassportViewModel @Inject constructor(
     val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val profile = database.profileDao().observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val medications = database.medicationDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val documents = database.documentDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), pk.vexel.healthpassport.core.datastore.UserPreferences())
 
     fun completeOnboarding() = viewModelScope.launch { preferences.setOnboardingComplete(true) }
@@ -122,8 +132,27 @@ class PassportViewModel @Inject constructor(
         database.healthEventDao().deleteAll()
         database.medicationDao().deleteAll()
         database.profileDao().deleteAll()
+        database.documentDao().deleteAll()
         secureFileStore.deleteAll()
         preferences.clearAll()
+    }
+    fun importDocument(context: Context, uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
+        val mimeType = context.contentResolver.getType(uri) ?: return@launch
+        val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else "document"
+        } ?: "document"
+        val preserved = context.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.preserveOriginal(input, mimeType, displayName) } ?: return@launch
+        val now = System.currentTimeMillis()
+        database.documentDao().insert(DocumentEntity(preserved.id, title.trim().ifBlank { displayName }, category.trim().ifBlank { "OTHER" }, documentDate.trim(), notes.trim(), displayName, preserved.mimeType, preserved.byteCount, preserved.sha256, now))
+    }
+    fun deleteDocument(document: DocumentEntity) = viewModelScope.launch {
+        secureFileStore.delete(document.id)
+        database.documentDao().delete(document.id)
+    }
+    fun openDocument(context: Context, document: DocumentEntity) = viewModelScope.launch {
+        val file = secureFileStore.copyToShareCache(context, document.id, document.originalFileName)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, document.mimeType); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }, "Open document").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }
 
@@ -147,7 +176,7 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 when (selectedIndex) {
                     0 -> HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, Modifier.padding(padding))
                     1 -> TimelineScreen(viewModel, Modifier.padding(padding))
-                    2 -> CaptureScreen(viewModel, "RECORD", "Add a medical record", Modifier.padding(padding))
+                    2 -> DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding))
                     3 -> CaptureScreen(viewModel, "REMINDER", "Add a follow-up reminder", Modifier.padding(padding))
                     else -> ProfileScreen(viewModel, profile, Modifier.padding(padding))
                 }
@@ -244,6 +273,55 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
 
 @Composable private fun CaptureScreen(vm: PassportViewModel, kind: String, heading: String, modifier: Modifier) {
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(heading, style = MaterialTheme.typography.headlineSmall); Text("Add information you entered or confirmed yourself."); Button({ vm.addEvent(kind, heading, "User-entered reminder or record") }) { Text("Add") } }
+}
+
+@Composable
+private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntity>, modifier: Modifier) {
+    val context = LocalContext.current
+    var showImport by rememberSaveable { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<DocumentEntity?>(null) }
+    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Private document vault", style = MaterialTheme.typography.headlineSmall)
+            TextButton({ showImport = true }) { Text("Import") }
+        }
+        Text("PDF, JPG, JPEG, and PNG files are copied into app-private storage.")
+        if (documents.isEmpty()) Text("No documents imported yet.")
+        else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(documents, key = { it.id }) { document ->
+                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(document.title, style = MaterialTheme.typography.titleMedium)
+                    Text("${document.category} · ${document.mimeType} · ${document.byteCount / 1024} KB")
+                    if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
+                    if (document.notes.isNotBlank()) Text(document.notes)
+                    Row { TextButton({ vm.openDocument(context, document) }) { Text("Open") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
+                } }
+            }
+        }
+    }
+    if (showImport) DocumentImportDialog(vm, context) { showImport = false }
+    pendingDelete?.let { document ->
+        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
+    }
+}
+
+@Composable
+private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDismiss: () -> Unit) {
+    var title by rememberSaveable { mutableStateOf("") }
+    var category by rememberSaveable { mutableStateOf("OTHER") }
+    var documentDate by rememberSaveable { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importDocument(context, uri, title, category, documentDate, notes)
+        if (uri != null) onDismiss()
+    }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Import private document") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Choose a PDF or image. The original is preserved privately; unsupported types are rejected.")
+        OutlinedTextField(title, { title = it }, label = { Text("Title") })
+        OutlinedTextField(category, { category = it }, label = { Text("Category") })
+        OutlinedTextField(documentDate, { documentDate = it }, label = { Text("Document date (optional)") })
+        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
+    } }, confirmButton = { Button({ launcher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Choose file") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable private fun ProfileScreen(vm: PassportViewModel, profile: ProfileEntity?, modifier: Modifier) {

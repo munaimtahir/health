@@ -10,6 +10,7 @@ object DatabaseProvider {
         Room.databaseBuilder(context, HealthDatabase::class.java, DatabaseConstants.NAME)
             .addMigrations(MIGRATION_1_2)
             .addMigrations(MIGRATION_2_3)
+            .addMigrations(MIGRATION_3_4)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -45,6 +46,24 @@ object DatabaseProvider {
                 notes TEXT NOT NULL DEFAULT '',
                 createdAtEpochMillis INTEGER NOT NULL,
                 updatedAtEpochMillis INTEGER NOT NULL
+            )""")
+        }
+    }
+
+    private val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""CREATE TABLE IF NOT EXISTS documents (
+                id TEXT NOT NULL PRIMARY KEY,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL DEFAULT 'OTHER',
+                documentDate TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT '',
+                originalFileName TEXT NOT NULL,
+                mimeType TEXT NOT NULL,
+                byteCount INTEGER NOT NULL,
+                sha256 TEXT NOT NULL,
+                createdAtEpochMillis INTEGER NOT NULL,
+                archived INTEGER NOT NULL DEFAULT 0
             )""")
         }
     }

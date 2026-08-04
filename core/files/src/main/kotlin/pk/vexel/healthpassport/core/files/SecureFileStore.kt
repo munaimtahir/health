@@ -1,5 +1,7 @@
 package pk.vexel.healthpassport.core.files
 
+import android.content.Context
+import java.io.File
 import java.io.InputStream
 
 data class PreservedDocument(
@@ -15,4 +17,5 @@ interface SecureFileStore {
     fun open(id: String): java.io.InputStream
     fun delete(id: String): Boolean
     suspend fun deleteAll()
+    suspend fun copyToShareCache(context: Context, id: String, fileName: String): File
 }

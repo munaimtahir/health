@@ -56,6 +56,14 @@ class LocalSecureFileStore(context: Context) : SecureFileStore {
         }
     }
 
+    override suspend fun copyToShareCache(context: Context, id: String, fileName: String): File = withContext(Dispatchers.IO) {
+        require(ID_PATTERN.matches(id)) { "Invalid document identifier" }
+        val safeName = fileName.substringAfterLast('/').substringAfterLast('\\').replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "document" }
+        val destination = File(context.cacheDir, "shared").apply { mkdirs() }.resolve("${UUID.randomUUID()}_$safeName")
+        open(id).use { source -> destination.outputStream().use { target -> source.copyTo(target) } }
+        destination
+    }
+
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
     private companion object {
