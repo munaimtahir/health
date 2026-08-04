@@ -166,6 +166,11 @@ class PassportViewModel @Inject constructor(
     }
     fun completeReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().setStatus(reminder.id, "COMPLETED", System.currentTimeMillis()) }
     fun deleteReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().delete(reminder.id) }
+    fun snoozeReminder(reminder: ReminderEntity) = viewModelScope.launch {
+        val dueAt = System.currentTimeMillis() + 60 * 60 * 1000L
+        database.reminderDao().reschedule(reminder.id, dueAt, System.currentTimeMillis())
+        reminderScheduler.schedule(reminder.id, dueAt, reminder.recurrence)
+    }
     fun importDocument(context: Context, uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
         val mimeType = context.contentResolver.getType(uri) ?: return@launch
         val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
@@ -178,6 +183,9 @@ class PassportViewModel @Inject constructor(
     fun deleteDocument(document: DocumentEntity) = viewModelScope.launch {
         secureFileStore.delete(document.id)
         database.documentDao().delete(document.id)
+    }
+    fun updateDocument(document: DocumentEntity, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
+        database.documentDao().update(document.copy(title = title.trim().ifBlank { document.title }, category = category.trim().ifBlank { document.category }, documentDate = documentDate.trim(), notes = notes.trim()))
     }
     fun openDocument(context: Context, document: DocumentEntity) = viewModelScope.launch {
         val file = secureFileStore.copyToShareCache(context, document.id, document.originalFileName)
@@ -374,6 +382,7 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
     val context = LocalContext.current
     var showImport by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<DocumentEntity?>(null) }
+    var pendingEdit by remember { mutableStateOf<DocumentEntity?>(null) }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Private document vault", style = MaterialTheme.typography.headlineSmall)
@@ -388,7 +397,7 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
                     Text("${document.category} · ${document.mimeType} · ${document.byteCount / 1024} KB")
                     if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
                     if (document.notes.isNotBlank()) Text(document.notes)
-                    Row { TextButton({ vm.openDocument(context, document) }) { Text("Open") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
+                    Row { TextButton({ vm.openDocument(context, document) }) { Text("Open") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
                 } }
             }
         }
@@ -397,6 +406,21 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
     pendingDelete?.let { document ->
         AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
     }
+    pendingEdit?.let { document -> DocumentEditDialog(vm, document) { pendingEdit = null } }
+}
+
+@Composable
+private fun DocumentEditDialog(vm: PassportViewModel, document: DocumentEntity, onDismiss: () -> Unit) {
+    var title by rememberSaveable(document.id) { mutableStateOf(document.title) }
+    var category by rememberSaveable(document.id) { mutableStateOf(document.category) }
+    var date by rememberSaveable(document.id) { mutableStateOf(document.documentDate) }
+    var notes by rememberSaveable(document.id) { mutableStateOf(document.notes) }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit document details") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(title, { title = it }, label = { Text("Title") })
+        OutlinedTextField(category, { category = it }, label = { Text("Category") })
+        OutlinedTextField(date, { date = it }, label = { Text("Document date") })
+        OutlinedTextField(notes, { notes = it }, label = { Text("Notes") })
+    } }, confirmButton = { Button({ vm.updateDocument(document, title, category, date, notes); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable
@@ -412,7 +436,7 @@ private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntit
                 Text(reminder.title, style = MaterialTheme.typography.titleMedium)
                 Text("${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))} · ${reminder.status.lowercase()}")
                 if (reminder.notes.isNotBlank()) Text(reminder.notes)
-                Row { if (reminder.status == "SCHEDULED") TextButton({ vm.completeReminder(reminder) }) { Text("Complete") }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
+                Row { if (reminder.status == "SCHEDULED") { TextButton({ vm.snoozeReminder(reminder) }) { Text("Snooze 1h") }; TextButton({ vm.completeReminder(reminder) }) { Text("Complete") } }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
             } }
         } }
     }
