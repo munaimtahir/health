@@ -2,7 +2,9 @@ package pk.vexel.healthpassport
 
 import android.content.Context
 import android.content.Intent
+import android.Manifest
 import android.net.Uri
+import android.os.Build
 import android.provider.OpenableColumns
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
@@ -401,6 +403,7 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
 private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntity>, modifier: Modifier) {
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<ReminderEntity?>(null) }
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Reminders", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } }
         Text("Reminders are user-created and do not determine medical intervals.")
@@ -413,12 +416,12 @@ private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntit
             } }
         } }
     }
-    if (showAdd) ReminderDialog(vm) { showAdd = false }
+    if (showAdd) ReminderDialog(vm, { showAdd = false }) { if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
     pendingDelete?.let { reminder -> AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete reminder?") }, text = { Text("The scheduled notification will be cancelled.") }, confirmButton = { Button({ vm.deleteReminder(reminder); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } }) }
 }
 
 @Composable
-private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
+private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit, onScheduled: () -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf("CUSTOM") }
     var dueText by rememberSaveable { mutableStateOf(SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(System.currentTimeMillis() + 3_600_000))) }
@@ -433,7 +436,7 @@ private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
         OutlinedTextField(recurrence, { recurrence = it.uppercase(Locale.getDefault()).take(12) }, label = { Text("Recurrence: ONCE or DAILY") })
         OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
         if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
-    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.addReminder(title, type, notes, dueAt!!, if (recurrence == "DAILY") "DAILY" else "ONCE"); onDismiss() }) { Text("Schedule") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.addReminder(title, type, notes, dueAt!!, if (recurrence == "DAILY") "DAILY" else "ONCE"); onScheduled(); onDismiss() }) { Text("Schedule") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable

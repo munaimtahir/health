@@ -3,6 +3,8 @@ package pk.vexel.healthpassport.core.notifications
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.app.PendingIntent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -58,7 +60,9 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setContentTitle("Vexel Health Passport reminder")
             .setContentText("You have a reminder to review")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT).setAutoCancel(true).build()
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT).setAutoCancel(true)
+            .setContentIntent(PendingIntent.getActivity(applicationContext, 0, applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)?.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) }, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+            .build()
         if (Build.VERSION.SDK_INT < 33 || NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) NotificationManagerCompat.from(applicationContext).notify(id.hashCode(), notification)
         if (reminder.recurrence == "ONCE") database.reminderDao().setStatus(id, "MISSED", System.currentTimeMillis())
         database.close()
