@@ -93,6 +93,8 @@ import pk.vexel.healthpassport.core.designsystem.VexelHealthPassportTheme
 import pk.vexel.healthpassport.core.model.SymptomDraft
 import pk.vexel.healthpassport.core.model.MedicationDraft
 import pk.vexel.healthpassport.core.model.validationErrors
+import pk.vexel.healthpassport.core.model.TrendEvent
+import pk.vexel.healthpassport.core.model.summarizeSymptoms
 import pk.vexel.healthpassport.core.security.PinVerifier
 import pk.vexel.healthpassport.core.security.PinMaterialCipher
 
@@ -257,7 +259,7 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 } } },
                 ) { padding ->
                 when (selectedIndex) {
-                    0 -> HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, Modifier.padding(padding))
+                    0 -> HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, viewModel.events.collectAsState().value, Modifier.padding(padding))
                     1 -> TimelineScreen(viewModel, Modifier.padding(padding))
                     2 -> DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding))
                     3 -> RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding))
@@ -311,13 +313,20 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
     }
 }
 
-@Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, medications: List<MedicationEntity>, modifier: Modifier) {
+@Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, medications: List<MedicationEntity>, events: List<HealthEventEntity>, modifier: Modifier) {
     var showSymptom by rememberSaveable { mutableStateOf(false) }
     var showMedication by rememberSaveable { mutableStateOf(false) }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
         Text("Keep your records together and ready for your next appointment.")
         InformationCard("Privacy", "Stored on this device. No account required.")
+        val trends = summarizeSymptoms(events.map { TrendEvent(it.title, it.kind, it.severity) })
+        if (trends.totalEntries > 0) {
+            Text("Recorded symptom summary", style = MaterialTheme.typography.titleMedium)
+            Text("${trends.totalEntries} symptom entr${if (trends.totalEntries == 1) "y" else "ies"}; most frequent: ${trends.mostFrequentSymptom ?: "none"}")
+            trends.averageRecordedSeverity?.let { Text("Average recorded severity: ${"%.1f".format(it)}/10") }
+            Text("This is a summary of your entries, not a diagnosis.", style = MaterialTheme.typography.bodySmall)
+        }
         if (medications.isNotEmpty()) {
             Text("Current medications", style = MaterialTheme.typography.titleMedium)
             medications.filter { it.status == "CURRENT" }.take(3).forEach { medication ->
