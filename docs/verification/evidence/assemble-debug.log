@@ -97,16 +97,16 @@ to this project's gradle.properties.
 > Task :core:notifications:packageDebugResources
 > Task :core:security:generateDebugResValues
 > Task :core:security:generateDebugResources
+> Task :core:common:compileKotlin
 > Task :core:security:packageDebugResources
+> Task :core:common:compileJava NO-SOURCE
+> Task :core:common:classes UP-TO-DATE
+> Task :core:common:jar
 > Task :core:ui:generateDebugResValues
 > Task :core:ui:generateDebugResources
 > Task :core:ui:packageDebugResources
 > Task :feature:appointments:generateDebugResValues
-> Task :core:common:compileKotlin
 > Task :feature:appointments:generateDebugResources
-> Task :core:common:compileJava NO-SOURCE
-> Task :core:common:classes UP-TO-DATE
-> Task :core:common:jar
 > Task :feature:appointments:packageDebugResources
 > Task :feature:dashboard:generateDebugResValues
 > Task :feature:dashboard:generateDebugResources
@@ -154,18 +154,14 @@ to this project's gradle.properties.
 > Task :core:datastore:extractDeepLinksDebug
 > Task :core:datastore:processDebugManifest
 > Task :core:designsystem:extractDeepLinksDebug
-> Task :core:domain:compileKotlin
-> Task :core:domain:compileJava NO-SOURCE
-> Task :core:domain:classes UP-TO-DATE
 > Task :core:designsystem:processDebugManifest
-> Task :core:domain:jar
 > Task :core:files:extractDeepLinksDebug
 > Task :core:files:processDebugManifest
 > Task :core:notifications:extractDeepLinksDebug
-> Task :core:security:extractDeepLinksDebug
 > Task :core:notifications:processDebugManifest
-> Task :core:ui:extractDeepLinksDebug
+> Task :core:security:extractDeepLinksDebug
 > Task :core:security:processDebugManifest
+> Task :core:ui:extractDeepLinksDebug
 > Task :core:ui:processDebugManifest
 > Task :feature:appointments:extractDeepLinksDebug
 > Task :feature:appointments:processDebugManifest
@@ -176,7 +172,11 @@ to this project's gradle.properties.
 > Task :feature:onboarding:extractDeepLinksDebug
 > Task :feature:onboarding:processDebugManifest
 > Task :feature:profile:extractDeepLinksDebug
+> Task :core:domain:compileKotlin
+> Task :core:domain:compileJava NO-SOURCE
+> Task :core:domain:classes UP-TO-DATE
 > Task :feature:profile:processDebugManifest
+> Task :core:domain:jar
 > Task :feature:records:extractDeepLinksDebug
 > Task :feature:records:processDebugManifest
 > Task :feature:reminders:extractDeepLinksDebug
@@ -194,40 +194,40 @@ to this project's gradle.properties.
 > Task :app:processDebugManifestForPackage
 > Task :core:database:compileDebugLibraryResources
 > Task :core:database:parseDebugLocalResources
-> Task :core:database:generateDebugRFile
 > Task :core:datastore:compileDebugLibraryResources
+> Task :core:database:generateDebugRFile
+> Task :core:designsystem:compileDebugLibraryResources
 > Task :core:datastore:parseDebugLocalResources
 > Task :core:datastore:generateDebugRFile
-> Task :core:designsystem:compileDebugLibraryResources
-> Task :core:designsystem:parseDebugLocalResources
-> Task :core:designsystem:generateDebugRFile
 > Task :core:files:compileDebugLibraryResources
+> Task :core:designsystem:parseDebugLocalResources
 > Task :core:files:parseDebugLocalResources
+> Task :core:designsystem:generateDebugRFile
 > Task :core:files:generateDebugRFile
 > Task :core:notifications:compileDebugLibraryResources
 > Task :core:notifications:parseDebugLocalResources
-> Task :core:notifications:generateDebugRFile
 > Task :core:security:compileDebugLibraryResources
-> Task :core:security:parseDebugLocalResources
-> Task :core:security:generateDebugRFile
+> Task :core:notifications:generateDebugRFile
 > Task :core:ui:compileDebugLibraryResources
+> Task :core:security:parseDebugLocalResources
 > Task :core:ui:parseDebugLocalResources
+> Task :core:security:generateDebugRFile
 > Task :core:ui:generateDebugRFile
 > Task :feature:appointments:compileDebugLibraryResources
-> Task :feature:dashboard:compileDebugLibraryResources
 > Task :feature:appointments:parseDebugLocalResources
+> Task :feature:dashboard:compileDebugLibraryResources
 > Task :feature:dashboard:parseDebugLocalResources
 > Task :feature:appointments:generateDebugRFile
-> Task :feature:medications:compileDebugLibraryResources
 > Task :feature:dashboard:generateDebugRFile
+> Task :feature:medications:compileDebugLibraryResources
 > Task :feature:onboarding:compileDebugLibraryResources
 > Task :feature:medications:parseDebugLocalResources
 > Task :feature:onboarding:parseDebugLocalResources
 > Task :feature:medications:generateDebugRFile
 > Task :feature:profile:compileDebugLibraryResources
 > Task :feature:onboarding:generateDebugRFile
-> Task :feature:records:compileDebugLibraryResources
 > Task :feature:profile:parseDebugLocalResources
+> Task :feature:records:compileDebugLibraryResources
 > Task :feature:records:parseDebugLocalResources
 > Task :feature:profile:generateDebugRFile
 > Task :feature:reminders:compileDebugLibraryResources
@@ -238,14 +238,14 @@ to this project's gradle.properties.
 > Task :feature:reports:parseDebugLocalResources
 > Task :feature:settings:compileDebugLibraryResources
 > Task :feature:reports:generateDebugRFile
-> Task :feature:symptoms:compileDebugLibraryResources
 > Task :feature:settings:parseDebugLocalResources
-> Task :feature:symptoms:parseDebugLocalResources
+> Task :feature:symptoms:compileDebugLibraryResources
 > Task :feature:settings:generateDebugRFile
+> Task :feature:symptoms:parseDebugLocalResources
 > Task :feature:timeline:compileDebugLibraryResources
-> Task :feature:timeline:parseDebugLocalResources
 > Task :feature:symptoms:generateDebugRFile
 > Task :core:database:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:timeline:parseDebugLocalResources
 > Task :feature:timeline:generateDebugRFile
 > Task :app:processDebugResources
 > Task :core:database:javaPreCompileDebug
@@ -279,19 +279,19 @@ to this project's gradle.properties.
 > Task :core:ui:compileDebugKotlin
 > Task :core:ui:javaPreCompileDebug
 > Task :core:ui:compileDebugJavaWithJavac NO-SOURCE
-> Task :core:notifications:compileDebugKotlin
-> Task :core:notifications:compileDebugJavaWithJavac NO-SOURCE
 > Task :core:ui:bundleLibCompileToJarDebug
 > Task :feature:appointments:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:notifications:compileDebugKotlin
+> Task :core:notifications:compileDebugJavaWithJavac NO-SOURCE
 > Task :core:notifications:bundleLibCompileToJarDebug
 > Task :feature:appointments:javaPreCompileDebug
 > Task :feature:dashboard:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:appointments:compileDebugKotlin
 > Task :feature:appointments:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:appointments:bundleLibCompileToJarDebug
-> Task :feature:dashboard:compileDebugKotlin
-> Task :feature:medications:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:dashboard:javaPreCompileDebug
+> Task :feature:medications:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:dashboard:compileDebugKotlin
 > Task :feature:dashboard:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:dashboard:bundleLibCompileToJarDebug
 > Task :feature:medications:javaPreCompileDebug
@@ -307,11 +307,11 @@ to this project's gradle.properties.
 > Task :feature:profile:javaPreCompileDebug
 > Task :feature:records:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:profile:compileDebugKotlin
-> Task :feature:records:compileDebugKotlin
 > Task :feature:profile:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:profile:bundleLibCompileToJarDebug
-> Task :feature:reminders:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:records:javaPreCompileDebug
+> Task :feature:reminders:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:records:compileDebugKotlin
 > Task :feature:records:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:records:bundleLibCompileToJarDebug
 > Task :feature:reminders:javaPreCompileDebug
@@ -768,5 +768,5 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 1m 11s
+BUILD SUCCESSFUL in 54s
 570 actionable tasks: 480 executed, 90 up-to-date

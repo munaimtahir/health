@@ -375,13 +375,13 @@ to this project's gradle.properties.
 > Task :feature:symptoms:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:records:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:medications:bundleLibRuntimeToJarRelease UP-TO-DATE
-> Task :app:bundleReleaseResources
 > Task :feature:reminders:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:appointments:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:reports:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:settings:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:ui:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:designsystem:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:bundleReleaseResources
 > Task :app:hiltAggregateDepsRelease UP-TO-DATE
 > Task :app:hiltJavaCompileRelease UP-TO-DATE
 > Task :app:transformReleaseClassesWithAsm UP-TO-DATE
@@ -576,5 +576,5 @@ to this project's gradle.properties.
 > Task :app:createReleaseBundleListingFileRedirect
 > Task :app:bundleRelease
 
-BUILD SUCCESSFUL in 15s
+BUILD SUCCESSFUL in 16s
 418 actionable tasks: 8 executed, 410 up-to-date
