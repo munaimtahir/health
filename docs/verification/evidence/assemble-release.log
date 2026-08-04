@@ -53,12 +53,12 @@ to this project's gradle.properties.
 > Task :core:notifications:writeReleaseAarMetadata
 > Task :core:security:preBuild UP-TO-DATE
 > Task :core:security:preReleaseBuild UP-TO-DATE
+> Task :core:security:writeReleaseAarMetadata
 > Task :core:ui:preBuild UP-TO-DATE
 > Task :core:ui:preReleaseBuild UP-TO-DATE
-> Task :core:security:writeReleaseAarMetadata
+> Task :core:ui:writeReleaseAarMetadata
 > Task :feature:appointments:preBuild UP-TO-DATE
 > Task :feature:appointments:preReleaseBuild UP-TO-DATE
-> Task :core:ui:writeReleaseAarMetadata
 > Task :feature:appointments:writeReleaseAarMetadata
 > Task :feature:dashboard:preBuild UP-TO-DATE
 > Task :feature:dashboard:preReleaseBuild UP-TO-DATE
@@ -68,12 +68,12 @@ to this project's gradle.properties.
 > Task :feature:medications:writeReleaseAarMetadata
 > Task :feature:onboarding:preBuild UP-TO-DATE
 > Task :feature:onboarding:preReleaseBuild UP-TO-DATE
+> Task :feature:onboarding:writeReleaseAarMetadata
 > Task :feature:profile:preBuild UP-TO-DATE
 > Task :feature:profile:preReleaseBuild UP-TO-DATE
-> Task :feature:onboarding:writeReleaseAarMetadata
+> Task :feature:profile:writeReleaseAarMetadata
 > Task :feature:records:preBuild UP-TO-DATE
 > Task :feature:records:preReleaseBuild UP-TO-DATE
-> Task :feature:profile:writeReleaseAarMetadata
 > Task :feature:records:writeReleaseAarMetadata
 > Task :feature:reminders:preBuild UP-TO-DATE
 > Task :feature:reminders:preReleaseBuild UP-TO-DATE
@@ -92,6 +92,7 @@ to this project's gradle.properties.
 > Task :feature:timeline:writeReleaseAarMetadata
 > Task :app:generateReleaseResValues
 > Task :core:database:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
 > Task :core:database:generateReleaseResources
 > Task :core:database:packageReleaseResources
 > Task :core:datastore:generateReleaseResValues
@@ -105,7 +106,6 @@ to this project's gradle.properties.
 > Task :core:files:packageReleaseResources
 > Task :core:notifications:generateReleaseResValues
 > Task :core:notifications:generateReleaseResources
-> Task :app:checkReleaseAarMetadata
 > Task :core:notifications:packageReleaseResources
 > Task :core:security:generateReleaseResValues
 > Task :core:security:generateReleaseResources
@@ -199,8 +199,8 @@ to this project's gradle.properties.
 > Task :core:datastore:parseReleaseLocalResources
 > Task :core:designsystem:compileReleaseLibraryResources
 > Task :core:datastore:generateReleaseRFile
-> Task :core:files:compileReleaseLibraryResources
 > Task :core:designsystem:parseReleaseLocalResources
+> Task :core:files:compileReleaseLibraryResources
 > Task :core:designsystem:generateReleaseRFile
 > Task :core:files:parseReleaseLocalResources
 > Task :core:notifications:compileReleaseLibraryResources
@@ -255,92 +255,92 @@ to this project's gradle.properties.
 > Task :core:datastore:compileReleaseJavaWithJavac NO-SOURCE
 > Task :core:datastore:bundleLibCompileToJarRelease
 > Task :core:designsystem:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:database:kspReleaseKotlin
-> Task :core:database:compileReleaseKotlin
 > Task :core:designsystem:compileReleaseKotlin
-> Task :core:database:compileReleaseJavaWithJavac
-> Task :core:database:bundleLibCompileToJarRelease
 > Task :core:designsystem:javaPreCompileRelease
 > Task :core:designsystem:compileReleaseJavaWithJavac NO-SOURCE
-> Task :core:files:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:designsystem:bundleLibCompileToJarRelease
-> Task :core:files:javaPreCompileRelease
-> Task :core:notifications:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:notifications:compileReleaseKotlin
-> Task :core:notifications:javaPreCompileRelease
-> Task :core:notifications:compileReleaseJavaWithJavac NO-SOURCE
-> Task :core:notifications:bundleLibCompileToJarRelease
-> Task :core:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:files:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:database:kspReleaseKotlin
 > Task :core:files:compileReleaseKotlin
+> Task :core:files:javaPreCompileRelease
 > Task :core:files:compileReleaseJavaWithJavac NO-SOURCE
 > Task :core:files:bundleLibCompileToJarRelease
-> Task :core:security:javaPreCompileRelease
-> Task :core:ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:notifications:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:notifications:javaPreCompileRelease
+> Task :core:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:database:compileReleaseKotlin
 > Task :core:security:compileReleaseKotlin
+> Task :core:database:compileReleaseJavaWithJavac
+> Task :core:security:javaPreCompileRelease
 > Task :core:security:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:database:bundleLibCompileToJarRelease
 > Task :core:security:bundleLibCompileToJarRelease
+> Task :core:ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:ui:compileReleaseKotlin
+> Task :core:notifications:compileReleaseKotlin
 > Task :core:ui:javaPreCompileRelease
+> Task :core:notifications:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:ui:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:notifications:bundleLibCompileToJarRelease
 > Task :feature:appointments:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:ui:bundleLibCompileToJarRelease
 > Task :feature:appointments:javaPreCompileRelease
 > Task :feature:dashboard:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:dashboard:javaPreCompileRelease
-> Task :feature:medications:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:medications:javaPreCompileRelease
-> Task :feature:onboarding:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:onboarding:javaPreCompileRelease
-> Task :feature:profile:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:profile:javaPreCompileRelease
-> Task :feature:records:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:records:javaPreCompileRelease
-> Task :feature:reminders:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:reminders:javaPreCompileRelease
-> Task :feature:reports:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:reports:javaPreCompileRelease
-> Task :feature:settings:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:settings:javaPreCompileRelease
-> Task :feature:symptoms:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:symptoms:javaPreCompileRelease
-> Task :feature:timeline:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:timeline:javaPreCompileRelease
-> Task :app:javaPreCompileRelease
-> Task :app:extractProguardFiles
-> Task :core:database:bundleLibRuntimeToJarRelease
-> Task :core:notifications:bundleLibRuntimeToJarRelease
-> Task :core:security:bundleLibRuntimeToJarRelease
-> Task :core:ui:compileReleaseKotlin
-> Task :core:files:bundleLibRuntimeToJarRelease
-> Task :core:ui:compileReleaseJavaWithJavac NO-SOURCE
-> Task :core:ui:bundleLibCompileToJarRelease
 > Task :feature:appointments:compileReleaseKotlin
 > Task :feature:appointments:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:appointments:bundleLibCompileToJarRelease
+> Task :feature:dashboard:javaPreCompileRelease
+> Task :feature:medications:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:dashboard:compileReleaseKotlin
 > Task :feature:dashboard:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:dashboard:bundleLibCompileToJarRelease
+> Task :feature:medications:javaPreCompileRelease
+> Task :feature:onboarding:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:medications:compileReleaseKotlin
 > Task :feature:medications:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:medications:bundleLibCompileToJarRelease
+> Task :feature:onboarding:javaPreCompileRelease
+> Task :feature:profile:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:onboarding:compileReleaseKotlin
 > Task :feature:onboarding:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:onboarding:bundleLibCompileToJarRelease
+> Task :feature:profile:javaPreCompileRelease
+> Task :feature:records:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:profile:compileReleaseKotlin
 > Task :feature:profile:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:profile:bundleLibCompileToJarRelease
+> Task :feature:records:javaPreCompileRelease
+> Task :feature:reminders:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:records:compileReleaseKotlin
 > Task :feature:records:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:records:bundleLibCompileToJarRelease
+> Task :feature:reminders:javaPreCompileRelease
+> Task :feature:reports:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:reminders:compileReleaseKotlin
 > Task :feature:reminders:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:reminders:bundleLibCompileToJarRelease
+> Task :feature:reports:javaPreCompileRelease
+> Task :feature:settings:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:reports:compileReleaseKotlin
 > Task :feature:reports:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:reports:bundleLibCompileToJarRelease
+> Task :feature:settings:javaPreCompileRelease
+> Task :feature:symptoms:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:settings:compileReleaseKotlin
 > Task :feature:settings:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:settings:bundleLibCompileToJarRelease
+> Task :feature:symptoms:javaPreCompileRelease
+> Task :feature:timeline:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:symptoms:compileReleaseKotlin
 > Task :feature:symptoms:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:symptoms:bundleLibCompileToJarRelease
+> Task :feature:timeline:javaPreCompileRelease
+> Task :app:javaPreCompileRelease
+> Task :app:extractProguardFiles
+> Task :core:notifications:bundleLibRuntimeToJarRelease
+> Task :core:database:bundleLibRuntimeToJarRelease
+> Task :core:security:bundleLibRuntimeToJarRelease
+> Task :core:files:bundleLibRuntimeToJarRelease
 > Task :core:datastore:bundleLibRuntimeToJarRelease
 > Task :feature:onboarding:bundleLibRuntimeToJarRelease
 > Task :feature:dashboard:bundleLibRuntimeToJarRelease
@@ -357,11 +357,7 @@ to this project's gradle.properties.
 > Task :core:database:processReleaseJavaRes
 > Task :core:database:createFullJarRelease
 > Task :core:database:extractProguardFiles
-> Task :feature:timeline:compileReleaseKotlin
 > Task :core:database:generateReleaseLintModel
-> Task :feature:timeline:compileReleaseJavaWithJavac NO-SOURCE
-> Task :feature:timeline:bundleLibCompileToJarRelease
-> Task :feature:timeline:bundleLibRuntimeToJarRelease
 > Task :core:database:prepareLintJarForPublish UP-TO-DATE
 > Task :core:datastore:processReleaseJavaRes
 > Task :core:datastore:createFullJarRelease
@@ -373,7 +369,11 @@ to this project's gradle.properties.
 > Task :core:designsystem:extractProguardFiles
 > Task :core:designsystem:generateReleaseLintModel
 > Task :core:designsystem:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:timeline:compileReleaseKotlin
 > Task :core:files:processReleaseJavaRes
+> Task :feature:timeline:compileReleaseJavaWithJavac NO-SOURCE
+> Task :feature:timeline:bundleLibCompileToJarRelease
+> Task :feature:timeline:bundleLibRuntimeToJarRelease
 > Task :core:files:createFullJarRelease
 > Task :core:files:extractProguardFiles
 > Task :core:files:generateReleaseLintModel
@@ -448,22 +448,6 @@ to this project's gradle.properties.
 > Task :feature:timeline:extractProguardFiles
 > Task :feature:timeline:generateReleaseLintModel
 > Task :feature:timeline:prepareLintJarForPublish UP-TO-DATE
-> Task :core:database:mergeReleaseJniLibFolders
-> Task :core:database:mergeReleaseNativeLibs NO-SOURCE
-> Task :core:database:stripReleaseDebugSymbols NO-SOURCE
-> Task :core:database:copyReleaseJniLibsProjectAndLocalJars
-> Task :core:database:extractDeepLinksForAarRelease UP-TO-DATE
-> Task :core:database:extractReleaseAnnotations
-> Task :core:database:mergeReleaseGeneratedProguardFiles UP-TO-DATE
-> Task :core:database:mergeReleaseConsumerProguardFiles UP-TO-DATE
-> Task :core:database:mergeReleaseShaders
-> Task :core:database:compileReleaseShaders NO-SOURCE
-> Task :core:database:generateReleaseAssets UP-TO-DATE
-> Task :core:database:packageReleaseAssets
-> Task :core:database:prepareReleaseArtProfile UP-TO-DATE
-> Task :core:database:mergeReleaseJavaResource
-> Task :core:database:syncReleaseLibJars
-> Task :core:database:bundleReleaseLocalLintAar
 > Task :core:notifications:mergeReleaseJniLibFolders
 > Task :core:notifications:mergeReleaseNativeLibs NO-SOURCE
 > Task :core:notifications:stripReleaseDebugSymbols NO-SOURCE
@@ -480,6 +464,22 @@ to this project's gradle.properties.
 > Task :core:notifications:mergeReleaseJavaResource
 > Task :core:notifications:syncReleaseLibJars
 > Task :core:notifications:bundleReleaseLocalLintAar
+> Task :core:database:mergeReleaseJniLibFolders
+> Task :core:database:mergeReleaseNativeLibs NO-SOURCE
+> Task :core:database:stripReleaseDebugSymbols NO-SOURCE
+> Task :core:database:copyReleaseJniLibsProjectAndLocalJars
+> Task :core:database:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :core:database:extractReleaseAnnotations
+> Task :core:database:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :core:database:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :core:database:mergeReleaseShaders
+> Task :core:database:compileReleaseShaders NO-SOURCE
+> Task :core:database:generateReleaseAssets UP-TO-DATE
+> Task :core:database:packageReleaseAssets
+> Task :core:database:prepareReleaseArtProfile UP-TO-DATE
+> Task :core:database:mergeReleaseJavaResource
+> Task :core:database:syncReleaseLibJars
+> Task :core:database:bundleReleaseLocalLintAar
 > Task :core:security:mergeReleaseJniLibFolders
 > Task :core:security:mergeReleaseNativeLibs NO-SOURCE
 > Task :core:security:stripReleaseDebugSymbols NO-SOURCE
@@ -736,18 +736,13 @@ to this project's gradle.properties.
 > Task :core:designsystem:mergeReleaseJavaResource
 > Task :core:designsystem:syncReleaseLibJars
 > Task :core:designsystem:bundleReleaseLocalLintAar
-> Task :app:kspReleaseKotlin
-> Task :app:compileReleaseKotlin
-> Task :app:compileReleaseJavaWithJavac
 > Task :core:database:lintVitalAnalyzeRelease
-> Task :app:hiltAggregateDepsRelease
-> Task :app:hiltJavaCompileRelease
-> Task :app:generateReleaseLintVitalReportModel
 > Task :core:database:writeReleaseLintModelMetadata
+> Task :app:kspReleaseKotlin
 > Task :core:datastore:lintVitalAnalyzeRelease
 > Task :core:datastore:writeReleaseLintModelMetadata
-> Task :core:designsystem:writeReleaseLintModelMetadata
 > Task :core:designsystem:lintVitalAnalyzeRelease
+> Task :core:designsystem:writeReleaseLintModelMetadata
 > Task :core:files:lintVitalAnalyzeRelease
 > Task :core:files:writeReleaseLintModelMetadata
 > Task :core:notifications:lintVitalAnalyzeRelease
@@ -758,32 +753,37 @@ to this project's gradle.properties.
 > Task :core:ui:writeReleaseLintModelMetadata
 > Task :feature:appointments:lintVitalAnalyzeRelease
 > Task :feature:appointments:writeReleaseLintModelMetadata
-> Task :feature:dashboard:writeReleaseLintModelMetadata
 > Task :feature:dashboard:lintVitalAnalyzeRelease
-> Task :feature:medications:writeReleaseLintModelMetadata
+> Task :feature:dashboard:writeReleaseLintModelMetadata
 > Task :feature:medications:lintVitalAnalyzeRelease
-> Task :feature:onboarding:writeReleaseLintModelMetadata
+> Task :feature:medications:writeReleaseLintModelMetadata
+> Task :app:compileReleaseKotlin
 > Task :feature:onboarding:lintVitalAnalyzeRelease
-> Task :feature:profile:writeReleaseLintModelMetadata
+> Task :app:compileReleaseJavaWithJavac
+> Task :feature:onboarding:writeReleaseLintModelMetadata
+> Task :app:hiltAggregateDepsRelease
 > Task :feature:profile:lintVitalAnalyzeRelease
+> Task :app:hiltJavaCompileRelease
+> Task :app:generateReleaseLintVitalReportModel
+> Task :feature:profile:writeReleaseLintModelMetadata
 > Task :feature:records:writeReleaseLintModelMetadata
 > Task :feature:records:lintVitalAnalyzeRelease
 > Task :feature:reminders:writeReleaseLintModelMetadata
 > Task :feature:reminders:lintVitalAnalyzeRelease
 > Task :feature:reports:writeReleaseLintModelMetadata
-> Task :feature:reports:lintVitalAnalyzeRelease
-> Task :feature:settings:writeReleaseLintModelMetadata
 > Task :feature:settings:lintVitalAnalyzeRelease
+> Task :feature:settings:writeReleaseLintModelMetadata
+> Task :feature:reports:lintVitalAnalyzeRelease
 > Task :feature:symptoms:writeReleaseLintModelMetadata
 > Task :feature:symptoms:lintVitalAnalyzeRelease
 > Task :feature:timeline:writeReleaseLintModelMetadata
-> Task :feature:timeline:lintVitalAnalyzeRelease
 > Task :core:database:generateReleaseLintVitalModel
 > Task :core:datastore:generateReleaseLintVitalModel
 > Task :core:designsystem:generateReleaseLintVitalModel
 > Task :core:files:generateReleaseLintVitalModel
 > Task :core:notifications:generateReleaseLintVitalModel
 > Task :core:security:generateReleaseLintVitalModel
+> Task :feature:timeline:lintVitalAnalyzeRelease
 > Task :core:ui:generateReleaseLintVitalModel
 > Task :feature:appointments:generateReleaseLintVitalModel
 > Task :feature:dashboard:generateReleaseLintVitalModel
@@ -822,8 +822,8 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 
 > Task :app:extractReleaseNativeSymbolTables
 > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
-> Task :core:database:bundleLibRuntimeToDirRelease
 > Task :core:notifications:bundleLibRuntimeToDirRelease
+> Task :core:database:bundleLibRuntimeToDirRelease
 > Task :core:security:bundleLibRuntimeToDirRelease
 > Task :core:files:bundleLibRuntimeToDirRelease
 > Task :core:datastore:bundleLibRuntimeToDirRelease
@@ -846,29 +846,29 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:desugarReleaseFileDependencies
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
 > Task :app:mergeExtDexRelease
-> Task :app:lintVitalAnalyzeRelease
 > Task :app:mergeDexRelease
-> Task :app:lintVitalReportRelease
-> Task :app:lintVitalRelease
 > Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:compileReleaseArtProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets UP-TO-DATE
-> Task :app:mergeReleaseGlobalSynthetics
 > Task :app:mergeReleaseAssets
 > Task :app:compressReleaseAssets
 > Task :app:extractReleaseVersionControlInfo
 > Task :app:processReleaseJavaRes
-> Task :app:compileReleaseArtProfile
 > Task :app:mergeReleaseJavaResource
+> Task :app:optimizeReleaseResources
 > Task :app:collectReleaseDependencies
 > Task :app:sdkReleaseDependencyData
 > Task :app:writeReleaseAppMetadata
 > Task :app:writeReleaseSigningConfigVersions
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
 > Task :core:database:bundleReleaseAar
 > Task :core:database:mapReleaseSourceSetPaths
 > Task :core:database:mergeReleaseResources
-> Task :app:optimizeReleaseResources
 > Task :core:database:verifyReleaseResources
 > Task :core:database:assembleRelease
 > Task :core:datastore:bundleReleaseAar
@@ -924,8 +924,8 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:medications:assembleRelease
 > Task :feature:profile:bundleReleaseAar
 > Task :feature:profile:mapReleaseSourceSetPaths
-> Task :feature:onboarding:verifyReleaseResources
 > Task :feature:profile:mergeReleaseResources
+> Task :feature:onboarding:verifyReleaseResources
 > Task :feature:onboarding:assembleRelease
 > Task :feature:records:bundleReleaseAar
 > Task :feature:records:mapReleaseSourceSetPaths
@@ -934,23 +934,23 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:profile:assembleRelease
 > Task :feature:reminders:bundleReleaseAar
 > Task :feature:reminders:mapReleaseSourceSetPaths
-> Task :feature:records:verifyReleaseResources
 > Task :feature:reminders:mergeReleaseResources
+> Task :feature:records:verifyReleaseResources
 > Task :feature:records:assembleRelease
 > Task :feature:reports:bundleReleaseAar
 > Task :feature:reports:mapReleaseSourceSetPaths
-> Task :feature:reports:mergeReleaseResources
 > Task :feature:reminders:verifyReleaseResources
+> Task :feature:reports:mergeReleaseResources
 > Task :feature:reminders:assembleRelease
 > Task :feature:settings:bundleReleaseAar
 > Task :feature:settings:mapReleaseSourceSetPaths
-> Task :feature:reports:verifyReleaseResources
 > Task :feature:settings:mergeReleaseResources
+> Task :feature:reports:verifyReleaseResources
 > Task :feature:reports:assembleRelease
 > Task :feature:symptoms:bundleReleaseAar
 > Task :feature:symptoms:mapReleaseSourceSetPaths
-> Task :feature:symptoms:mergeReleaseResources
 > Task :feature:settings:verifyReleaseResources
+> Task :feature:symptoms:mergeReleaseResources
 > Task :feature:settings:assembleRelease
 > Task :feature:timeline:bundleReleaseAar
 > Task :feature:timeline:mapReleaseSourceSetPaths
@@ -960,5 +960,5 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:timeline:verifyReleaseResources
 > Task :feature:timeline:assembleRelease
 
-BUILD SUCCESSFUL in 9m 9s
+BUILD SUCCESSFUL in 1m 21s
 762 actionable tasks: 665 executed, 97 up-to-date

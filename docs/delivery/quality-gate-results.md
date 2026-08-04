@@ -12,7 +12,7 @@
 Additional executed checks:
 
 - `./gradlew :core:model:test :core:database:compileDebugKotlin :core:files:compileDebugKotlin :app:assembleDebug --no-daemon`: passed after current changes.
-- `./verify_project.sh`: all stages passed; logs are in `docs/verification/evidence/`.
+- `./verify_project.sh` at commit `5b1a94c`: all stages passed; logs are in `docs/verification/evidence/`.
 - Physical TECNO CH6i: debug APK installed and onboarding/main-shell launch exercised with synthetic input.
 - Emulator `emulator-5554`: connected launch test passed; an earlier manual launch showed a transient System UI dialog, recorded as environmental.
 

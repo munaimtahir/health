@@ -235,19 +235,40 @@ to this project's gradle.properties.
 > Task :core:common:processResources NO-SOURCE
 > Task :core:common:classes UP-TO-DATE
 > Task :core:common:jar UP-TO-DATE
-> Task :core:model:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:bundleReleaseResources
-> Task :core:model:processResources NO-SOURCE
-> Task :core:database:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:database:javaPreCompileRelease UP-TO-DATE
 > Task :core:domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:model:compileKotlin UP-TO-DATE
+> Task :core:model:compileJava NO-SOURCE
+> Task :core:model:processResources NO-SOURCE
+> Task :core:model:classes UP-TO-DATE
+> Task :core:model:jar UP-TO-DATE
+> Task :core:domain:compileKotlin UP-TO-DATE
+> Task :core:domain:compileJava NO-SOURCE
 > Task :core:domain:processResources NO-SOURCE
+> Task :core:domain:classes UP-TO-DATE
+> Task :core:domain:jar UP-TO-DATE
+> Task :core:database:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:database:kspReleaseKotlin UP-TO-DATE
+> Task :core:database:compileReleaseKotlin UP-TO-DATE
+> Task :core:database:javaPreCompileRelease UP-TO-DATE
+> Task :core:database:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :core:database:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :core:notifications:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:notifications:compileReleaseKotlin UP-TO-DATE
 > Task :core:notifications:javaPreCompileRelease UP-TO-DATE
+> Task :core:notifications:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:notifications:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :core:database:bundleLibRuntimeToDirRelease UP-TO-DATE
 > Task :core:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:security:compileReleaseKotlin UP-TO-DATE
 > Task :core:security:javaPreCompileRelease UP-TO-DATE
+> Task :core:security:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:security:bundleLibRuntimeToDirRelease UP-TO-DATE
 > Task :core:files:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:files:compileReleaseKotlin UP-TO-DATE
 > Task :core:files:javaPreCompileRelease UP-TO-DATE
+> Task :core:files:compileReleaseJavaWithJavac NO-SOURCE
+> Task :core:files:bundleLibRuntimeToDirRelease UP-TO-DATE
 > Task :core:datastore:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:datastore:compileReleaseKotlin UP-TO-DATE
 > Task :core:datastore:javaPreCompileRelease UP-TO-DATE
@@ -324,6 +345,9 @@ to this project's gradle.properties.
 > Task :app:buildKotlinToolingMetadata UP-TO-DATE
 > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:datastore:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :core:files:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :core:notifications:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :core:security:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :feature:appointments:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :feature:dashboard:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :feature:medications:bundleLibCompileToJarRelease UP-TO-DATE
@@ -335,7 +359,14 @@ to this project's gradle.properties.
 > Task :feature:settings:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :feature:symptoms:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :feature:timeline:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :app:kspReleaseKotlin UP-TO-DATE
+> Task :app:compileReleaseKotlin UP-TO-DATE
 > Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :core:notifications:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :core:database:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :core:security:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :core:files:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:datastore:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:onboarding:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:dashboard:bundleLibRuntimeToJarRelease UP-TO-DATE
@@ -344,15 +375,21 @@ to this project's gradle.properties.
 > Task :feature:symptoms:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:records:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:medications:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:bundleReleaseResources
 > Task :feature:reminders:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:appointments:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:reports:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :feature:settings:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:ui:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:designsystem:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:hiltAggregateDepsRelease UP-TO-DATE
+> Task :app:hiltJavaCompileRelease UP-TO-DATE
+> Task :app:transformReleaseClassesWithAsm UP-TO-DATE
+> Task :app:dexBuilderRelease UP-TO-DATE
 > Task :app:desugarReleaseFileDependencies UP-TO-DATE
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
 > Task :app:mergeExtDexRelease UP-TO-DATE
+> Task :app:mergeDexRelease UP-TO-DATE
 > Task :app:mergeReleaseShaders UP-TO-DATE
 > Task :app:compileReleaseShaders NO-SOURCE
 > Task :app:generateReleaseAssets UP-TO-DATE
@@ -429,8 +466,14 @@ to this project's gradle.properties.
 > Task :feature:timeline:generateReleaseAssets UP-TO-DATE
 > Task :feature:timeline:packageReleaseAssets UP-TO-DATE
 > Task :app:mergeReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseGlobalSynthetics UP-TO-DATE
+> Task :app:processReleaseJavaRes UP-TO-DATE
+> Task :core:database:processReleaseJavaRes UP-TO-DATE
 > Task :core:datastore:processReleaseJavaRes UP-TO-DATE
 > Task :core:designsystem:processReleaseJavaRes UP-TO-DATE
+> Task :core:files:processReleaseJavaRes UP-TO-DATE
+> Task :core:notifications:processReleaseJavaRes UP-TO-DATE
+> Task :core:security:processReleaseJavaRes UP-TO-DATE
 > Task :core:ui:processReleaseJavaRes UP-TO-DATE
 > Task :feature:appointments:processReleaseJavaRes UP-TO-DATE
 > Task :feature:dashboard:processReleaseJavaRes UP-TO-DATE
@@ -443,6 +486,7 @@ to this project's gradle.properties.
 > Task :feature:settings:processReleaseJavaRes UP-TO-DATE
 > Task :feature:symptoms:processReleaseJavaRes UP-TO-DATE
 > Task :feature:timeline:processReleaseJavaRes UP-TO-DATE
+> Task :app:mergeReleaseJavaResource UP-TO-DATE
 > Task :app:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :core:database:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :core:database:mergeReleaseNativeLibs NO-SOURCE
@@ -498,7 +542,10 @@ to this project's gradle.properties.
 > Task :feature:timeline:mergeReleaseJniLibFolders UP-TO-DATE
 > Task :feature:timeline:mergeReleaseNativeLibs NO-SOURCE
 > Task :feature:timeline:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :app:mergeReleaseNativeLibs UP-TO-DATE
+> Task :app:stripReleaseDebugSymbols UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
+> Task :app:buildReleasePreBundle
 > Task :core:database:prepareReleaseArtProfile UP-TO-DATE
 > Task :core:datastore:prepareReleaseArtProfile UP-TO-DATE
 > Task :core:designsystem:prepareReleaseArtProfile UP-TO-DATE
@@ -518,63 +565,16 @@ to this project's gradle.properties.
 > Task :feature:symptoms:prepareReleaseArtProfile UP-TO-DATE
 > Task :feature:timeline:prepareReleaseArtProfile UP-TO-DATE
 > Task :app:mergeReleaseArtProfile UP-TO-DATE
+> Task :app:compileReleaseArtProfile UP-TO-DATE
 > Task :app:collectReleaseDependencies UP-TO-DATE
 > Task :app:configureReleaseDependencies
-> Task :app:parseReleaseIntegrityConfig UP-TO-DATE
-> Task :core:model:compileKotlin
-> Task :core:model:compileJava NO-SOURCE
-> Task :core:model:classes UP-TO-DATE
-> Task :core:model:jar
-> Task :core:domain:compileKotlin
-> Task :core:domain:compileJava NO-SOURCE
-> Task :core:domain:classes UP-TO-DATE
-> Task :core:domain:jar UP-TO-DATE
-> Task :core:notifications:compileReleaseKotlin
-> Task :core:notifications:compileReleaseJavaWithJavac NO-SOURCE
-> Task :core:notifications:bundleLibRuntimeToDirRelease UP-TO-DATE
-> Task :core:security:compileReleaseKotlin
-> Task :core:security:compileReleaseJavaWithJavac NO-SOURCE
-> Task :core:security:bundleLibRuntimeToDirRelease UP-TO-DATE
-> Task :core:files:compileReleaseKotlin
-> Task :core:files:compileReleaseJavaWithJavac NO-SOURCE
-> Task :core:files:bundleLibRuntimeToDirRelease UP-TO-DATE
-> Task :core:files:bundleLibCompileToJarRelease UP-TO-DATE
-> Task :core:notifications:bundleLibCompileToJarRelease UP-TO-DATE
-> Task :core:security:bundleLibCompileToJarRelease UP-TO-DATE
-> Task :core:notifications:bundleLibRuntimeToJarRelease UP-TO-DATE
-> Task :core:security:bundleLibRuntimeToJarRelease UP-TO-DATE
-> Task :core:files:bundleLibRuntimeToJarRelease UP-TO-DATE
-> Task :core:files:processReleaseJavaRes UP-TO-DATE
-> Task :core:notifications:processReleaseJavaRes UP-TO-DATE
-> Task :core:security:processReleaseJavaRes UP-TO-DATE
-> Task :app:mergeReleaseNativeLibs UP-TO-DATE
-> Task :app:stripReleaseDebugSymbols UP-TO-DATE
 > Task :app:extractReleaseNativeSymbolTables UP-TO-DATE
-> Task :core:database:kspReleaseKotlin
-> Task :core:database:compileReleaseKotlin
-> Task :core:database:compileReleaseJavaWithJavac
-> Task :core:database:bundleLibCompileToJarRelease
-> Task :core:database:bundleLibRuntimeToDirRelease
-> Task :core:database:bundleLibRuntimeToJarRelease
-> Task :core:database:processReleaseJavaRes UP-TO-DATE
-> Task :app:kspReleaseKotlin
-> Task :app:compileReleaseKotlin
-> Task :app:compileReleaseJavaWithJavac
-> Task :app:hiltAggregateDepsRelease UP-TO-DATE
-> Task :app:hiltJavaCompileRelease
-> Task :app:processReleaseJavaRes
-> Task :app:transformReleaseClassesWithAsm
-> Task :app:mergeReleaseJavaResource
-> Task :app:dexBuilderRelease
-> Task :app:mergeReleaseGlobalSynthetics UP-TO-DATE
-> Task :app:mergeDexRelease
-> Task :app:buildReleasePreBundle
-> Task :app:compileReleaseArtProfile
+> Task :app:parseReleaseIntegrityConfig UP-TO-DATE
 > Task :app:packageReleaseBundle
 > Task :app:signReleaseBundle
 > Task :app:produceReleaseBundleIdeListingFile
 > Task :app:createReleaseBundleListingFileRedirect
 > Task :app:bundleRelease
 
-BUILD SUCCESSFUL in 56s
-418 actionable tasks: 30 executed, 388 up-to-date
+BUILD SUCCESSFUL in 15s
+418 actionable tasks: 8 executed, 410 up-to-date
