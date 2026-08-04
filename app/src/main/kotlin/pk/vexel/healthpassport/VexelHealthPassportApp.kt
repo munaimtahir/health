@@ -166,6 +166,12 @@ class PassportViewModel @Inject constructor(
     }
     fun completeReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().setStatus(reminder.id, "COMPLETED", System.currentTimeMillis()) }
     fun deleteReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().delete(reminder.id) }
+    fun updateReminder(reminder: ReminderEntity, title: String, type: String, notes: String, dueAtEpochMillis: Long, recurrence: String) = viewModelScope.launch {
+        reminderScheduler.cancel(reminder.id)
+        val updated = reminder.copy(title = title.trim(), type = type.trim().ifBlank { "CUSTOM" }, notes = notes.trim(), dueAtEpochMillis = dueAtEpochMillis, recurrence = recurrence, status = "SCHEDULED", snoozeUntilEpochMillis = null, updatedAtEpochMillis = System.currentTimeMillis())
+        database.reminderDao().update(updated)
+        reminderScheduler.schedule(updated.id, updated.dueAtEpochMillis, updated.recurrence)
+    }
     fun snoozeReminder(reminder: ReminderEntity) = viewModelScope.launch {
         val dueAt = System.currentTimeMillis() + 60 * 60 * 1000L
         database.reminderDao().reschedule(reminder.id, dueAt, System.currentTimeMillis())
@@ -427,6 +433,7 @@ private fun DocumentEditDialog(vm: PassportViewModel, document: DocumentEntity, 
 private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntity>, modifier: Modifier) {
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<ReminderEntity?>(null) }
+    var pendingEdit by remember { mutableStateOf<ReminderEntity?>(null) }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Reminders", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } }
@@ -436,12 +443,32 @@ private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntit
                 Text(reminder.title, style = MaterialTheme.typography.titleMedium)
                 Text("${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))} · ${reminder.status.lowercase()}")
                 if (reminder.notes.isNotBlank()) Text(reminder.notes)
-                Row { if (reminder.status == "SCHEDULED") { TextButton({ vm.snoozeReminder(reminder) }) { Text("Snooze 1h") }; TextButton({ vm.completeReminder(reminder) }) { Text("Complete") } }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
+                Row { if (reminder.status == "SCHEDULED") { TextButton({ vm.snoozeReminder(reminder) }) { Text("Snooze 1h") }; TextButton({ vm.completeReminder(reminder) }) { Text("Complete") } }; TextButton({ pendingEdit = reminder }) { Text("Edit") }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
             } }
         } }
     }
     if (showAdd) ReminderDialog(vm, { showAdd = false }) { if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
+    pendingEdit?.let { reminder -> ReminderEditDialog(vm, reminder) { pendingEdit = null } }
     pendingDelete?.let { reminder -> AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete reminder?") }, text = { Text("The scheduled notification will be cancelled.") }, confirmButton = { Button({ vm.deleteReminder(reminder); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } }) }
+}
+
+@Composable
+private fun ReminderEditDialog(vm: PassportViewModel, reminder: ReminderEntity, onDismiss: () -> Unit) {
+    var title by rememberSaveable(reminder.id) { mutableStateOf(reminder.title) }
+    var type by rememberSaveable(reminder.id) { mutableStateOf(reminder.type) }
+    var dueText by rememberSaveable(reminder.id) { mutableStateOf(SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))) }
+    var notes by rememberSaveable(reminder.id) { mutableStateOf(reminder.notes) }
+    var recurrence by rememberSaveable(reminder.id) { mutableStateOf(reminder.recurrence) }
+    val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
+    val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit reminder") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
+        OutlinedTextField(type, { type = it }, label = { Text("Type") })
+        OutlinedTextField(dueText, { dueText = it }, label = { Text("Date and time") }, supportingText = { Text("yyyy-MM-dd HH:mm") }, isError = dueAt == null)
+        OutlinedTextField(recurrence, { recurrence = it.uppercase(Locale.getDefault()).take(12) }, label = { Text("Recurrence: ONCE or DAILY") })
+        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
+        if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
+    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.updateReminder(reminder, title, type, notes, dueAt!!, if (recurrence == "DAILY") "DAILY" else "ONCE"); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable
