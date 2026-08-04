@@ -14,6 +14,8 @@ import pk.vexel.healthpassport.core.files.LocalSecureFileStore
 import pk.vexel.healthpassport.core.files.SecureFileStore
 import pk.vexel.healthpassport.core.security.KeystorePinMaterialCipher
 import pk.vexel.healthpassport.core.security.PinMaterialCipher
+import pk.vexel.healthpassport.core.notifications.ReminderScheduler
+import pk.vexel.healthpassport.core.notifications.WorkManagerReminderScheduler
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -36,4 +38,8 @@ object AppModule {
     @Provides
     @Singleton
     fun providePinMaterialCipher(): PinMaterialCipher = KeystorePinMaterialCipher()
+
+    @Provides
+    @Singleton
+    fun provideReminderScheduler(@ApplicationContext context: Context): ReminderScheduler = WorkManagerReminderScheduler(context)
 }

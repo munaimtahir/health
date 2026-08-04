@@ -11,6 +11,7 @@ object DatabaseProvider {
             .addMigrations(MIGRATION_1_2)
             .addMigrations(MIGRATION_2_3)
             .addMigrations(MIGRATION_3_4)
+            .addMigrations(MIGRATION_4_5)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -64,6 +65,23 @@ object DatabaseProvider {
                 sha256 TEXT NOT NULL,
                 createdAtEpochMillis INTEGER NOT NULL,
                 archived INTEGER NOT NULL DEFAULT 0
+            )""")
+        }
+    }
+
+    private val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""CREATE TABLE IF NOT EXISTS reminders (
+                id TEXT NOT NULL PRIMARY KEY,
+                title TEXT NOT NULL,
+                type TEXT NOT NULL DEFAULT 'CUSTOM',
+                notes TEXT NOT NULL DEFAULT '',
+                dueAtEpochMillis INTEGER NOT NULL,
+                recurrence TEXT NOT NULL DEFAULT 'ONCE',
+                status TEXT NOT NULL DEFAULT 'SCHEDULED',
+                snoozeUntilEpochMillis INTEGER,
+                createdAtEpochMillis INTEGER NOT NULL,
+                updatedAtEpochMillis INTEGER NOT NULL
             )""")
         }
     }

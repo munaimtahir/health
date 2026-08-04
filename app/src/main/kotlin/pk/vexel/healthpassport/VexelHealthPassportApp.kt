@@ -61,7 +61,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -71,9 +73,11 @@ import pk.vexel.healthpassport.core.database.HealthDatabase
 import pk.vexel.healthpassport.core.database.HealthEventEntity
 import pk.vexel.healthpassport.core.database.MedicationEntity
 import pk.vexel.healthpassport.core.database.DocumentEntity
+import pk.vexel.healthpassport.core.database.ReminderEntity
 import pk.vexel.healthpassport.core.database.ProfileEntity
 import pk.vexel.healthpassport.core.datastore.PreferencesStore
 import pk.vexel.healthpassport.core.files.SecureFileStore
+import pk.vexel.healthpassport.core.notifications.ReminderScheduler
 import pk.vexel.healthpassport.core.designsystem.InformationCard
 import pk.vexel.healthpassport.core.designsystem.VexelHealthPassportTheme
 import pk.vexel.healthpassport.core.model.SymptomDraft
@@ -95,12 +99,14 @@ class PassportViewModel @Inject constructor(
     private val preferences: PreferencesStore,
     private val pinMaterialCipher: PinMaterialCipher,
     private val secureFileStore: SecureFileStore,
+    private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
     private val pinVerifier = PinVerifier()
     val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val profile = database.profileDao().observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val medications = database.medicationDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val documents = database.documentDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val reminders = database.reminderDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), pk.vexel.healthpassport.core.datastore.UserPreferences())
 
     fun completeOnboarding() = viewModelScope.launch { preferences.setOnboardingComplete(true) }
@@ -133,9 +139,19 @@ class PassportViewModel @Inject constructor(
         database.medicationDao().deleteAll()
         database.profileDao().deleteAll()
         database.documentDao().deleteAll()
+        reminders.value.forEach { reminderScheduler.cancel(it.id) }
+        database.reminderDao().deleteAll()
         secureFileStore.deleteAll()
         preferences.clearAll()
     }
+    fun addReminder(title: String, type: String, notes: String, dueAtEpochMillis: Long, recurrence: String) = viewModelScope.launch {
+        val now = System.currentTimeMillis()
+        val reminder = ReminderEntity(UUID.randomUUID().toString(), title.trim(), type.trim().ifBlank { "CUSTOM" }, notes.trim(), dueAtEpochMillis, recurrence, createdAtEpochMillis = now, updatedAtEpochMillis = now)
+        database.reminderDao().insert(reminder)
+        reminderScheduler.schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence)
+    }
+    fun completeReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().setStatus(reminder.id, "COMPLETED", System.currentTimeMillis()) }
+    fun deleteReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().delete(reminder.id) }
     fun importDocument(context: Context, uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
         val mimeType = context.contentResolver.getType(uri) ?: return@launch
         val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
@@ -177,7 +193,7 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                     0 -> HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, Modifier.padding(padding))
                     1 -> TimelineScreen(viewModel, Modifier.padding(padding))
                     2 -> DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding))
-                    3 -> CaptureScreen(viewModel, "REMINDER", "Add a follow-up reminder", Modifier.padding(padding))
+                    3 -> RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding))
                     else -> ProfileScreen(viewModel, profile, Modifier.padding(padding))
                 }
                 }
@@ -303,6 +319,45 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
     pendingDelete?.let { document ->
         AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
     }
+}
+
+@Composable
+private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntity>, modifier: Modifier) {
+    var showAdd by rememberSaveable { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<ReminderEntity?>(null) }
+    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Reminders", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } }
+        Text("Reminders are user-created and do not determine medical intervals.")
+        if (reminders.isEmpty()) Text("No reminders yet.") else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(reminders, key = { it.id }) { reminder ->
+            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+                Text(reminder.title, style = MaterialTheme.typography.titleMedium)
+                Text("${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))} · ${reminder.status.lowercase()}")
+                if (reminder.notes.isNotBlank()) Text(reminder.notes)
+                Row { if (reminder.status == "SCHEDULED") TextButton({ vm.completeReminder(reminder) }) { Text("Complete") }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
+            } }
+        } }
+    }
+    if (showAdd) ReminderDialog(vm) { showAdd = false }
+    pendingDelete?.let { reminder -> AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete reminder?") }, text = { Text("The scheduled notification will be cancelled.") }, confirmButton = { Button({ vm.deleteReminder(reminder); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } }) }
+}
+
+@Composable
+private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
+    var title by rememberSaveable { mutableStateOf("") }
+    var type by rememberSaveable { mutableStateOf("CUSTOM") }
+    var dueText by rememberSaveable { mutableStateOf(SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(System.currentTimeMillis() + 3_600_000))) }
+    var notes by rememberSaveable { mutableStateOf("") }
+    var recurrence by rememberSaveable { mutableStateOf("ONCE") }
+    val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
+    val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Add reminder") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
+        OutlinedTextField(type, { type = it }, label = { Text("Type") })
+        OutlinedTextField(dueText, { dueText = it }, label = { Text("Date and time") }, supportingText = { Text("yyyy-MM-dd HH:mm") }, isError = dueAt == null)
+        OutlinedTextField(recurrence, { recurrence = it.uppercase(Locale.getDefault()).take(12) }, label = { Text("Recurrence: ONCE or DAILY") })
+        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
+        if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
+    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.addReminder(title, type, notes, dueAt!!, if (recurrence == "DAILY") "DAILY" else "ONCE"); onDismiss() }) { Text("Schedule") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable

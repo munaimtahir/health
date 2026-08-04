@@ -10,4 +10,4 @@ android { namespace = "pk.vexel.healthpassport.database"; compileSdk = 36
     lint { abortOnError = true }
 }
 dependencies { api(project(":core:model")) }
-dependencies { implementation(libs.androidx.room.runtime); implementation(libs.androidx.room.ktx); ksp(libs.androidx.room.compiler) }
+dependencies { api(libs.androidx.room.runtime); api(libs.androidx.room.ktx); ksp(libs.androidx.room.compiler) }
