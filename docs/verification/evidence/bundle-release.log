@@ -310,7 +310,6 @@ to this project's gradle.properties.
 > Task :feature:symptoms:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:symptoms:bundleLibRuntimeToDirRelease UP-TO-DATE
 > Task :feature:records:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:bundleReleaseResources
 > Task :feature:records:compileReleaseKotlin UP-TO-DATE
 > Task :feature:records:javaPreCompileRelease UP-TO-DATE
 > Task :feature:records:compileReleaseJavaWithJavac NO-SOURCE
@@ -331,6 +330,7 @@ to this project's gradle.properties.
 > Task :feature:appointments:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:appointments:bundleLibRuntimeToDirRelease UP-TO-DATE
 > Task :feature:reports:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:bundleReleaseResources
 > Task :feature:reports:compileReleaseKotlin UP-TO-DATE
 > Task :feature:reports:javaPreCompileRelease UP-TO-DATE
 > Task :feature:reports:compileReleaseJavaWithJavac NO-SOURCE
@@ -577,5 +577,5 @@ to this project's gradle.properties.
 > Task :app:createReleaseBundleListingFileRedirect
 > Task :app:bundleRelease
 
-BUILD SUCCESSFUL in 16s
+BUILD SUCCESSFUL in 14s
 419 actionable tasks: 8 executed, 411 up-to-date

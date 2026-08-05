@@ -10,8 +10,8 @@ Implemented the Compose shell, Material 3 theme switch, Hilt, Room v2 migration,
 
 ## Implemented feature slices — TESTED PARTIAL
 
-Added validated symptom drafts, searchable and confirmed-deletable timeline entries, private document-byte preservation, salted PBKDF2 PIN verification, Keystore-backed PIN-material encryption, lifecycle-gated PIN/biometric UI, WorkManager reminders, structured JSON export, transactional backup restore, selectable/date-ranged PDF generation, and neutral symptom summaries. Full acceptance workflows and dedicated UI/device coverage remain incomplete.
+Added validated symptom drafts, searchable and confirmed-deletable timeline entries, private document-byte preservation and replacement, metadata editing, scoped document sharing, salted PBKDF2 PIN verification, Keystore-backed PIN-material encryption, lifecycle-gated PIN/biometric UI, WorkManager reminders with persisted-schedule reconciliation, structured and readable date-ranged exports, versioned/integrity-checked transactional backup restore, selectable/date-ranged PDF generation with secure sharing, structured medication fields, and neutral symptom summaries. Full acceptance workflows and dedicated UI/device coverage remain incomplete.
 
 ## Sprints 2–12 — INCOMPLETE
 
-Not all requested production workflows are implemented in this session. The exact remaining scope is listed in `parked-blockers.md` and the final build report.
+The current repository-wide verification pipeline passes, including release APK/AAB and connected tests on the physical TECNO device. Remaining functional depth and test coverage are listed in `docs/verification/DEFERRED_ITEMS.md`.
