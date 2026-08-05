@@ -14,6 +14,7 @@ data class PreservedDocument(
 
 interface SecureFileStore {
     suspend fun preserveOriginal(input: InputStream, mimeType: String, displayName: String = "document"): PreservedDocument
+    suspend fun replaceOriginal(id: String, input: InputStream, mimeType: String, displayName: String = "document"): PreservedDocument
     fun open(id: String): java.io.InputStream
     fun delete(id: String): Boolean
     suspend fun deleteAll()

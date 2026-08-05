@@ -118,6 +118,17 @@ private val destinations = listOf(
 )
 internal val primaryDestinationLabels: List<String> = destinations.map { it.label }
 
+private fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
+    .digest(bytes).joinToString("") { "%02x".format(it) }
+
+private fun shareContentUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String) {
+    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }, chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
 @HiltViewModel
 class PassportViewModel @Inject constructor(
     private val database: HealthDatabase,
@@ -126,6 +137,9 @@ class PassportViewModel @Inject constructor(
     private val secureFileStore: SecureFileStore,
     private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
+    init {
+        viewModelScope.launch { reminderScheduler.reconcile() }
+    }
     private val pinVerifier = PinVerifier()
     val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val profile = database.profileDao().observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -145,8 +159,8 @@ class PassportViewModel @Inject constructor(
     fun delete(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().delete(event.id) }
     fun addMedication(draft: MedicationDraft) = viewModelScope.launch {
         val now = System.currentTimeMillis()
-        database.medicationDao().insert(MedicationEntity(UUID.randomUUID().toString(), draft.name.trim(), strength = draft.strength.trim(), dose = draft.dose.trim(), route = draft.route.trim(), frequency = draft.frequency.trim(), notes = draft.notes.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
-        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), listOf(draft.strength, draft.dose, draft.frequency).filter { it.isNotBlank() }.joinToString(" · "), "MEDICATION", now, now, now, "ACTIVE"))
+        database.medicationDao().insert(MedicationEntity(UUID.randomUUID().toString(), draft.name.trim(), genericName = draft.genericName.trim(), strength = draft.strength.trim(), dose = draft.dose.trim(), unit = draft.unit.trim(), route = draft.route.trim(), frequency = draft.frequency.trim(), startDate = draft.startDate.trim(), stopDate = draft.stopDate.trim(), status = draft.status, indication = draft.indication.trim(), physician = draft.physician.trim(), notes = draft.notes.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
+        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), listOf(draft.strength, draft.dose, draft.unit, draft.frequency, draft.status.lowercase()).filter { it.isNotBlank() }.joinToString(" · "), "MEDICATION", now, now, now, "ACTIVE"))
     }
     fun savePin(pin: String, confirmation: String): Boolean {
         if (pin != confirmation || pin.length !in 4..12 || pin.any { !it.isDigit() }) return false
@@ -204,24 +218,72 @@ class PassportViewModel @Inject constructor(
     fun updateDocument(document: DocumentEntity, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
         database.documentDao().update(document.copy(title = title.trim().ifBlank { document.title }, category = category.trim().ifBlank { document.category }, documentDate = documentDate.trim(), notes = notes.trim()))
     }
+    fun replaceDocument(context: Context, document: DocumentEntity, uri: Uri) = viewModelScope.launch {
+        val mimeType = context.contentResolver.getType(uri) ?: return@launch
+        val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else document.originalFileName
+        } ?: document.originalFileName
+        val replaced = context.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.replaceOriginal(document.id, input, mimeType, displayName) } ?: return@launch
+        database.documentDao().update(document.copy(originalFileName = displayName, mimeType = replaced.mimeType, byteCount = replaced.byteCount, sha256 = replaced.sha256))
+    }
     fun openDocument(context: Context, document: DocumentEntity) = viewModelScope.launch {
         val file = secureFileStore.copyToShareCache(context, document.id, document.originalFileName)
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
         context.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, document.mimeType); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }, "Open document").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
-    fun exportJson(): String {
+    fun shareDocument(context: Context, document: DocumentEntity) = viewModelScope.launch {
+        val file = secureFileStore.copyToShareCache(context, document.id, document.originalFileName)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        shareContentUri(context, uri, document.mimeType, "Share document")
+    }
+    fun exportJson(fromEpochMillis: Long? = null, toEpochMillis: Long? = null): String {
+        fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
         val root = JSONObject().put("formatVersion", 1).put("generatedAtEpochMillis", System.currentTimeMillis())
         profile.value?.let { p -> root.put("profile", JSONObject().put("name", p.name).put("dateOfBirth", p.dateOfBirth).put("bloodGroup", p.bloodGroup).put("allergies", p.allergies).put("conditions", p.conditions).put("emergencyContact", p.emergencyContact)) }
-        root.put("events", JSONArray(events.value.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity) }))
-        root.put("medications", JSONArray(medications.value.map { m -> JSONObject().put("id", m.id).put("name", m.name).put("genericName", m.genericName).put("strength", m.strength).put("dose", m.dose).put("unit", m.unit).put("route", m.route).put("frequency", m.frequency).put("startDate", m.startDate).put("stopDate", m.stopDate).put("status", m.status).put("indication", m.indication).put("physician", m.physician).put("notes", m.notes) }))
-        root.put("documents", JSONArray(documents.value.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256) }))
-        root.put("reminders", JSONArray(reminders.value.map { r -> JSONObject().put("id", r.id).put("title", r.title).put("type", r.type).put("notes", r.notes).put("dueAtEpochMillis", r.dueAtEpochMillis).put("recurrence", r.recurrence).put("status", r.status) }))
+        root.put("events", JSONArray(events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity) }))
+        root.put("medications", JSONArray(medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { m -> JSONObject().put("id", m.id).put("name", m.name).put("genericName", m.genericName).put("strength", m.strength).put("dose", m.dose).put("unit", m.unit).put("route", m.route).put("frequency", m.frequency).put("startDate", m.startDate).put("stopDate", m.stopDate).put("status", m.status).put("indication", m.indication).put("physician", m.physician).put("notes", m.notes) }))
+        root.put("documents", JSONArray(documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256) }))
+        root.put("reminders", JSONArray(reminders.value.filter { inRange(it.dueAtEpochMillis) }.map { r -> JSONObject().put("id", r.id).put("title", r.title).put("type", r.type).put("notes", r.notes).put("dueAtEpochMillis", r.dueAtEpochMillis).put("recurrence", r.recurrence).put("status", r.status) }))
         return root.toString(2)
+    }
+    fun exportHumanReadable(fromEpochMillis: Long? = null, toEpochMillis: Long? = null): String = buildString {
+        fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
+        appendLine("Vexel Health Passport")
+        appendLine("User-recorded information · generated ${DateFormat.getDateTimeInstance().format(Date())}")
+        appendLine("This export is not a diagnosis or medical advice.")
+        appendLine()
+        profile.value?.let {
+            appendLine("PROFILE")
+            appendLine("Name: ${it.name}")
+            appendLine("Allergies: ${it.allergies}")
+            appendLine("Conditions: ${it.conditions}")
+            appendLine()
+        }
+        appendLine("HEALTH EVENTS")
+        events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.kind} · ${it.title} · ${it.details}") }
+        appendLine()
+        appendLine("MEDICATIONS")
+        medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.name} · ${it.genericName} · ${it.strength} · ${it.dose} ${it.unit} · ${it.frequency} · ${it.status} · ${it.startDate}–${it.stopDate}") }
+        appendLine()
+        appendLine("DOCUMENTS")
+        documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.category} · ${it.originalFileName} · SHA-256 ${it.sha256}") }
+        appendLine()
+        appendLine("REMINDERS")
+        reminders.value.filter { inRange(it.dueAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.status} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))}") }
     }
     fun createBackup(context: Context, uri: Uri) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
         context.contentResolver.openOutputStream(uri)?.use { output ->
             ZipOutputStream(output).use { zip ->
-                zip.putNextEntry(ZipEntry("data.json")); zip.write(exportJson().toByteArray(Charsets.UTF_8)); zip.closeEntry()
+                val data = exportJson().toByteArray(Charsets.UTF_8)
+                zip.putNextEntry(ZipEntry("data.json")); zip.write(data); zip.closeEntry()
+                val manifest = JSONObject()
+                    .put("formatVersion", 1)
+                    .put("createdAtEpochMillis", System.currentTimeMillis())
+                    .put("dataSha256", sha256Hex(data))
+                    .put("documentCount", documents.value.size)
+                    .toString()
+                    .toByteArray(Charsets.UTF_8)
+                zip.putNextEntry(ZipEntry("manifest.json")); zip.write(manifest); zip.closeEntry()
                 documents.value.forEach { document ->
                     zip.putNextEntry(ZipEntry("documents/${document.id}")); secureFileStore.open(document.id).use { it.copyTo(zip) }; zip.closeEntry()
                 }
@@ -233,18 +295,24 @@ class PassportViewModel @Inject constructor(
         context.contentResolver.openInputStream(uri)?.use { input -> ZipInputStream(input).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
-                require(!entry.isDirectory && (entry.name == "data.json" || entry.name.startsWith("documents/"))) { "Unsupported backup entry" }
+                require(!entry.isDirectory && (entry.name == "data.json" || entry.name == "manifest.json" || entry.name.startsWith("documents/"))) { "Unsupported backup entry" }
                 entries[entry.name] = zip.readBytes()
                 entry = zip.nextEntry
             }
         } } ?: error("Unable to read backup")
-        val data = JSONObject(String(entries["data.json"] ?: error("Missing backup data"), Charsets.UTF_8))
+        val dataBytes = entries["data.json"] ?: error("Missing backup data")
+        entries["manifest.json"]?.let { manifestBytes ->
+            val manifest = JSONObject(String(manifestBytes, Charsets.UTF_8))
+            require(manifest.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
+            require(manifest.optString("dataSha256").equals(sha256Hex(dataBytes), ignoreCase = true)) { "Backup integrity check failed" }
+        }
+        val data = JSONObject(String(dataBytes, Charsets.UTF_8))
         require(data.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
         val restoredDocuments = mutableListOf<DocumentEntity>()
         val documentData = data.optJSONArray("documents") ?: JSONArray()
         for (index in 0 until documentData.length()) {
             val source = documentData.getJSONObject(index); val bytes = entries["documents/${source.getString("id")}"] ?: error("Missing document binary")
-            val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+            val digest = sha256Hex(bytes)
             require(digest.equals(source.getString("sha256"), ignoreCase = true)) { "Document integrity check failed" }
             val preserved = secureFileStore.preserveOriginal(ByteArrayInputStream(bytes), source.getString("mimeType"), source.optString("originalFileName", "document"))
             restoredDocuments += DocumentEntity(preserved.id, source.optString("title"), source.optString("category", "OTHER"), source.optString("documentDate"), source.optString("notes"), source.optString("originalFileName", "document"), preserved.mimeType, preserved.byteCount, preserved.sha256, System.currentTimeMillis())
@@ -284,15 +352,19 @@ class PassportViewModel @Inject constructor(
     }
     fun createPdfReport(context: Context, uri: Uri, includeProfile: Boolean = true, includeEvents: Boolean = true, includeMedications: Boolean = true, includeDocuments: Boolean = true, includeReminders: Boolean = true, fromEpochMillis: Long? = null, toEpochMillis: Long? = null) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
         fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
-        val lines = mutableListOf("Vexel Health Passport", "Appointment report · generated ${DateFormat.getDateTimeInstance().format(Date())}", "User-recorded data; not a diagnosis or medical advice.", "")
+        val dateParser = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
+        fun dateTextInRange(value: String, fallback: Long): Boolean = value.isBlank() || inRange(runCatching { dateParser.parse(value)?.time }.getOrNull() ?: fallback)
+        val rangeLabel = if (fromEpochMillis == null && toEpochMillis == null) "All dates" else "${fromEpochMillis?.let { DateFormat.getDateInstance().format(Date(it)) } ?: "Start"} – ${toEpochMillis?.let { DateFormat.getDateInstance().format(Date(it)) } ?: "End"}"
+        val lines = mutableListOf("Vexel Health Passport", "Appointment report · generated ${DateFormat.getDateTimeInstance().format(Date())}", "Selected range: $rangeLabel", "User-recorded data; not a diagnosis or medical advice.", "")
         if (includeProfile) profile.value?.let { lines += listOf("PROFILE", "Name: ${it.name}", "Allergies: ${it.allergies}", "Conditions: ${it.conditions}", "") }
         if (includeEvents) { lines += "HEALTH EVENTS"; events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.forEach { lines += "${it.kind} · ${it.title} · ${it.details}" } }
-        if (includeMedications) { lines += "MEDICATIONS"; medications.value.forEach { lines += "${it.name} ${it.strength} · ${it.dose} · ${it.frequency}" } }
-        if (includeDocuments) { lines += "DOCUMENTS"; documents.value.forEach { lines += "${it.title} · ${it.category} · ${it.originalFileName}" } }
+        if (includeMedications) { lines += "MEDICATIONS"; medications.value.filter { dateTextInRange(it.startDate, it.createdAtEpochMillis) }.forEach { lines += "${it.name} ${it.strength} · ${it.dose} · ${it.frequency}" } }
+        if (includeDocuments) { lines += "DOCUMENTS"; documents.value.filter { dateTextInRange(it.documentDate, it.createdAtEpochMillis) }.forEach { lines += "${it.title} · ${it.category} · ${it.originalFileName}" } }
         if (includeReminders) { lines += "REMINDERS"; reminders.value.filter { inRange(it.dueAtEpochMillis) }.forEach { lines += "${it.title} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))} · ${it.status}" } }
         val pdf = PdfDocument(); val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 11f }; var pageNo = 0; var page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); var y = 48f
-        lines.forEach { raw -> raw.chunked(88).ifEmpty { listOf("") }.forEach { text -> if (y > 800f) { pdf.finishPage(page); page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); y = 48f }; paint.textSize = if (pageNo == 1 && y < 60f) 20f else 11f; page.canvas.drawText(text, 48f, y, paint); y += 18f } }
-        pdf.finishPage(page); context.contentResolver.openOutputStream(uri)?.use { pdf.writeTo(it) }; pdf.close()
+        fun finishPage() { paint.textSize = 9f; page.canvas.drawText("Vexel Health Passport · Page $pageNo", 48f, 824f, paint); pdf.finishPage(page) }
+        lines.forEach { raw -> raw.chunked(88).ifEmpty { listOf("") }.forEach { text -> if (y > 790f) { finishPage(); page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); y = 48f }; paint.textSize = if (pageNo == 1 && y < 70f) 20f else 11f; page.canvas.drawText(text, 48f, y, paint); y += 18f } }
+        finishPage(); context.contentResolver.openOutputStream(uri)?.use { pdf.writeTo(it) }; pdf.close()
     }
 }
 
@@ -463,6 +535,12 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
     var showImport by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<DocumentEntity?>(null) }
     var pendingEdit by remember { mutableStateOf<DocumentEntity?>(null) }
+    var pendingReplace by remember { mutableStateOf<DocumentEntity?>(null) }
+    val replaceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val document = pendingReplace
+        if (uri != null && document != null) vm.replaceDocument(context, document, uri)
+        pendingReplace = null
+    }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Private document vault", style = MaterialTheme.typography.headlineSmall)
@@ -480,7 +558,7 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
                     }
                     if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
                     if (document.notes.isNotBlank()) Text(document.notes)
-                    Row { TextButton({ vm.openDocument(context, document) }) { Text("Open") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
+                    Row { TextButton({ vm.openDocument(context, document) }) { Text("Open") }; TextButton({ vm.shareDocument(context, document) }) { Text("Share") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingReplace = document; replaceLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Replace") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
                 } }
             }
         }
@@ -603,14 +681,29 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
     var showReportOptions by rememberSaveable { mutableStateOf(false) }
     var includeProfile by rememberSaveable { mutableStateOf(true) }; var includeEvents by rememberSaveable { mutableStateOf(true) }; var includeMedications by rememberSaveable { mutableStateOf(true) }; var includeDocuments by rememberSaveable { mutableStateOf(true) }; var includeReminders by rememberSaveable { mutableStateOf(true) }
     var reportFrom by rememberSaveable { mutableStateOf("") }; var reportTo by rememberSaveable { mutableStateOf("") }
+    var generatedReportUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportJson().toByteArray(Charsets.UTF_8)) }
+        if (uri != null) {
+            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
+            val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
+            val to = runCatching { parser.parse(reportTo)?.time?.plus(86_399_999L) }.getOrNull()
+            context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportJson(from, to).toByteArray(Charsets.UTF_8)) }
+        }
+    }
+    val readableExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri != null) {
+            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
+            val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
+            val to = runCatching { parser.parse(reportTo)?.time?.plus(86_399_999L) }.getOrNull()
+            context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportHumanReadable(from, to).toByteArray(Charsets.UTF_8)) }
+        }
     }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.createBackup(context, uri) }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(context, uri) }
     val reportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
         if (uri != null) {
+            generatedReportUri = uri
             val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
             val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
             val to = runCatching { parser.parse(reportTo)?.time?.plus(86_399_999L) }.getOrNull()
@@ -631,10 +724,17 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
         item {
             SectionHeader("Reports and data tools")
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
+                Text("Optional date range for exports and reports (yyyy-MM-dd). Leave blank for all dates.", Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(reportFrom, { reportFrom = it }, Modifier.weight(1f), label = { Text("From") }, singleLine = true)
+                    OutlinedTextField(reportTo, { reportTo = it }, Modifier.weight(1f), label = { Text("To") }, singleLine = true)
+                }
                 TextButton({ exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }
+                TextButton({ readableExportLauncher.launch("vexel-health-export.txt") }) { Text("Export readable summary") }
                 TextButton({ backupLauncher.launch("vexel-health-backup.vexel") }) { Text("Create local backup") }
                 TextButton({ restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }) { Text("Restore backup") }
                 TextButton({ showReportOptions = true }) { Text("Create PDF report") }
+                generatedReportUri?.let { uri -> TextButton({ shareContentUri(context, uri, "application/pdf", "Share health report") }) { Text("Share last PDF report") } }
             } }
         }
         item {
@@ -648,6 +748,17 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
             SectionHeader("Privacy and data")
             Text("Health information is stored locally on this device. Exported files and backups may contain sensitive information.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton({ showDeleteAll = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete all app data", color = MaterialTheme.colorScheme.error) }
+        }
+        item {
+            SectionHeader("Help and about")
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Vexel Health Passport", style = MaterialTheme.typography.titleMedium)
+                    Text("Your health history, organized.")
+                    Text("Vexel stores user-entered information locally and works offline. It does not diagnose conditions or replace professional care.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
     }
     if (showReportOptions) ReportOptionsDialog({ showReportOptions = false }, { showReportOptions = false; reportLauncher.launch("vexel-health-report.pdf") }, { includeProfile = it }, { includeEvents = it }, { includeMedications = it }, { includeDocuments = it }, { includeReminders = it }, reportFrom, { reportFrom = it }, reportTo, { reportTo = it })
@@ -692,22 +803,39 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
 @Composable
 private fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
+    var genericName by rememberSaveable { mutableStateOf("") }
     var strength by rememberSaveable { mutableStateOf("") }
     var dose by rememberSaveable { mutableStateOf("") }
+    var unit by rememberSaveable { mutableStateOf("") }
     var route by rememberSaveable { mutableStateOf("") }
     var frequency by rememberSaveable { mutableStateOf("") }
+    var startDate by rememberSaveable { mutableStateOf("") }
+    var stopDate by rememberSaveable { mutableStateOf("") }
+    var status by rememberSaveable { mutableStateOf("CURRENT") }
+    var indication by rememberSaveable { mutableStateOf("") }
+    var physician by rememberSaveable { mutableStateOf("") }
     var notes by rememberSaveable { mutableStateOf("") }
-    val draft = MedicationDraft(name, strength, dose, route, frequency, notes)
+    val draft = MedicationDraft(name, genericName, strength, dose, unit, route, frequency, startDate, stopDate, status, indication, physician, notes)
     val errors = draft.validationErrors()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add medication") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(name, { name = it }, label = { Text("Medication name") }, isError = errors.containsKey("name"))
+            OutlinedTextField(genericName, { genericName = it }, label = { Text("Generic or brand name (optional)") })
             OutlinedTextField(strength, { strength = it }, label = { Text("Strength") })
             OutlinedTextField(dose, { dose = it }, label = { Text("Dose") })
+            OutlinedTextField(unit, { unit = it }, label = { Text("Unit (optional)") })
             OutlinedTextField(route, { route = it }, label = { Text("Route (optional)") })
             OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency (optional)") })
+            OutlinedTextField(startDate, { startDate = it }, label = { Text("Start date (optional)") })
+            OutlinedTextField(stopDate, { stopDate = it }, label = { Text("Stop date (optional)") })
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = status == "CURRENT", onClick = { status = "CURRENT" }, label = { Text("Current") })
+                FilterChip(selected = status == "STOPPED", onClick = { status = "STOPPED" }, label = { Text("Stopped") })
+            }
+            OutlinedTextField(indication, { indication = it }, label = { Text("Indication (optional)") })
+            OutlinedTextField(physician, { physician = it }, label = { Text("Physician (optional)") })
             OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"))
             errors.values.firstOrNull()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         } },

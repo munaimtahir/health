@@ -40,6 +40,36 @@ class LocalSecureFileStore(context: Context) : SecureFileStore {
             }
         }
 
+    override suspend fun replaceOriginal(id: String, input: InputStream, mimeType: String, displayName: String): PreservedDocument =
+        withContext(Dispatchers.IO) {
+            require(ID_PATTERN.matches(id)) { "Invalid document identifier" }
+            require(mimeType in SUPPORTED_MIME_TYPES) { "Unsupported document type" }
+            val destination = File(root, id)
+            val temporary = File(root, ".${id}.replacement")
+            val digest = MessageDigest.getInstance("SHA-256")
+            var count = 0L
+            try {
+                BufferedInputStream(input).use { source ->
+                    temporary.outputStream().use { target ->
+                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                        var read = source.read(buffer)
+                        while (read >= 0) {
+                            count += read
+                            require(count <= MAX_DOCUMENT_BYTES) { "Document is too large" }
+                            digest.update(buffer, 0, read)
+                            target.write(buffer, 0, read)
+                            read = source.read(buffer)
+                        }
+                    }
+                }
+                require(temporary.renameTo(destination)) { "Unable to replace document" }
+                PreservedDocument(id, id, mimeType, count, digest.digest().toHex())
+            } catch (error: Throwable) {
+                temporary.delete()
+                throw error
+            }
+        }
+
     override fun open(id: String): InputStream {
         require(ID_PATTERN.matches(id)) { "Invalid document identifier" }
         return File(root, id).inputStream()

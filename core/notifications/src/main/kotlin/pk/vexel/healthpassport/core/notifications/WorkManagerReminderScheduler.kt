@@ -42,7 +42,16 @@ class WorkManagerReminderScheduler(private val context: Context) : ReminderSched
 
     override suspend fun cancel(id: String) { workManager.cancelUniqueWork(id) }
 
-    override suspend fun reconcile() { /* unique work survives process death and reboot through WorkManager */ }
+    override suspend fun reconcile() {
+        val database = DatabaseProvider.create(context)
+        try {
+            database.reminderDao().findScheduled().forEach { reminder ->
+                schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence)
+            }
+        } finally {
+            database.close()
+        }
+    }
 
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT >= 26) {

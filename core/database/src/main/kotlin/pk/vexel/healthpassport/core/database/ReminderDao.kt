@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 interface ReminderDao {
     @Query("SELECT * FROM reminders ORDER BY dueAtEpochMillis ASC") fun observeAll(): Flow<List<ReminderEntity>>
     @Query("SELECT * FROM reminders WHERE id = :id LIMIT 1") suspend fun find(id: String): ReminderEntity?
+    @Query("SELECT * FROM reminders WHERE status = 'SCHEDULED'") suspend fun findScheduled(): List<ReminderEntity>
     @Insert suspend fun insert(reminder: ReminderEntity)
     @Update suspend fun update(reminder: ReminderEntity)
     @Query("UPDATE reminders SET status = :status, updatedAtEpochMillis = :updatedAt WHERE id = :id") suspend fun setStatus(id: String, status: String, updatedAt: Long)
