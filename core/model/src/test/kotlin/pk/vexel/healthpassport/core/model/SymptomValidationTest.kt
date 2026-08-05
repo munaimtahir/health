@@ -20,4 +20,9 @@ class SymptomValidationTest {
         assertTrue(draft.validationErrors().containsKey("name"))
         assertTrue(draft.validationErrors()["severity"] == null)
     }
+
+    @Test
+    fun ongoing_symptom_cannot_have_an_end_time() {
+        assertTrue(SymptomDraft("Pain", 4, "", ongoing = true, endAtText = "2026-08-06 10:00").validationErrors().containsKey("endAt"))
+    }
 }

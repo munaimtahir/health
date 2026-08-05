@@ -15,4 +15,12 @@ data class HealthEventEntity(
     val status: String = "ACTIVE",
     val severity: Int? = null,
     val archived: Boolean = false,
+    val durationMinutes: Int? = null,
+    val startAtEpochMillis: Long? = null,
+    val endAtEpochMillis: Long? = null,
+    val ongoing: Boolean = false,
+    val bodyLocation: String = "",
+    val associatedSymptoms: String = "",
+    val possibleTrigger: String = "",
+    val relatedMedication: String = "",
 )

@@ -12,6 +12,7 @@ object DatabaseProvider {
             .addMigrations(MIGRATION_2_3)
             .addMigrations(MIGRATION_3_4)
             .addMigrations(MIGRATION_4_5)
+            .addMigrations(MIGRATION_5_6)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -83,6 +84,19 @@ object DatabaseProvider {
                 createdAtEpochMillis INTEGER NOT NULL,
                 updatedAtEpochMillis INTEGER NOT NULL
             )""")
+        }
+    }
+
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE health_events ADD COLUMN durationMinutes INTEGER")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN startAtEpochMillis INTEGER")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN endAtEpochMillis INTEGER")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN ongoing INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN bodyLocation TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN associatedSymptoms TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN possibleTrigger TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN relatedMedication TEXT NOT NULL DEFAULT ''")
         }
     }
 }
