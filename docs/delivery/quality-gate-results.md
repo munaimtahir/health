@@ -17,3 +17,5 @@ Additional executed checks:
 - Emulator `emulator-5554`: connected launch test passed; an earlier manual launch showed a transient System UI dialog, recorded as environmental.
 
 The compileSdk 36 warning is emitted because AGP 8.7.3 was tested through API 35; it is a toolchain warning, not a lint failure.
+
+Release signing verification: `app-release.apk` passed `apksigner verify --verbose`; `app-release.aab` passed `jarsigner -verify`. The local keystore is outside the repository and is not committed.

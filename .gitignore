@@ -8,6 +8,8 @@ local.properties
 .externalNativeBuild/
 *.apk
 *.aab
+*.jks
+*.keystore
+signing.properties
 captures/
 .DS_Store
-

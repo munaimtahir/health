@@ -22,6 +22,29 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     lint { abortOnError = true }
+
+    val releaseStorePath = providers.gradleProperty("vexelReleaseStoreFile").orNull
+    val releaseStorePassword = providers.gradleProperty("vexelReleaseStorePassword").orNull
+    val releaseKeyAlias = providers.gradleProperty("vexelReleaseKeyAlias").orNull
+    val releaseKeyPassword = providers.gradleProperty("vexelReleaseKeyPassword").orNull
+    val releaseSigningConfigured = listOf(releaseStorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { !it.isNullOrBlank() }
+
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = file(releaseStorePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            if (releaseSigningConfigured) signingConfig = signingConfigs.getByName("release")
+        }
+    }
 }
 
 dependencies {

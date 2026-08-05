@@ -6,7 +6,7 @@ The repository is technically named `health`; the public application name is **V
 
 ## Status
 
-The current implementation is a runnable offline-first development build. It provides first-run privacy acknowledgement, persisted profile fields, validated symptom capture with optional severity, searchable/archiveable/deletable Room timeline events, theme persistence, salted PIN verification with Keystore-protected material, private document-byte preservation, migration version 1→2, tests, lint, and CI. Biometric authentication, complete document metadata/SAF workflows, scheduled notifications, PDF generation, backup/restore, and complete export/deletion remain release blockers and are tracked in verification documentation.
+The current implementation is a runnable offline-first internal-testing build. It provides onboarding/profile persistence, symptom and medication capture, timeline events, PIN/biometric lock primitives, private document storage, WorkManager reminders, JSON export, transactional backup restore, selectable/date-ranged PDF generation, trend summaries, tests, lint, CI, and local signed release artifacts. Full acceptance workflows, comprehensive UI/security/accessibility/performance coverage, and Play Console release configuration remain incomplete and are tracked in verification documentation.
 
 ## Stack and structure
 
@@ -35,4 +35,4 @@ Start at [docs/README.md](docs/README.md). Canonical requirements, architecture,
 
 ## Roadmap
 
-The next development phase is Sprint 1 — onboarding, privacy consent, personal health profile, and application lock. Do not start production feature work without updating the applicable canonical docs and gates.
+The current phase is internal-testing hardening: complete remaining vault/reminder/report workflows, expand medication/symptom history, finish automated coverage, and repeat physical-device regression. Do not claim production readiness until the verification matrix is complete.

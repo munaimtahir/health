@@ -6,6 +6,7 @@
 - [x] Package and SDK identity
 - [ ] Mandatory features complete
 - [ ] Full release smoke/end-to-end/accessibility/security/performance matrix
-- [ ] Production signing certificate and store declarations
+- [x] Local release keystore and signed APK/AAB
+- [ ] Play Console/App Signing configuration and store declarations
 
 Decision: NOT COMPLETE.
