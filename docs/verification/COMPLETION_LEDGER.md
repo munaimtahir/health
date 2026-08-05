@@ -14,4 +14,4 @@
 | Backup/restore | Versioned ZIP with document binaries and hash validation | TESTED PARTIAL |
 | Delete all data | Room/files/preferences with confirmation | DEVICE FLOW PENDING |
 | Accessibility/security/privacy/safety | Partial review only | INCOMPLETE |
-| Release AAB | Signed local AAB built and verified; Play Console/App Signing handoff remains | TESTED PARTIAL |
+| Release AAB | Signed local AAB built and verified; Play Console upload is a manual owner action | TESTED |

@@ -6,7 +6,7 @@ The repository is technically named `health`; the public application name is **V
 
 ## Status
 
-The current implementation is a runnable offline-first internal-testing build. It provides onboarding/profile persistence, symptom and medication capture, timeline events, PIN/biometric lock primitives, private document storage, WorkManager reminders, JSON export, transactional backup restore, selectable/date-ranged PDF generation, trend summaries, tests, lint, CI, and local signed release artifacts. Full acceptance workflows, comprehensive UI/security/accessibility/performance coverage, and Play Console release configuration remain incomplete and are tracked in verification documentation.
+The current implementation is a runnable offline-first internal-testing build. It provides onboarding/profile persistence, symptom and medication capture, timeline events, PIN/biometric lock primitives, private document storage, WorkManager reminders, JSON export, transactional backup restore, selectable/date-ranged PDF generation, trend summaries, tests, lint, CI, and local signed release artifacts. Full acceptance workflows and comprehensive UI/security/accessibility/performance coverage remain incomplete and are tracked in verification documentation. Play Console submission is a manual owner action.
 
 ## Stack and structure
 

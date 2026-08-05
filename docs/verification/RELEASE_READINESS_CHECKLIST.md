@@ -7,6 +7,10 @@
 - [ ] Mandatory features complete
 - [ ] Full release smoke/end-to-end/accessibility/security/performance matrix
 - [x] Local release keystore and signed APK/AAB
-- [ ] Play Console/App Signing configuration and store declarations
+
+## Manual owner action
+
+- [ ] Upload the signed AAB to Play Console
+- [ ] Complete Google Play App Signing/store declarations
 
 Decision: NOT COMPLETE.
