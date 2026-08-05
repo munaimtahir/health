@@ -4,9 +4,9 @@
 
 Play Console upload, Google Play App Signing enrollment/selection, store declarations, and publication must be handled manually by the owner. This is not an engineering blocker for local signed-artifact generation or internal testing.
 
-## Engineering blockers still open
+## Engineering gaps still open
 
-The application is not complete: mandatory functional features and their tests remain to be implemented. These are not external blockers and must not be treated as owner action items.
+The complete application acceptance pack is not complete: broader end-to-end/UI/accessibility automation and several product-level coverage items remain. These are engineering work, not owner action items. See `DEFERRED_ITEMS.md`.
 
 Local release signing is now configured. A generated keystore is stored outside the repository at `/home/munaim/.config/vexel-health/vexel-health-release.jks`, with Gradle credentials stored in the machine-level Gradle properties using restrictive permissions. The keystore must be backed up securely and must never be committed.
 

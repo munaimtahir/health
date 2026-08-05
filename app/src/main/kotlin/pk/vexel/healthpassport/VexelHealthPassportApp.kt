@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Folder
@@ -27,13 +29,16 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -93,6 +98,9 @@ import pk.vexel.healthpassport.core.datastore.PreferencesStore
 import pk.vexel.healthpassport.core.files.SecureFileStore
 import pk.vexel.healthpassport.core.notifications.ReminderScheduler
 import pk.vexel.healthpassport.core.designsystem.InformationCard
+import pk.vexel.healthpassport.core.designsystem.EmptyState
+import pk.vexel.healthpassport.core.designsystem.SectionHeader
+import pk.vexel.healthpassport.core.designsystem.StatusPill
 import pk.vexel.healthpassport.core.designsystem.VexelHealthPassportTheme
 import pk.vexel.healthpassport.core.model.SymptomDraft
 import pk.vexel.healthpassport.core.model.MedicationDraft
@@ -104,10 +112,11 @@ import pk.vexel.healthpassport.core.security.PinMaterialCipher
 
 private data class Destination(val label: String, val icon: ImageVector)
 private val destinations = listOf(
-    Destination("Home", Icons.Outlined.Home), Destination("Timeline", Icons.Outlined.Event),
-    Destination("Records", Icons.Outlined.Folder), Destination("Plan", Icons.Outlined.Schedule),
+    Destination("Home", Icons.Outlined.Home), Destination("Records", Icons.Outlined.Event),
+    Destination("Plan", Icons.Outlined.Schedule), Destination("Vault", Icons.Outlined.Folder),
     Destination("Profile", Icons.Outlined.Person),
 )
+internal val primaryDestinationLabels: List<String> = destinations.map { it.label }
 
 @HiltViewModel
 class PassportViewModel @Inject constructor(
@@ -299,16 +308,24 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
         } else {
             LockGate(prefs, viewModel) {
                 Scaffold(
-                topBar = { TopAppBar(title = { Text("Vexel Health Passport") }) },
-                bottomBar = { NavigationBar { destinations.forEachIndexed { index, destination ->
-                    NavigationBarItem(index == selectedIndex, { selectedIndex = index }, icon = { Icon(destination.icon, destination.label) }, label = { Text(destination.label) })
+                topBar = { TopAppBar(title = { Text(destinations[selectedIndex].label) }) },
+                bottomBar = { NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp,
+                ) { destinations.forEachIndexed { index, destination ->
+                    NavigationBarItem(
+                        selected = index == selectedIndex,
+                        onClick = { selectedIndex = index },
+                        icon = { Icon(destination.icon, contentDescription = destination.label) },
+                        label = { Text(destination.label) },
+                    )
                 } } },
                 ) { padding ->
                 when (selectedIndex) {
                     0 -> HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, viewModel.events.collectAsState().value, Modifier.padding(padding))
                     1 -> TimelineScreen(viewModel, Modifier.padding(padding))
-                    2 -> DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding))
-                    3 -> RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding))
+                    2 -> RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding))
+                    3 -> DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding))
                     else -> ProfileScreen(viewModel, profile, Modifier.padding(padding))
                 }
                 }
@@ -349,12 +366,20 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
 
 @Composable private fun OnboardingScreen(onComplete: () -> Unit) {
     var acknowledged by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Vexel Health Passport", style = MaterialTheme.typography.headlineMedium)
-        Text("Your health history, organized.", style = MaterialTheme.typography.titleMedium)
-        Text("A private, offline-first place to organize your personal health information.")
-        Text("This app is not a diagnostic tool and does not replace advice from a qualified healthcare professional.")
-        TextButton(onClick = { acknowledged = !acknowledged }) { Text(if (acknowledged) "✓ I understand" else "I understand") }
+    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Text("Step 1 of 1", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+        Text("Welcome to Vexel", style = MaterialTheme.typography.headlineLarge)
+        Text("Your health history, organized.", style = MaterialTheme.typography.titleLarge)
+        Card(Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("A calm, offline-first place to organize your personal health information.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text("Your entries are user-recorded. This app does not diagnose or replace advice from a qualified healthcare professional.", color = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+        }
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Checkbox(checked = acknowledged, onCheckedChange = { acknowledged = it })
+            Text("I understand and want to continue")
+        }
         Button(onClick = onComplete, enabled = acknowledged, modifier = Modifier.fillMaxWidth()) { Text("Continue") }
     }
 }
@@ -362,30 +387,49 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
 @Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, medications: List<MedicationEntity>, events: List<HealthEventEntity>, modifier: Modifier) {
     var showSymptom by rememberSaveable { mutableStateOf(false) }
     var showMedication by rememberSaveable { mutableStateOf(false) }
-    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
-        Text("Keep your records together and ready for your next appointment.")
-        InformationCard("Privacy", "Stored on this device. No account required.")
-        val trends = summarizeSymptoms(events.map { TrendEvent(it.title, it.kind, it.severity) })
-        if (trends.totalEntries > 0) {
-            Text("Recorded symptom summary", style = MaterialTheme.typography.titleMedium)
-            Text("${trends.totalEntries} symptom entr${if (trends.totalEntries == 1) "y" else "ies"}; most frequent: ${trends.mostFrequentSymptom ?: "none"}")
-            trends.averageRecordedSeverity?.let { Text("Average recorded severity: ${"%.1f".format(it)}/10") }
-            Text("This is a summary of your entries, not a diagnosis.", style = MaterialTheme.typography.bodySmall)
+    LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
+        item {
+            Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
+            Text("Your health history, organized.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (medications.isNotEmpty()) {
-            Text("Current medications", style = MaterialTheme.typography.titleMedium)
-            medications.filter { it.status == "CURRENT" }.take(3).forEach { medication ->
-                Text("• ${medication.name}${medication.strength.takeIf { it.isNotBlank() }?.let { " — $it" } ?: ""}")
+        item {
+            Card(modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Record how you feel", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("Keep a clear, user-entered record for yourself and your care conversations.", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Button(onClick = { showSymptom = true }) { Text("Log symptom") }
+                }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button({ showSymptom = true }, Modifier.weight(1f)) { Text("Log symptom") }
-            Button({ showMedication = true }, Modifier.weight(1f)) { Text("Add medication") }
+        item { InformationCard("Privacy", "Stored on this device. No account required.") }
+        val trends = summarizeSymptoms(events.map { TrendEvent(it.title, it.kind, it.severity) })
+        if (trends.totalEntries > 0) {
+            item {
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionHeader("Recorded symptom summary")
+                    Text("${trends.totalEntries} symptom entr${if (trends.totalEntries == 1) "y" else "ies"}")
+                    trends.mostFrequentSymptom?.let { Text("Most frequent: $it") }
+                    trends.averageRecordedSeverity?.let { Text("Average recorded severity: ${"%.1f".format(it)}/10") }
+                    Text("A neutral summary of your entries, not a diagnosis.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } }
+            }
         }
-        if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent)
-        if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
+        if (medications.isNotEmpty()) {
+            item {
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionHeader("Current medications")
+                    medications.filter { it.status == "CURRENT" }.take(3).forEach { medication ->
+                        Text("${medication.name}${medication.strength.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""}")
+                    }
+                } }
+            }
+        }
+        item {
+            OutlinedButton(onClick = { showMedication = true }, modifier = Modifier.fillMaxWidth()) { Text("Add medication record") }
+        }
     }
+    if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent)
+    if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
 }
 
 @Composable private fun TimelineScreen(vm: PassportViewModel, modifier: Modifier) {
@@ -397,10 +441,10 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Health timeline", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } }
         OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Search timeline") }, singleLine = true)
-        if (events.isEmpty()) Text("Your health events will appear here.")
-        else if (visibleEvents.isEmpty()) Text("No events match your search.")
+        if (events.isEmpty()) EmptyState("No records yet", "Symptoms, medications and other user-entered events will appear here.", "Log a record", onAction = { showAdd = true })
+        else if (visibleEvents.isEmpty()) EmptyState("No matches", "Try a different search term or clear the search field.")
         else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(visibleEvents, key = { it.id }) { event ->
-            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ vm.archive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ vm.archive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
         } }
     }
     if (showAdd) CaptureDialog("OTHER", "Add health event", { showAdd = false }, vm::addEvent)
@@ -425,12 +469,15 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
             TextButton({ showImport = true }) { Text("Import") }
         }
         Text("PDF, JPG, JPEG, and PNG files are copied into app-private storage.")
-        if (documents.isEmpty()) Text("No documents imported yet.")
+        if (documents.isEmpty()) EmptyState("Your vault is empty", "Import a PDF or image to keep a private copy on this device.", "Import a document", onAction = { showImport = true })
         else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(documents, key = { it.id }) { document ->
-                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(document.title, style = MaterialTheme.typography.titleMedium)
-                    Text("${document.category} · ${document.mimeType} · ${document.byteCount / 1024} KB")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StatusPill(document.category)
+                        Text("${document.mimeType.substringAfterLast('/')}, ${document.byteCount / 1024} KB", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
                     if (document.notes.isNotBlank()) Text(document.notes)
                     Row { TextButton({ vm.openDocument(context, document) }) { Text("Open") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
@@ -451,7 +498,7 @@ private fun DocumentEditDialog(vm: PassportViewModel, document: DocumentEntity, 
     var category by rememberSaveable(document.id) { mutableStateOf(document.category) }
     var date by rememberSaveable(document.id) { mutableStateOf(document.documentDate) }
     var notes by rememberSaveable(document.id) { mutableStateOf(document.notes) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit document details") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit document details") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text("Title") })
         OutlinedTextField(category, { category = it }, label = { Text("Category") })
         OutlinedTextField(date, { date = it }, label = { Text("Document date") })
@@ -464,14 +511,25 @@ private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntit
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<ReminderEntity?>(null) }
     var pendingEdit by remember { mutableStateOf<ReminderEntity?>(null) }
+    var selectedView by rememberSaveable { mutableStateOf("UPCOMING") }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    val visibleReminders = if (selectedView == "HISTORY") reminders.filter { it.status != "SCHEDULED" } else reminders.filter { it.status == "SCHEDULED" }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Reminders", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } }
         Text("Reminders are user-created and do not determine medical intervals.")
-        if (reminders.isEmpty()) Text("No reminders yet.") else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(reminders, key = { it.id }) { reminder ->
-            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                Text(reminder.title, style = MaterialTheme.typography.titleMedium)
-                Text("${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))} · ${reminder.status.lowercase()}")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = selectedView == "UPCOMING", onClick = { selectedView = "UPCOMING" }, label = { Text("Upcoming") })
+            FilterChip(selected = selectedView == "HISTORY", onClick = { selectedView = "HISTORY" }, label = { Text("History") })
+        }
+        if (reminders.isEmpty()) EmptyState("No reminders yet", "Create a follow-up, review or custom reminder when you want one.", "Create reminder", onAction = { showAdd = true })
+        else if (visibleReminders.isEmpty()) EmptyState(if (selectedView == "HISTORY") "No reminder history" else "No upcoming reminders", if (selectedView == "HISTORY") "Completed or missed reminders will appear here." else "Your scheduled reminders will appear here.")
+        else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(visibleReminders, key = { it.id }) { reminder ->
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(reminder.title, style = MaterialTheme.typography.titleMedium)
+                    StatusPill(reminder.status.lowercase().replaceFirstChar { it.uppercase() })
+                }
+                Text("${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (reminder.notes.isNotBlank()) Text(reminder.notes)
                 Row { if (reminder.status == "SCHEDULED") { TextButton({ vm.snoozeReminder(reminder) }) { Text("Snooze 1h") }; TextButton({ vm.completeReminder(reminder) }) { Text("Complete") } }; TextButton({ pendingEdit = reminder }) { Text("Edit") }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
             } }
@@ -491,7 +549,7 @@ private fun ReminderEditDialog(vm: PassportViewModel, reminder: ReminderEntity, 
     var recurrence by rememberSaveable(reminder.id) { mutableStateOf(reminder.recurrence) }
     val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
     val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit reminder") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit reminder") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
         OutlinedTextField(type, { type = it }, label = { Text("Type") })
         OutlinedTextField(dueText, { dueText = it }, label = { Text("Date and time") }, supportingText = { Text("yyyy-MM-dd HH:mm") }, isError = dueAt == null)
@@ -510,7 +568,7 @@ private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit, onSched
     var recurrence by rememberSaveable { mutableStateOf("ONCE") }
     val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
     val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Add reminder") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Add reminder") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
         OutlinedTextField(type, { type = it }, label = { Text("Type") })
         OutlinedTextField(dueText, { dueText = it }, label = { Text("Date and time") }, supportingText = { Text("yyyy-MM-dd HH:mm") }, isError = dueAt == null)
@@ -530,7 +588,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
         if (uri != null) vm.importDocument(context, uri, title, category, documentDate, notes)
         if (uri != null) onDismiss()
     }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Import private document") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Import private document") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Choose a PDF or image. The original is preserved privately; unsupported types are rejected.")
         OutlinedTextField(title, { title = it }, label = { Text("Title") })
         OutlinedTextField(category, { category = it }, label = { Text("Category") })
@@ -559,7 +617,39 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
             vm.createPdfReport(context, uri, includeProfile, includeEvents, includeMedications, includeDocuments, includeReminders, from, to)
         }
     }
-    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") }); OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") }); OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Diagnoses or conditions") }); Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }) { Text("Save profile") }; TextButton({ exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }; TextButton({ backupLauncher.launch("vexel-health-backup.vexel") }) { Text("Create local backup") }; TextButton({ restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }) { Text("Restore backup") }; TextButton({ showReportOptions = true }) { Text("Create PDF report") }; TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }; TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") }; TextButton({ showDeleteAll = true }) { Text("Delete all local data", color = MaterialTheme.colorScheme.error) } }
+    LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
+        item { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); Text("Keep your personal details and app controls in one place.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item {
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SectionHeader("Personal details")
+                OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") })
+                OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") })
+                OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Conditions") })
+                Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }, modifier = Modifier.fillMaxWidth()) { Text("Save profile") }
+            } }
+        }
+        item {
+            SectionHeader("Reports and data tools")
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
+                TextButton({ exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }
+                TextButton({ backupLauncher.launch("vexel-health-backup.vexel") }) { Text("Create local backup") }
+                TextButton({ restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }) { Text("Restore backup") }
+                TextButton({ showReportOptions = true }) { Text("Create PDF report") }
+            } }
+        }
+        item {
+            SectionHeader("Appearance and security")
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
+                TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }
+                TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") }
+            } }
+        }
+        item {
+            SectionHeader("Privacy and data")
+            Text("Health information is stored locally on this device. Exported files and backups may contain sensitive information.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton({ showDeleteAll = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete all app data", color = MaterialTheme.colorScheme.error) }
+        }
+    }
     if (showReportOptions) ReportOptionsDialog({ showReportOptions = false }, { showReportOptions = false; reportLauncher.launch("vexel-health-report.pdf") }, { includeProfile = it }, { includeEvents = it }, { includeMedications = it }, { includeDocuments = it }, { includeReminders = it }, reportFrom, { reportFrom = it }, reportTo, { reportTo = it })
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
     if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
@@ -568,7 +658,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
 @Composable
 private fun ReportOptionsDialog(onDismiss: () -> Unit, onGenerate: () -> Unit, setProfile: (Boolean) -> Unit, setEvents: (Boolean) -> Unit, setMedications: (Boolean) -> Unit, setDocuments: (Boolean) -> Unit, setReminders: (Boolean) -> Unit, from: String, setFrom: (String) -> Unit, to: String, setTo: (String) -> Unit) {
     var profileChecked by remember { mutableStateOf(true) }; var eventsChecked by remember { mutableStateOf(true) }; var medicationsChecked by remember { mutableStateOf(true) }; var documentsChecked by remember { mutableStateOf(true) }; var remindersChecked by remember { mutableStateOf(true) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("Select sections and optional date range. Use yyyy-MM-dd.")
         listOf("Profile" to profileChecked, "Health events" to eventsChecked, "Medications" to medicationsChecked, "Documents" to documentsChecked, "Reminders" to remindersChecked).forEach { (label, checked) -> Row { Checkbox(checked, { value -> when (label) { "Profile" -> { profileChecked = value; setProfile(value) }; "Health events" -> { eventsChecked = value; setEvents(value) }; "Medications" -> { medicationsChecked = value; setMedications(value) }; "Documents" -> { documentsChecked = value; setDocuments(value) }; else -> { remindersChecked = value; setReminders(value) } } }); Text(label) } }
         OutlinedTextField(from, setFrom, label = { Text("From (optional)") })
@@ -581,7 +671,7 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     var pin by rememberSaveable { mutableStateOf("") }
     var confirmation by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Set up PIN lock") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Set up PIN lock") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Use 4–12 digits. The PIN is never stored as plaintext.")
         OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12) }, label = { Text("PIN") }, isError = error.isNotBlank())
         OutlinedTextField(confirmation, { confirmation = it.filter(Char::isDigit).take(12) }, label = { Text("Confirm PIN") }, isError = error.isNotBlank(), supportingText = { if (error.isNotBlank()) Text(error) })
@@ -592,11 +682,11 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     var title by remember { mutableStateOf("") }; var details by remember { mutableStateOf("") }; var severityText by remember { mutableStateOf("") }
     val severity = severityText.toIntOrNull()
     val errors = SymptomDraft(title, if (kind == "SYMPTOM") severity else null, details).validationErrors()
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(heading) }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(heading) }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text(if (kind == "SYMPTOM") "Symptom" else "Title") }, isError = errors.containsKey("name"))
         if (kind == "SYMPTOM") OutlinedTextField(severityText, { severityText = it.filter(Char::isDigit) }, label = { Text("Severity (0–10, optional)") }, isError = errors.containsKey("severity"), supportingText = { errors["severity"]?.let { Text(it) } })
         OutlinedTextField(details, { details = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"), supportingText = { errors["notes"]?.let { Text(it) } })
-    } }, confirmButton = { Button({ if (errors.isEmpty()) { onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null); onDismiss() } }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { Button(enabled = errors.isEmpty(), onClick = { onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable

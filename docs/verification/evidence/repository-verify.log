@@ -765,7 +765,7 @@ to this project's gradle.properties.
 > Task :feature:timeline:bundleDebugAar UP-TO-DATE
 > Task :feature:timeline:assembleDebug UP-TO-DATE
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 8s
 570 actionable tasks: 570 up-to-date
 WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 36
 
@@ -1786,7 +1786,7 @@ to this project's gradle.properties.
 > Task :feature:timeline:testReleaseUnitTest NO-SOURCE
 > Task :feature:timeline:test UP-TO-DATE
 
-BUILD SUCCESSFUL in 8s
+BUILD SUCCESSFUL in 10s
 659 actionable tasks: 659 up-to-date
 WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 36
 
@@ -2778,5 +2778,5 @@ to this project's gradle.properties.
 > Task :feature:timeline:lintDebug
 > Task :feature:timeline:lint
 
-BUILD SUCCESSFUL in 9s
+BUILD SUCCESSFUL in 8s
 758 actionable tasks: 19 executed, 739 up-to-date

@@ -768,8 +768,8 @@ to this project's gradle.properties.
 > Task :core:datastore:lintAnalyzeDebug
 > Task :core:database:lintAnalyzeDebug
 > Task :core:files:lintAnalyzeDebug
-> Task :core:designsystem:lintAnalyzeDebug
 > Task :core:notifications:lintAnalyzeDebug
+> Task :core:designsystem:lintAnalyzeDebug
 > Task :core:security:lintAnalyzeDebug
 > Task :core:ui:lintAnalyzeDebug
 > Task :feature:appointments:lintAnalyzeDebug
@@ -836,10 +836,10 @@ to this project's gradle.properties.
 > Task :core:ui:lintAnalyzeDebugUnitTest
 > Task :feature:appointments:preDebugAndroidTestBuild UP-TO-DATE
 > Task :feature:appointments:generateDebugAndroidTestResValues
+> Task :app:lintAnalyzeDebug
 > Task :feature:appointments:generateDebugAndroidTestLintModel
 > Task :feature:appointments:preDebugUnitTestBuild UP-TO-DATE
 > Task :feature:appointments:generateDebugUnitTestLintModel
-> Task :app:lintAnalyzeDebug
 > Task :feature:appointments:lintAnalyzeDebugAndroidTest
 > Task :feature:appointments:lintAnalyzeDebugUnitTest
 > Task :feature:dashboard:preDebugAndroidTestBuild UP-TO-DATE
@@ -921,7 +921,10 @@ to this project's gradle.properties.
 > Task :core:datastore:lintDebug
 > Task :core:datastore:lint
 > Task :core:designsystem:generateDebugLintReportModel
+
 > Task :core:designsystem:lintReportDebug
+Wrote HTML report to file:///home/munaim/Documents/github/health/core/designsystem/build/reports/lint-results-debug.html
+
 > Task :core:designsystem:lintDebug
 > Task :core:designsystem:lint
 > Task :core:files:generateDebugLintReportModel
@@ -994,5 +997,5 @@ Wrote HTML report to file:///home/munaim/Documents/github/health/app/build/repor
 > Task :app:lintDebug
 > Task :app:lint
 
-BUILD SUCCESSFUL in 2m 1s
+BUILD SUCCESSFUL in 2m 29s
 758 actionable tasks: 243 executed, 515 up-to-date

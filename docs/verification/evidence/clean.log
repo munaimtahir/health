@@ -1,4 +1,4 @@
-Starting a Gradle Daemon, 2 incompatible and 1 stopped Daemons could not be reused, use --status for details
+Starting a Gradle Daemon, 1 incompatible Daemon could not be reused, use --status for details
 > Task :app:clean
 > Task :core:common:clean
 > Task :core:database:clean
@@ -23,5 +23,5 @@ Starting a Gradle Daemon, 2 incompatible and 1 stopped Daemons could not be reus
 > Task :feature:symptoms:clean
 > Task :feature:timeline:clean
 
-BUILD SUCCESSFUL in 30s
+BUILD SUCCESSFUL in 35s
 23 actionable tasks: 23 executed
