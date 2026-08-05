@@ -330,7 +330,6 @@ to this project's gradle.properties.
 > Task :feature:appointments:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:appointments:bundleLibRuntimeToDirRelease UP-TO-DATE
 > Task :feature:reports:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:bundleReleaseResources
 > Task :feature:reports:compileReleaseKotlin UP-TO-DATE
 > Task :feature:reports:javaPreCompileRelease UP-TO-DATE
 > Task :feature:reports:compileReleaseJavaWithJavac NO-SOURCE
@@ -382,11 +381,11 @@ to this project's gradle.properties.
 > Task :feature:settings:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:ui:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :core:designsystem:bundleLibRuntimeToJarRelease UP-TO-DATE
-> Task :app:desugarReleaseFileDependencies UP-TO-DATE
 > Task :app:hiltAggregateDepsRelease UP-TO-DATE
 > Task :app:hiltJavaCompileRelease UP-TO-DATE
 > Task :app:transformReleaseClassesWithAsm UP-TO-DATE
 > Task :app:dexBuilderRelease UP-TO-DATE
+> Task :app:desugarReleaseFileDependencies UP-TO-DATE
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
 > Task :app:mergeExtDexRelease UP-TO-DATE
 > Task :app:mergeDexRelease UP-TO-DATE
@@ -545,7 +544,6 @@ to this project's gradle.properties.
 > Task :app:mergeReleaseNativeLibs UP-TO-DATE
 > Task :app:stripReleaseDebugSymbols UP-TO-DATE
 > Task :app:writeReleaseAppMetadata UP-TO-DATE
-> Task :app:buildReleasePreBundle
 > Task :core:database:prepareReleaseArtProfile UP-TO-DATE
 > Task :core:datastore:prepareReleaseArtProfile UP-TO-DATE
 > Task :core:designsystem:prepareReleaseArtProfile UP-TO-DATE
@@ -571,11 +569,13 @@ to this project's gradle.properties.
 > Task :app:extractReleaseNativeSymbolTables UP-TO-DATE
 > Task :app:parseReleaseIntegrityConfig UP-TO-DATE
 > Task :app:validateSigningRelease UP-TO-DATE
+> Task :app:bundleReleaseResources
+> Task :app:buildReleasePreBundle
 > Task :app:packageReleaseBundle
 > Task :app:signReleaseBundle
 > Task :app:produceReleaseBundleIdeListingFile
 > Task :app:createReleaseBundleListingFileRedirect
 > Task :app:bundleRelease
 
-BUILD SUCCESSFUL in 14s
+BUILD SUCCESSFUL in 13s
 419 actionable tasks: 8 executed, 411 up-to-date

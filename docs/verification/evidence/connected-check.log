@@ -552,9 +552,9 @@ to this project's gradle.properties.
 > Task :app:checkDebugAndroidTestAarMetadata
 > Task :app:mapDebugAndroidTestSourceSetPaths
 > Task :app:generateDebugAndroidTestResources
-> Task :app:mergeDebugAndroidTestResources
 > Task :app:processDebugAndroidTestManifest
 > Task :app:javaPreCompileDebugAndroidTest
+> Task :app:mergeDebugAndroidTestResources
 > Task :app:mergeDebugAndroidTestShaders
 > Task :app:compileDebugAndroidTestShaders NO-SOURCE
 > Task :app:generateDebugAndroidTestAssets UP-TO-DATE
@@ -596,16 +596,16 @@ to this project's gradle.properties.
 > Task :core:database:checkDebugAndroidTestDuplicateClasses
 > Task :app:compileDebugAndroidTestKotlin
 > Task :app:compileDebugAndroidTestJavaWithJavac NO-SOURCE
+> Task :core:database:mergeExtDexDebugAndroidTest
 > Task :app:hiltAggregateDepsDebugAndroidTest
 > Task :app:hiltJavaCompileDebugAndroidTest NO-SOURCE
-> Task :core:database:mergeExtDexDebugAndroidTest
+> Task :core:database:mergeLibDexDebugAndroidTest
 > Task :app:processDebugAndroidTestJavaRes
 > Task :app:transformDebugAndroidTestClassesWithAsm
-> Task :app:dexBuilderDebugAndroidTest
 > Task :app:mergeDebugAndroidTestJavaResource
+> Task :app:dexBuilderDebugAndroidTest
 > Task :app:mergeDebugAndroidTestGlobalSynthetics
 > Task :app:mergeProjectDexDebugAndroidTest
-> Task :core:database:mergeLibDexDebugAndroidTest
 > Task :core:database:mergeProjectDexDebugAndroidTest
 > Task :core:database:mergeDebugAndroidTestJniLibFolders
 > Task :core:database:mergeDebugAndroidTestNativeLibs NO-SOURCE
@@ -618,14 +618,13 @@ to this project's gradle.properties.
 > Task :app:connectedDebugAndroidTest
 Starting 2 tests on TECNO CH6i - 13
 
-> Task :core:database:packageDebugAndroidTest
-
 Finished 2 tests on TECNO CH6i - 13
 
 > Task :app:connectedAndroidTest
 > Task :app:connectedCheck
 > Task :core:datastore:preDebugAndroidTestBuild UP-TO-DATE
 > Task :core:datastore:checkDebugAndroidTestAarMetadata
+> Task :core:database:packageDebugAndroidTest
 > Task :core:database:createDebugAndroidTestApkListingFileRedirect
 > Task :core:database:connectedDebugAndroidTest
 > Task :core:database:connectedAndroidTest
@@ -671,7 +670,6 @@ Unable to strip the following libraries, packaging them as they are: libdatastor
 > Task :core:datastore:connectedDebugAndroidTest
 > Task :core:datastore:connectedAndroidTest
 > Task :core:datastore:connectedCheck
-> Task :core:designsystem:mergeDebugAndroidTestResources
 > Task :core:designsystem:processDebugAndroidTestManifest
 > Task :core:designsystem:javaPreCompileDebugAndroidTest
 > Task :core:designsystem:mergeDebugAndroidTestShaders
@@ -681,15 +679,9 @@ Unable to strip the following libraries, packaging them as they are: libdatastor
 > Task :core:designsystem:compressDebugAndroidTestAssets
 > Task :core:designsystem:desugarDebugAndroidTestFileDependencies
 > Task :core:designsystem:checkDebugAndroidTestDuplicateClasses
-> Task :core:designsystem:processDebugAndroidTestResources
-> Task :core:designsystem:compileDebugAndroidTestKotlin NO-SOURCE
-> Task :core:designsystem:compileDebugAndroidTestJavaWithJavac NO-SOURCE
-> Task :core:designsystem:dexBuilderDebugAndroidTest
-> Task :core:designsystem:mergeDebugAndroidTestGlobalSynthetics
-> Task :core:designsystem:processDebugAndroidTestJavaRes NO-SOURCE
+> Task :core:designsystem:mergeDebugAndroidTestResources
 > Task :core:designsystem:mergeExtDexDebugAndroidTest
 > Task :core:designsystem:mergeLibDexDebugAndroidTest
-> Task :core:designsystem:mergeProjectDexDebugAndroidTest
 > Task :core:designsystem:mergeDebugAndroidTestJniLibFolders
 > Task :core:designsystem:mergeDebugAndroidTestNativeLibs
 
@@ -705,7 +697,14 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:files:generateDebugAndroidTestResources
 > Task :core:files:mergeDebugAndroidTestResources
 > Task :core:files:processDebugAndroidTestManifest
+> Task :core:designsystem:processDebugAndroidTestResources
+> Task :core:designsystem:compileDebugAndroidTestKotlin NO-SOURCE
+> Task :core:designsystem:compileDebugAndroidTestJavaWithJavac NO-SOURCE
 > Task :core:files:processDebugAndroidTestResources
+> Task :core:designsystem:dexBuilderDebugAndroidTest
+> Task :core:designsystem:processDebugAndroidTestJavaRes NO-SOURCE
+> Task :core:designsystem:mergeDebugAndroidTestGlobalSynthetics
+> Task :core:designsystem:mergeProjectDexDebugAndroidTest
 > Task :core:files:compileDebugAndroidTestKotlin NO-SOURCE
 > Task :core:files:javaPreCompileDebugAndroidTest
 > Task :core:files:compileDebugAndroidTestJavaWithJavac NO-SOURCE
@@ -762,9 +761,9 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:notifications:checkDebugAndroidTestDuplicateClasses
 > Task :core:notifications:mergeDebugAndroidTestJavaResource
 > Task :core:notifications:mergeExtDexDebugAndroidTest
-> Task :core:notifications:mergeProjectDexDebugAndroidTest
 > Task :core:notifications:mergeLibDexDebugAndroidTest
 > Task :core:notifications:mergeDebugAndroidTestJniLibFolders
+> Task :core:notifications:mergeProjectDexDebugAndroidTest
 > Task :core:notifications:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :core:notifications:stripDebugAndroidTestDebugSymbols NO-SOURCE
 > Task :core:notifications:validateSigningDebugAndroidTest
@@ -776,30 +775,30 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:security:generateDebugAndroidTestResources
 > Task :core:security:mergeDebugAndroidTestResources
 > Task :core:security:processDebugAndroidTestManifest
+> Task :core:notifications:packageDebugAndroidTest
+> Task :core:notifications:createDebugAndroidTestApkListingFileRedirect
 > Task :core:security:processDebugAndroidTestResources
+> Task :core:notifications:connectedDebugAndroidTest
+> Task :core:notifications:connectedAndroidTest
+> Task :core:notifications:connectedCheck
 > Task :core:security:compileDebugAndroidTestKotlin NO-SOURCE
 > Task :core:security:javaPreCompileDebugAndroidTest
-> Task :core:security:compileDebugAndroidTestJavaWithJavac NO-SOURCE
 > Task :core:security:mergeDebugAndroidTestShaders
+> Task :core:security:compileDebugAndroidTestJavaWithJavac NO-SOURCE
 > Task :core:security:compileDebugAndroidTestShaders NO-SOURCE
 > Task :core:security:generateDebugAndroidTestAssets UP-TO-DATE
 > Task :core:security:mergeDebugAndroidTestAssets
 > Task :core:security:compressDebugAndroidTestAssets
 > Task :core:security:desugarDebugAndroidTestFileDependencies
 > Task :core:security:dexBuilderDebugAndroidTest
-> Task :core:security:mergeDebugAndroidTestGlobalSynthetics
-> Task :core:notifications:packageDebugAndroidTest
-> Task :core:notifications:createDebugAndroidTestApkListingFileRedirect
-> Task :core:notifications:connectedDebugAndroidTest
-> Task :core:notifications:connectedAndroidTest
-> Task :core:notifications:connectedCheck
 > Task :core:security:processDebugAndroidTestJavaRes NO-SOURCE
+> Task :core:security:mergeDebugAndroidTestGlobalSynthetics
 > Task :core:security:checkDebugAndroidTestDuplicateClasses
 > Task :core:security:mergeDebugAndroidTestJavaResource
 > Task :core:security:mergeExtDexDebugAndroidTest
 > Task :core:security:mergeLibDexDebugAndroidTest
-> Task :core:security:mergeDebugAndroidTestJniLibFolders
 > Task :core:security:mergeProjectDexDebugAndroidTest
+> Task :core:security:mergeDebugAndroidTestJniLibFolders
 > Task :core:security:mergeDebugAndroidTestNativeLibs NO-SOURCE
 > Task :core:security:stripDebugAndroidTestDebugSymbols NO-SOURCE
 > Task :core:security:validateSigningDebugAndroidTest
@@ -848,6 +847,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:appointments:mergeDebugAndroidTestResources
 > Task :core:ui:mergeProjectDexDebugAndroidTest
 > Task :feature:appointments:processDebugAndroidTestManifest
+> Task :core:ui:mergeDebugAndroidTestJavaResource
 > Task :feature:appointments:processDebugAndroidTestResources
 > Task :feature:appointments:compileDebugAndroidTestKotlin NO-SOURCE
 > Task :feature:appointments:javaPreCompileDebugAndroidTest
@@ -858,16 +858,18 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:appointments:mergeDebugAndroidTestAssets
 > Task :feature:appointments:compressDebugAndroidTestAssets
 > Task :feature:appointments:desugarDebugAndroidTestFileDependencies
-> Task :core:ui:mergeDebugAndroidTestJavaResource
 > Task :feature:appointments:dexBuilderDebugAndroidTest
 > Task :feature:appointments:mergeDebugAndroidTestGlobalSynthetics
 > Task :feature:appointments:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:appointments:mergeDebugAndroidTestJavaResource
+> Task :feature:appointments:checkDebugAndroidTestDuplicateClasses
 > Task :core:ui:packageDebugAndroidTest
 > Task :core:ui:createDebugAndroidTestApkListingFileRedirect
 > Task :core:ui:connectedDebugAndroidTest
 > Task :core:ui:connectedAndroidTest
 > Task :core:ui:connectedCheck
+> Task :feature:appointments:mergeLibDexDebugAndroidTest
+> Task :feature:appointments:mergeProjectDexDebugAndroidTest
 > Task :feature:appointments:mergeDebugAndroidTestJniLibFolders
 > Task :feature:appointments:mergeDebugAndroidTestNativeLibs
 
@@ -880,13 +882,10 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:dashboard:checkDebugAndroidTestAarMetadata
 > Task :feature:dashboard:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :feature:dashboard:mapDebugAndroidTestSourceSetPaths
-> Task :feature:dashboard:generateDebugAndroidTestResources
-> Task :feature:appointments:checkDebugAndroidTestDuplicateClasses
-> Task :feature:dashboard:mergeDebugAndroidTestResources
-> Task :feature:appointments:mergeLibDexDebugAndroidTest
-> Task :feature:appointments:mergeProjectDexDebugAndroidTest
-> Task :feature:dashboard:processDebugAndroidTestManifest
 > Task :feature:appointments:mergeExtDexDebugAndroidTest
+> Task :feature:dashboard:generateDebugAndroidTestResources
+> Task :feature:dashboard:mergeDebugAndroidTestResources
+> Task :feature:dashboard:processDebugAndroidTestManifest
 > Task :feature:dashboard:processDebugAndroidTestResources
 > Task :feature:dashboard:compileDebugAndroidTestKotlin NO-SOURCE
 > Task :feature:dashboard:javaPreCompileDebugAndroidTest
@@ -900,22 +899,22 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:dashboard:dexBuilderDebugAndroidTest
 > Task :feature:dashboard:mergeDebugAndroidTestGlobalSynthetics
 > Task :feature:dashboard:processDebugAndroidTestJavaRes NO-SOURCE
-> Task :feature:dashboard:mergeDebugAndroidTestJavaResource
 > Task :feature:appointments:packageDebugAndroidTest
 > Task :feature:appointments:createDebugAndroidTestApkListingFileRedirect
 > Task :feature:appointments:connectedDebugAndroidTest
 > Task :feature:appointments:connectedAndroidTest
 > Task :feature:appointments:connectedCheck
+> Task :feature:dashboard:checkDebugAndroidTestDuplicateClasses
+> Task :feature:dashboard:mergeDebugAndroidTestJavaResource
+> Task :feature:dashboard:mergeLibDexDebugAndroidTest
+> Task :feature:dashboard:mergeProjectDexDebugAndroidTest
 > Task :feature:dashboard:mergeDebugAndroidTestJniLibFolders
 > Task :feature:dashboard:mergeDebugAndroidTestNativeLibs
 
 > Task :feature:dashboard:stripDebugAndroidTestDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so.
 
-> Task :feature:dashboard:checkDebugAndroidTestDuplicateClasses
 > Task :feature:dashboard:validateSigningDebugAndroidTest
-> Task :feature:dashboard:mergeLibDexDebugAndroidTest
-> Task :feature:dashboard:mergeProjectDexDebugAndroidTest
 > Task :feature:dashboard:writeDebugAndroidTestSigningConfigVersions
 > Task :feature:medications:preDebugAndroidTestBuild UP-TO-DATE
 > Task :feature:dashboard:mergeExtDexDebugAndroidTest
@@ -937,14 +936,14 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:medications:mergeDebugAndroidTestAssets
 > Task :feature:medications:compressDebugAndroidTestAssets
 > Task :feature:medications:desugarDebugAndroidTestFileDependencies
+> Task :feature:medications:checkDebugAndroidTestDuplicateClasses
 > Task :feature:medications:processDebugAndroidTestResources
 > Task :feature:medications:compileDebugAndroidTestKotlin NO-SOURCE
 > Task :feature:medications:compileDebugAndroidTestJavaWithJavac NO-SOURCE
-> Task :feature:medications:checkDebugAndroidTestDuplicateClasses
 > Task :feature:medications:dexBuilderDebugAndroidTest
-> Task :feature:medications:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:medications:mergeDebugAndroidTestGlobalSynthetics
-> Task :feature:medications:mergeDebugAndroidTestJavaResource
+> Task :feature:medications:processDebugAndroidTestJavaRes NO-SOURCE
+> Task :feature:medications:mergeExtDexDebugAndroidTest
 > Task :feature:medications:mergeLibDexDebugAndroidTest
 > Task :feature:medications:mergeProjectDexDebugAndroidTest
 > Task :feature:medications:mergeDebugAndroidTestJniLibFolders
@@ -960,7 +959,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:onboarding:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :feature:onboarding:mapDebugAndroidTestSourceSetPaths
 > Task :feature:onboarding:generateDebugAndroidTestResources
-> Task :feature:medications:mergeExtDexDebugAndroidTest
+> Task :feature:medications:mergeDebugAndroidTestJavaResource
 > Task :feature:onboarding:mergeDebugAndroidTestResources
 > Task :feature:onboarding:processDebugAndroidTestManifest
 > Task :feature:onboarding:processDebugAndroidTestResources
@@ -977,20 +976,20 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:onboarding:mergeDebugAndroidTestGlobalSynthetics
 > Task :feature:onboarding:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:medications:packageDebugAndroidTest
+> Task :feature:onboarding:mergeDebugAndroidTestJavaResource
 > Task :feature:medications:createDebugAndroidTestApkListingFileRedirect
 > Task :feature:medications:connectedDebugAndroidTest
 > Task :feature:medications:connectedAndroidTest
 > Task :feature:medications:connectedCheck
-> Task :feature:onboarding:checkDebugAndroidTestDuplicateClasses
-> Task :feature:onboarding:mergeDebugAndroidTestJavaResource
-> Task :feature:onboarding:mergeLibDexDebugAndroidTest
-> Task :feature:onboarding:mergeProjectDexDebugAndroidTest
 > Task :feature:onboarding:mergeDebugAndroidTestJniLibFolders
 > Task :feature:onboarding:mergeDebugAndroidTestNativeLibs
+> Task :feature:onboarding:checkDebugAndroidTestDuplicateClasses
 
 > Task :feature:onboarding:stripDebugAndroidTestDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so.
 
+> Task :feature:onboarding:mergeLibDexDebugAndroidTest
+> Task :feature:onboarding:mergeProjectDexDebugAndroidTest
 > Task :feature:onboarding:mergeExtDexDebugAndroidTest
 > Task :feature:onboarding:validateSigningDebugAndroidTest
 > Task :feature:onboarding:writeDebugAndroidTestSigningConfigVersions
@@ -1013,12 +1012,12 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:profile:desugarDebugAndroidTestFileDependencies
 > Task :feature:profile:dexBuilderDebugAndroidTest
 > Task :feature:profile:mergeDebugAndroidTestGlobalSynthetics
+> Task :feature:profile:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:onboarding:packageDebugAndroidTest
 > Task :feature:onboarding:createDebugAndroidTestApkListingFileRedirect
 > Task :feature:onboarding:connectedDebugAndroidTest
 > Task :feature:onboarding:connectedAndroidTest
 > Task :feature:onboarding:connectedCheck
-> Task :feature:profile:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:profile:checkDebugAndroidTestDuplicateClasses
 > Task :feature:profile:mergeDebugAndroidTestJavaResource
 > Task :feature:profile:mergeLibDexDebugAndroidTest
@@ -1052,17 +1051,17 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:records:dexBuilderDebugAndroidTest
 > Task :feature:records:mergeDebugAndroidTestGlobalSynthetics
 > Task :feature:records:processDebugAndroidTestJavaRes NO-SOURCE
-> Task :feature:profile:packageDebugAndroidTest
 > Task :feature:records:mergeDebugAndroidTestJavaResource
+> Task :feature:records:checkDebugAndroidTestDuplicateClasses
+> Task :feature:profile:packageDebugAndroidTest
 > Task :feature:profile:createDebugAndroidTestApkListingFileRedirect
 > Task :feature:profile:connectedDebugAndroidTest
 > Task :feature:profile:connectedAndroidTest
 > Task :feature:profile:connectedCheck
-> Task :feature:records:mergeDebugAndroidTestJniLibFolders
-> Task :feature:records:checkDebugAndroidTestDuplicateClasses
-> Task :feature:records:mergeDebugAndroidTestNativeLibs
 > Task :feature:records:mergeLibDexDebugAndroidTest
 > Task :feature:records:mergeProjectDexDebugAndroidTest
+> Task :feature:records:mergeDebugAndroidTestJniLibFolders
+> Task :feature:records:mergeDebugAndroidTestNativeLibs
 
 > Task :feature:records:stripDebugAndroidTestDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so.
@@ -1072,9 +1071,9 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:reminders:preDebugAndroidTestBuild UP-TO-DATE
 > Task :feature:reminders:checkDebugAndroidTestAarMetadata
 > Task :feature:reminders:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :feature:records:mergeExtDexDebugAndroidTest
 > Task :feature:reminders:mapDebugAndroidTestSourceSetPaths
 > Task :feature:reminders:generateDebugAndroidTestResources
-> Task :feature:records:mergeExtDexDebugAndroidTest
 > Task :feature:reminders:mergeDebugAndroidTestResources
 > Task :feature:reminders:processDebugAndroidTestManifest
 > Task :feature:reminders:processDebugAndroidTestResources
@@ -1108,10 +1107,10 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:reminders:validateSigningDebugAndroidTest
 > Task :feature:reminders:writeDebugAndroidTestSigningConfigVersions
 > Task :feature:reports:preDebugAndroidTestBuild UP-TO-DATE
-> Task :feature:reminders:mergeExtDexDebugAndroidTest
 > Task :feature:reports:checkDebugAndroidTestAarMetadata
 > Task :feature:reports:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :feature:reports:mapDebugAndroidTestSourceSetPaths
+> Task :feature:reminders:mergeExtDexDebugAndroidTest
 > Task :feature:reports:generateDebugAndroidTestResources
 > Task :feature:reports:mergeDebugAndroidTestResources
 > Task :feature:reports:processDebugAndroidTestManifest
@@ -1127,30 +1126,30 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:reports:desugarDebugAndroidTestFileDependencies
 > Task :feature:reports:dexBuilderDebugAndroidTest
 > Task :feature:reports:mergeDebugAndroidTestGlobalSynthetics
-> Task :feature:reports:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:reminders:packageDebugAndroidTest
 > Task :feature:reminders:createDebugAndroidTestApkListingFileRedirect
 > Task :feature:reminders:connectedDebugAndroidTest
 > Task :feature:reminders:connectedAndroidTest
 > Task :feature:reminders:connectedCheck
+> Task :feature:reports:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:reports:checkDebugAndroidTestDuplicateClasses
 > Task :feature:reports:mergeDebugAndroidTestJavaResource
 > Task :feature:reports:mergeLibDexDebugAndroidTest
 > Task :feature:reports:mergeProjectDexDebugAndroidTest
-> Task :feature:reports:mergeExtDexDebugAndroidTest
 > Task :feature:reports:mergeDebugAndroidTestJniLibFolders
-> Task :feature:reports:validateSigningDebugAndroidTest
 > Task :feature:reports:mergeDebugAndroidTestNativeLibs
-> Task :feature:reports:writeDebugAndroidTestSigningConfigVersions
-> Task :feature:settings:preDebugAndroidTestBuild UP-TO-DATE
 
 > Task :feature:reports:stripDebugAndroidTestDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so.
 
+> Task :feature:reports:validateSigningDebugAndroidTest
+> Task :feature:reports:writeDebugAndroidTestSigningConfigVersions
+> Task :feature:settings:preDebugAndroidTestBuild UP-TO-DATE
 > Task :feature:settings:checkDebugAndroidTestAarMetadata
 > Task :feature:settings:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :feature:settings:mapDebugAndroidTestSourceSetPaths
 > Task :feature:settings:generateDebugAndroidTestResources
+> Task :feature:reports:mergeExtDexDebugAndroidTest
 > Task :feature:settings:mergeDebugAndroidTestResources
 > Task :feature:settings:processDebugAndroidTestManifest
 > Task :feature:settings:processDebugAndroidTestResources
@@ -1168,27 +1167,27 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:settings:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:reports:packageDebugAndroidTest
 > Task :feature:reports:createDebugAndroidTestApkListingFileRedirect
+> Task :feature:settings:mergeDebugAndroidTestJavaResource
 > Task :feature:reports:connectedDebugAndroidTest
 > Task :feature:reports:connectedAndroidTest
 > Task :feature:reports:connectedCheck
-> Task :feature:settings:checkDebugAndroidTestDuplicateClasses
-> Task :feature:settings:mergeDebugAndroidTestJavaResource
-> Task :feature:settings:mergeLibDexDebugAndroidTest
-> Task :feature:settings:mergeProjectDexDebugAndroidTest
 > Task :feature:settings:mergeDebugAndroidTestJniLibFolders
 > Task :feature:settings:mergeDebugAndroidTestNativeLibs
+> Task :feature:settings:checkDebugAndroidTestDuplicateClasses
 
 > Task :feature:settings:stripDebugAndroidTestDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so.
 
+> Task :feature:settings:mergeLibDexDebugAndroidTest
+> Task :feature:settings:mergeProjectDexDebugAndroidTest
 > Task :feature:settings:validateSigningDebugAndroidTest
 > Task :feature:settings:writeDebugAndroidTestSigningConfigVersions
 > Task :feature:symptoms:preDebugAndroidTestBuild UP-TO-DATE
-> Task :feature:settings:mergeExtDexDebugAndroidTest
 > Task :feature:symptoms:checkDebugAndroidTestAarMetadata
 > Task :feature:symptoms:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :feature:symptoms:mapDebugAndroidTestSourceSetPaths
 > Task :feature:symptoms:generateDebugAndroidTestResources
+> Task :feature:settings:mergeExtDexDebugAndroidTest
 > Task :feature:symptoms:mergeDebugAndroidTestResources
 > Task :feature:symptoms:processDebugAndroidTestManifest
 > Task :feature:symptoms:processDebugAndroidTestResources
@@ -1206,27 +1205,27 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:symptoms:processDebugAndroidTestJavaRes NO-SOURCE
 > Task :feature:settings:packageDebugAndroidTest
 > Task :feature:settings:createDebugAndroidTestApkListingFileRedirect
+> Task :feature:symptoms:mergeDebugAndroidTestJavaResource
 > Task :feature:settings:connectedDebugAndroidTest
 > Task :feature:settings:connectedAndroidTest
 > Task :feature:settings:connectedCheck
-> Task :feature:symptoms:checkDebugAndroidTestDuplicateClasses
-> Task :feature:symptoms:mergeDebugAndroidTestJavaResource
-> Task :feature:symptoms:mergeLibDexDebugAndroidTest
-> Task :feature:symptoms:mergeProjectDexDebugAndroidTest
 > Task :feature:symptoms:mergeDebugAndroidTestJniLibFolders
 > Task :feature:symptoms:mergeDebugAndroidTestNativeLibs
+> Task :feature:symptoms:checkDebugAndroidTestDuplicateClasses
 
 > Task :feature:symptoms:stripDebugAndroidTestDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so.
 
+> Task :feature:symptoms:mergeLibDexDebugAndroidTest
+> Task :feature:symptoms:mergeProjectDexDebugAndroidTest
 > Task :feature:symptoms:validateSigningDebugAndroidTest
 > Task :feature:symptoms:writeDebugAndroidTestSigningConfigVersions
 > Task :feature:timeline:preDebugAndroidTestBuild UP-TO-DATE
-> Task :feature:symptoms:mergeExtDexDebugAndroidTest
 > Task :feature:timeline:checkDebugAndroidTestAarMetadata
 > Task :feature:timeline:generateDebugAndroidTestResValues UP-TO-DATE
 > Task :feature:timeline:mapDebugAndroidTestSourceSetPaths
 > Task :feature:timeline:generateDebugAndroidTestResources
+> Task :feature:symptoms:mergeExtDexDebugAndroidTest
 > Task :feature:timeline:mergeDebugAndroidTestResources
 > Task :feature:timeline:processDebugAndroidTestManifest
 > Task :feature:timeline:processDebugAndroidTestResources
@@ -1247,24 +1246,24 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:symptoms:connectedDebugAndroidTest
 > Task :feature:symptoms:connectedAndroidTest
 > Task :feature:symptoms:connectedCheck
-> Task :feature:timeline:checkDebugAndroidTestDuplicateClasses
 > Task :feature:timeline:mergeDebugAndroidTestJavaResource
-> Task :feature:timeline:mergeExtDexDebugAndroidTest
-> Task :feature:timeline:mergeLibDexDebugAndroidTest
+> Task :feature:timeline:checkDebugAndroidTestDuplicateClasses
 > Task :feature:timeline:mergeDebugAndroidTestJniLibFolders
-> Task :feature:timeline:mergeDebugAndroidTestNativeLibs
+> Task :feature:timeline:mergeLibDexDebugAndroidTest
 > Task :feature:timeline:mergeProjectDexDebugAndroidTest
-> Task :feature:timeline:validateSigningDebugAndroidTest
+> Task :feature:timeline:mergeDebugAndroidTestNativeLibs
 
 > Task :feature:timeline:stripDebugAndroidTestDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so.
 
+> Task :feature:timeline:validateSigningDebugAndroidTest
 > Task :feature:timeline:writeDebugAndroidTestSigningConfigVersions
+> Task :feature:timeline:mergeExtDexDebugAndroidTest
 > Task :feature:timeline:packageDebugAndroidTest
 > Task :feature:timeline:createDebugAndroidTestApkListingFileRedirect
 > Task :feature:timeline:connectedDebugAndroidTest
 > Task :feature:timeline:connectedAndroidTest
 > Task :feature:timeline:connectedCheck
 
-BUILD SUCCESSFUL in 3m 12s
+BUILD SUCCESSFUL in 3m 3s
 899 actionable tasks: 489 executed, 410 up-to-date
