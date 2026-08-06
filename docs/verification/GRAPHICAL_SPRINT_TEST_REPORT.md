@@ -21,6 +21,8 @@ Subsequent targeted checks also passed after the continued engineering work:
 
 The connected suite ran two tests on the TECNO Android 13 device and two tests on the Android 15 emulator, including private document replacement/hash verification.
 
+The latest connected run passed three tests on the TECNO CH6i Android 13 device, including private symptom-image attachment preservation/removal.
+
 The release gate was rerun after structured medication fields, date-range export, and secure report/document sharing changes:
 
 ```text
