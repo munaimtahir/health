@@ -859,11 +859,11 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
 
 @Composable private fun CaptureDialog(kind: String, heading: String, onDismiss: () -> Unit, onSave: (String, String, String, Int?) -> Unit, onSaveSymptom: ((SymptomDraft, Uri?) -> Unit)? = null) {
     var title by remember { mutableStateOf("") }; var details by remember { mutableStateOf("") }; var severityText by remember { mutableStateOf("") }
-    var startAtText by rememberSaveable { mutableStateOf("") }; var endAtText by rememberSaveable { mutableStateOf("") }; var durationText by rememberSaveable { mutableStateOf("") }; var ongoing by rememberSaveable { mutableStateOf(false) }; var bodyLocation by rememberSaveable { mutableStateOf("") }; var associatedSymptoms by rememberSaveable { mutableStateOf("") }; var possibleTrigger by rememberSaveable { mutableStateOf("") }; var relatedMedication by rememberSaveable { mutableStateOf("") }
+    var startAtText by rememberSaveable { mutableStateOf("") }; var endAtText by rememberSaveable { mutableStateOf("") }; var durationText by rememberSaveable { mutableStateOf("") }; var ongoing by rememberSaveable { mutableStateOf(false) }; var bodyLocation by rememberSaveable { mutableStateOf("") }; var associatedSymptoms by rememberSaveable { mutableStateOf("") }; var possibleTrigger by rememberSaveable { mutableStateOf("") }; var relatedMedication by rememberSaveable { mutableStateOf("") }; var episodeId by rememberSaveable { mutableStateOf("") }
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { imageUri = it }
     val severity = severityText.toIntOrNull()
-    val draft = SymptomDraft(title, if (kind == "SYMPTOM") severity else null, details, startAtText, endAtText, durationText.toIntOrNull(), ongoing, bodyLocation, associatedSymptoms, possibleTrigger, relatedMedication)
+    val draft = SymptomDraft(title, if (kind == "SYMPTOM") severity else null, details, startAtText, endAtText, durationText.toIntOrNull(), ongoing, bodyLocation, associatedSymptoms, possibleTrigger, relatedMedication, episodeId)
     val errors = draft.validationErrors()
     AlertDialog(onDismissRequest = onDismiss, title = { Text(heading) }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text(if (kind == "SYMPTOM") "Symptom" else "Title") }, isError = errors.containsKey("name"))
@@ -879,6 +879,7 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
             OutlinedTextField(associatedSymptoms, { associatedSymptoms = it }, label = { Text("Associated symptoms (optional)") })
             OutlinedTextField(possibleTrigger, { possibleTrigger = it }, label = { Text("Possible trigger, as you observed (optional)") })
             OutlinedTextField(relatedMedication, { relatedMedication = it }, label = { Text("Related medication (optional)") })
+            OutlinedTextField(episodeId, { episodeId = it }, label = { Text("Episode or flare ID (optional)") })
             OutlinedButton({ imagePicker.launch(arrayOf("image/jpeg", "image/png")) }) { Text(if (imageUri == null) "Attach symptom image (optional)" else "Image attached") }
         }
     } }, confirmButton = { Button(enabled = errors.isEmpty(), onClick = { if (kind == "SYMPTOM" && onSaveSymptom != null) onSaveSymptom(draft, imageUri) else onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
