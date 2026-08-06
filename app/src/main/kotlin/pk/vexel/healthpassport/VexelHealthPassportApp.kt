@@ -79,6 +79,7 @@ import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -109,6 +110,7 @@ import pk.vexel.healthpassport.core.model.TrendEvent
 import pk.vexel.healthpassport.core.model.summarizeSymptoms
 import pk.vexel.healthpassport.core.security.PinVerifier
 import pk.vexel.healthpassport.core.security.PinMaterialCipher
+import pk.vexel.healthpassport.core.security.BackupCrypto
 
 private data class Destination(val label: String, val icon: ImageVector)
 private val destinations = listOf(
@@ -278,8 +280,8 @@ class PassportViewModel @Inject constructor(
         appendLine("REMINDERS")
         reminders.value.filter { inRange(it.dueAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.status} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))}") }
     }
-    fun createBackup(context: Context, uri: Uri) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-        context.contentResolver.openOutputStream(uri)?.use { output ->
+    fun createBackup(context: Context, uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val zipBytes = ByteArrayOutputStream().use { output ->
             ZipOutputStream(output).use { zip ->
                 val data = exportJson().toByteArray(Charsets.UTF_8)
                 zip.putNextEntry(ZipEntry("data.json")); zip.write(data); zip.closeEntry()
@@ -295,18 +297,22 @@ class PassportViewModel @Inject constructor(
                     zip.putNextEntry(ZipEntry("documents/${document.id}")); secureFileStore.open(document.id).use { it.copyTo(zip) }; zip.closeEntry()
                 }
             }
+            output.toByteArray()
         }
+        context.contentResolver.openOutputStream(uri)?.use { it.write(BackupCrypto.encrypt(zipBytes, password.toCharArray())) }
     }
-    fun restoreBackup(context: Context, uri: Uri) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    fun restoreBackup(context: Context, uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val sourceBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Unable to read backup")
+        val backupBytes = if (BackupCrypto.isEncrypted(sourceBytes)) BackupCrypto.decrypt(sourceBytes, password.toCharArray()) else sourceBytes
         val entries = linkedMapOf<String, ByteArray>()
-        context.contentResolver.openInputStream(uri)?.use { input -> ZipInputStream(input).use { zip ->
+        ZipInputStream(ByteArrayInputStream(backupBytes)).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 require(!entry.isDirectory && (entry.name == "data.json" || entry.name == "manifest.json" || entry.name.startsWith("documents/"))) { "Unsupported backup entry" }
                 entries[entry.name] = zip.readBytes()
                 entry = zip.nextEntry
             }
-        } } ?: error("Unable to read backup")
+        }
         val dataBytes = entries["data.json"] ?: error("Missing backup data")
         entries["manifest.json"]?.let { manifestBytes ->
             val manifest = JSONObject(String(manifestBytes, Charsets.UTF_8))
@@ -686,6 +692,9 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
     var name by remember(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by remember(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by remember(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }; val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
     var showDeleteAll by rememberSaveable { mutableStateOf(false) }
     var showReportOptions by rememberSaveable { mutableStateOf(false) }
+    var showBackupPassword by rememberSaveable { mutableStateOf(false) }
+    var backupAction by rememberSaveable { mutableStateOf("CREATE") }
+    var backupPassword by rememberSaveable { mutableStateOf("") }
     var includeProfile by rememberSaveable { mutableStateOf(true) }; var includeEvents by rememberSaveable { mutableStateOf(true) }; var includeMedications by rememberSaveable { mutableStateOf(true) }; var includeDocuments by rememberSaveable { mutableStateOf(true) }; var includeReminders by rememberSaveable { mutableStateOf(true) }
     var reportFrom by rememberSaveable { mutableStateOf("") }; var reportTo by rememberSaveable { mutableStateOf("") }
     var generatedReportUri by remember { mutableStateOf<Uri?>(null) }
@@ -706,8 +715,8 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
             context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportHumanReadable(from, to).toByteArray(Charsets.UTF_8)) }
         }
     }
-    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.createBackup(context, uri) }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(context, uri) }
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri -> if (uri != null) vm.createBackup(context, uri, backupPassword) }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(context, uri, backupPassword) }
     val reportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
         if (uri != null) {
             generatedReportUri = uri
@@ -738,8 +747,8 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
                 }
                 TextButton({ exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }
                 TextButton({ readableExportLauncher.launch("vexel-health-export.txt") }) { Text("Export readable summary") }
-                TextButton({ backupLauncher.launch("vexel-health-backup.vexel") }) { Text("Create local backup") }
-                TextButton({ restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }) { Text("Restore backup") }
+                TextButton({ backupAction = "CREATE"; showBackupPassword = true }) { Text("Create encrypted backup") }
+                TextButton({ backupAction = "RESTORE"; showBackupPassword = true }) { Text("Restore backup") }
                 TextButton({ showReportOptions = true }) { Text("Create PDF report") }
                 generatedReportUri?.let { uri -> TextButton({ shareContentUri(context, uri, "application/pdf", "Share health report") }) { Text("Share last PDF report") } }
             } }
@@ -769,8 +778,30 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
         }
     }
     if (showReportOptions) ReportOptionsDialog({ showReportOptions = false }, { showReportOptions = false; reportLauncher.launch("vexel-health-report.pdf") }, { includeProfile = it }, { includeEvents = it }, { includeMedications = it }, { includeDocuments = it }, { includeReminders = it }, reportFrom, { reportFrom = it }, reportTo, { reportTo = it })
+    if (showBackupPassword) BackupPasswordDialog(backupAction == "CREATE", backupPassword, { backupPassword = it }, { password -> backupPassword = password; showBackupPassword = false; if (backupAction == "CREATE") backupLauncher.launch("vexel-health-backup.vexel") else restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) }, { showBackupPassword = false })
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
     if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
+}
+
+@Composable
+private fun BackupPasswordDialog(
+    creating: Boolean,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val valid = password.length >= 8
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (creating) "Protect backup" else "Unlock backup") },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(if (creating) "Use at least 8 characters. This password is not stored; you will need it to restore this backup." else "Enter the password used when this backup was created.")
+            OutlinedTextField(password, onPasswordChange, label = { Text("Backup password") }, isError = password.isNotEmpty() && !valid, supportingText = { if (password.isNotEmpty() && !valid) Text("Use at least 8 characters") })
+        } },
+        confirmButton = { Button(enabled = valid, onClick = { onConfirm(password) }) { Text(if (creating) "Choose destination" else "Choose backup") } },
+        dismissButton = { TextButton(onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
