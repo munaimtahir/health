@@ -91,14 +91,14 @@ to this project's gradle.properties.
 > Task :core:designsystem:packageDebugResources
 > Task :core:files:generateDebugResValues
 > Task :core:files:generateDebugResources
-> Task :core:common:compileKotlin
 > Task :core:files:packageDebugResources
+> Task :core:notifications:generateDebugResValues
+> Task :core:notifications:generateDebugResources
+> Task :core:common:compileKotlin
+> Task :core:notifications:packageDebugResources
 > Task :core:common:compileJava NO-SOURCE
 > Task :core:common:classes UP-TO-DATE
 > Task :core:common:jar
-> Task :core:notifications:generateDebugResValues
-> Task :core:notifications:generateDebugResources
-> Task :core:notifications:packageDebugResources
 > Task :core:security:generateDebugResValues
 > Task :core:security:generateDebugResources
 > Task :core:security:packageDebugResources
@@ -158,21 +158,21 @@ to this project's gradle.properties.
 > Task :core:files:extractDeepLinksDebug
 > Task :core:files:processDebugManifest
 > Task :core:notifications:extractDeepLinksDebug
-> Task :core:domain:compileKotlin
 > Task :core:notifications:processDebugManifest
-> Task :core:domain:compileJava NO-SOURCE
-> Task :core:domain:classes UP-TO-DATE
-> Task :core:domain:jar
 > Task :core:security:extractDeepLinksDebug
-> Task :core:ui:extractDeepLinksDebug
 > Task :core:security:processDebugManifest
+> Task :core:ui:extractDeepLinksDebug
 > Task :core:ui:processDebugManifest
 > Task :feature:appointments:extractDeepLinksDebug
 > Task :feature:appointments:processDebugManifest
 > Task :feature:dashboard:extractDeepLinksDebug
 > Task :feature:dashboard:processDebugManifest
 > Task :feature:medications:extractDeepLinksDebug
+> Task :core:domain:compileKotlin
 > Task :feature:medications:processDebugManifest
+> Task :core:domain:compileJava NO-SOURCE
+> Task :core:domain:classes UP-TO-DATE
+> Task :core:domain:jar
 > Task :feature:onboarding:extractDeepLinksDebug
 > Task :feature:onboarding:processDebugManifest
 > Task :feature:profile:extractDeepLinksDebug
@@ -191,54 +191,54 @@ to this project's gradle.properties.
 > Task :feature:timeline:processDebugManifest
 > Task :app:processDebugMainManifest
 > Task :app:processDebugManifest
-> Task :core:database:compileDebugLibraryResources
 > Task :app:processDebugManifestForPackage
+> Task :core:database:compileDebugLibraryResources
 > Task :core:database:parseDebugLocalResources
-> Task :core:datastore:compileDebugLibraryResources
 > Task :core:database:generateDebugRFile
+> Task :core:datastore:compileDebugLibraryResources
 > Task :core:datastore:parseDebugLocalResources
-> Task :core:designsystem:compileDebugLibraryResources
 > Task :core:datastore:generateDebugRFile
+> Task :core:designsystem:compileDebugLibraryResources
 > Task :core:designsystem:parseDebugLocalResources
-> Task :core:files:compileDebugLibraryResources
 > Task :core:designsystem:generateDebugRFile
+> Task :core:files:compileDebugLibraryResources
 > Task :core:files:parseDebugLocalResources
 > Task :core:notifications:compileDebugLibraryResources
 > Task :core:files:generateDebugRFile
-> Task :core:security:compileDebugLibraryResources
 > Task :core:notifications:parseDebugLocalResources
-> Task :core:security:parseDebugLocalResources
+> Task :core:security:compileDebugLibraryResources
 > Task :core:notifications:generateDebugRFile
-> Task :core:security:generateDebugRFile
 > Task :core:ui:compileDebugLibraryResources
+> Task :core:security:parseDebugLocalResources
 > Task :core:ui:parseDebugLocalResources
-> Task :feature:appointments:compileDebugLibraryResources
+> Task :core:security:generateDebugRFile
 > Task :core:ui:generateDebugRFile
-> Task :feature:appointments:parseDebugLocalResources
+> Task :feature:appointments:compileDebugLibraryResources
 > Task :feature:dashboard:compileDebugLibraryResources
-> Task :feature:appointments:generateDebugRFile
+> Task :feature:appointments:parseDebugLocalResources
 > Task :feature:dashboard:parseDebugLocalResources
+> Task :feature:appointments:generateDebugRFile
 > Task :feature:medications:compileDebugLibraryResources
 > Task :feature:dashboard:generateDebugRFile
-> Task :feature:medications:parseDebugLocalResources
 > Task :feature:onboarding:compileDebugLibraryResources
-> Task :feature:medications:generateDebugRFile
+> Task :feature:medications:parseDebugLocalResources
 > Task :feature:onboarding:parseDebugLocalResources
+> Task :feature:medications:generateDebugRFile
 > Task :feature:profile:compileDebugLibraryResources
 > Task :feature:onboarding:generateDebugRFile
-> Task :feature:profile:parseDebugLocalResources
 > Task :feature:records:compileDebugLibraryResources
-> Task :feature:profile:generateDebugRFile
+> Task :feature:profile:parseDebugLocalResources
 > Task :feature:records:parseDebugLocalResources
+> Task :feature:profile:generateDebugRFile
 > Task :feature:reminders:compileDebugLibraryResources
 > Task :feature:records:generateDebugRFile
 > Task :feature:reminders:parseDebugLocalResources
 > Task :feature:reports:compileDebugLibraryResources
 > Task :feature:reminders:generateDebugRFile
-> Task :feature:settings:compileDebugLibraryResources
 > Task :feature:reports:parseDebugLocalResources
-> Task :feature:settings:parseDebugLocalResources
+> Task :feature:settings:compileDebugLibraryResources
 > Task :feature:reports:generateDebugRFile
+> Task :feature:settings:parseDebugLocalResources
 > Task :feature:symptoms:compileDebugLibraryResources
 > Task :feature:settings:generateDebugRFile
 > Task :feature:symptoms:parseDebugLocalResources
@@ -303,37 +303,30 @@ to this project's gradle.properties.
 > Task :feature:timeline:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:timeline:javaPreCompileDebug
 > Task :app:javaPreCompileDebug
+> Task :core:ui:compileDebugKotlin
 > Task :app:mergeDebugShaders
+> Task :core:ui:compileDebugJavaWithJavac NO-SOURCE
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
-> Task :core:database:mergeDebugShaders
-> Task :core:database:compileDebugShaders NO-SOURCE
-> Task :core:database:generateDebugAssets UP-TO-DATE
-> Task :core:database:packageDebugAssets
-> Task :core:ui:compileDebugKotlin
-> Task :core:datastore:mergeDebugShaders
-> Task :core:ui:compileDebugJavaWithJavac NO-SOURCE
-> Task :core:datastore:compileDebugShaders NO-SOURCE
-> Task :core:datastore:generateDebugAssets UP-TO-DATE
 > Task :core:ui:bundleLibCompileToJarDebug
-> Task :core:datastore:packageDebugAssets
-> Task :feature:dashboard:compileDebugKotlin
+> Task :core:database:mergeDebugShaders
 > Task :feature:appointments:compileDebugKotlin
-> Task :feature:dashboard:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:appointments:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:appointments:bundleLibCompileToJarDebug
+> Task :feature:dashboard:compileDebugKotlin
+> Task :feature:dashboard:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:dashboard:bundleLibCompileToJarDebug
 > Task :feature:medications:compileDebugKotlin
-> Task :feature:medications:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:medications:bundleLibCompileToJarDebug
 > Task :feature:onboarding:compileDebugKotlin
+> Task :feature:medications:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:onboarding:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:medications:bundleLibCompileToJarDebug
 > Task :feature:onboarding:bundleLibCompileToJarDebug
 > Task :feature:profile:compileDebugKotlin
-> Task :feature:records:compileDebugKotlin
 > Task :feature:profile:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:records:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:profile:bundleLibCompileToJarDebug
+> Task :feature:records:compileDebugKotlin
+> Task :feature:records:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:records:bundleLibCompileToJarDebug
 > Task :feature:reminders:compileDebugKotlin
 > Task :feature:reminders:compileDebugJavaWithJavac NO-SOURCE
@@ -347,6 +340,13 @@ to this project's gradle.properties.
 > Task :feature:symptoms:compileDebugKotlin
 > Task :feature:symptoms:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:symptoms:bundleLibCompileToJarDebug
+> Task :core:database:compileDebugShaders NO-SOURCE
+> Task :core:database:generateDebugAssets UP-TO-DATE
+> Task :core:database:packageDebugAssets
+> Task :core:datastore:mergeDebugShaders
+> Task :core:datastore:compileDebugShaders NO-SOURCE
+> Task :core:datastore:generateDebugAssets UP-TO-DATE
+> Task :core:datastore:packageDebugAssets
 > Task :core:designsystem:mergeDebugShaders
 > Task :core:designsystem:compileDebugShaders NO-SOURCE
 > Task :core:designsystem:generateDebugAssets UP-TO-DATE
@@ -414,10 +414,10 @@ to this project's gradle.properties.
 > Task :app:mergeDebugAssets
 > Task :app:compressDebugAssets
 > Task :core:notifications:bundleLibRuntimeToJarDebug
-> Task :core:database:bundleLibRuntimeToJarDebug
 > Task :feature:timeline:compileDebugKotlin
 > Task :feature:timeline:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:timeline:bundleLibCompileToJarDebug
+> Task :core:database:bundleLibRuntimeToJarDebug
 > Task :core:security:bundleLibRuntimeToJarDebug
 > Task :core:files:bundleLibRuntimeToJarDebug
 > Task :core:datastore:bundleLibRuntimeToJarDebug
@@ -768,5 +768,5 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 49s
+BUILD SUCCESSFUL in 59s
 570 actionable tasks: 480 executed, 90 up-to-date
