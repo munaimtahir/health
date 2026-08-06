@@ -1,0 +1,30 @@
+Vexel Health Passport — live feature smoke test
+Date: 2026-08-06
+Device: TECNO CH6i / Android 13 / serial 08357252AE006901
+Build: app/build/outputs/apk/debug/app-debug.apk
+Data: synthetic only; device was reset to onboarding at the end
+
+Observed flows:
+- Fresh launch and onboarding disclaimer: passed; onboarding completed and Home rendered.
+- Profile create/persistence: passed; synthetic profile displayed after force-stop/relaunch.
+- Home navigation and quick actions: passed; Log symptom and Add medication record opened.
+- Symptom: passed; saved synthetic Headache with severity 7/10, appeared in Records.
+- Records: passed; timeline, search field, archive action, delete action surface, and empty state rendered.
+- Medication: passed; saved synthetic medication and Home medication snapshot rendered.
+- Medication change: passed; Record medication change dialog opened and cancel returned safely.
+- Reminders: passed; create custom reminder, Android notification permission allow, snooze, complete, History, edit/cancel, delete confirmation, and final deletion.
+- Vault: passed; SAF picker, PNG import, private document row, open, share chooser return, metadata edit/cancel, replace picker/cancel, delete confirmation, and final deletion.
+- Export: passed; JSON and readable-summary save pickers opened with expected filenames and returned safely after SAVE.
+- PDF report: passed; report section dialog opened and PDF save picker opened with vexel-health-report.pdf.
+- Backup: passed; encrypted backup password dialog accepted a synthetic password and backup save picker opened with vexel-health-backup.vexel.
+- Restore: attempted; restore picker and backup unlock flow opened without a crash; no successful restore claim is made because picker selection returned to another device activity during this manual run.
+- Appearance: passed; dark-theme toggle changed to the light-theme action and app remained usable.
+- Security validation: passed; PIN setup dialog opened and mismatched PIN error was shown without exposing sensitive data. No successful PIN unlock claim is made from this manual run.
+- Orientation: passed; landscape rotation rendered Home and returned to portrait.
+- Delete all data: passed; confirmation cancel worked, confirmation execution returned to fresh onboarding.
+- Process check: app PID remained present after every completed in-app flow; final PID was 5224 before evidence cleanup.
+- Crash check: `adb logcat -d -t 500 -s AndroidRuntime:E` reported no FATAL EXCEPTION entries during the run.
+
+Notes:
+- Synthetic input text entered through ADB displayed `%20` in a few optional labels; this is an ADB keyboard encoding artifact, not an application crash.
+- Biometric success was not claimed; the device has fingerprint hardware but no enrolled biometric in the available test profile. Automated availability-path coverage remains in the connected test suite.
