@@ -56,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -110,6 +111,8 @@ import pk.vexel.healthpassport.core.model.MedicationDraft
 import pk.vexel.healthpassport.core.model.validationErrors
 import pk.vexel.healthpassport.core.model.TrendEvent
 import pk.vexel.healthpassport.core.model.summarizeSymptoms
+import pk.vexel.healthpassport.core.model.EpisodeEvent
+import pk.vexel.healthpassport.core.model.summarizeSymptomEpisodes
 import pk.vexel.healthpassport.core.model.isWithinDateScope
 import pk.vexel.healthpassport.core.model.validateDateScope
 import pk.vexel.healthpassport.core.security.PinVerifier
@@ -502,7 +505,7 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
         }
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Checkbox(checked = acknowledged, onCheckedChange = { acknowledged = it })
-            Text("I understand and want to continue")
+            Text("I understand and want to continue", Modifier.clickable { acknowledged = !acknowledged })
         }
         Button(onClick = onComplete, enabled = acknowledged, modifier = Modifier.fillMaxWidth()) { Text("Continue") }
     }
@@ -568,13 +571,15 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
     var query by rememberSaveable { mutableStateOf("") }
     var pendingDelete by remember { mutableStateOf<HealthEventEntity?>(null) }
     val visibleEvents = events.filter { event -> query.isBlank() || event.title.contains(query, ignoreCase = true) || event.details.contains(query, ignoreCase = true) }
+    val episodeSummaries = summarizeSymptomEpisodes(events.filter { it.kind == "SYMPTOM" }.map { EpisodeEvent(it.title, it.episodeId, it.effectiveAtEpochMillis ?: it.createdAtEpochMillis, it.ongoing) })
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Health timeline", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } }
         OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Search timeline") }, singleLine = true)
+        if (episodeSummaries.isNotEmpty()) Text("Recorded episodes: ${episodeSummaries.size} · ${episodeSummaries.sumOf { it.entryCount }} linked entries", color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (events.isEmpty()) EmptyState("No records yet", "Symptoms, medications and other user-entered events will appear here.", "Log a record", onAction = { showAdd = true })
         else if (visibleEvents.isEmpty()) EmptyState("No matches", "Try a different search term or clear the search field.")
         else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(visibleEvents, key = { it.id }) { event ->
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; if (event.durationMinutes != null) Text("Duration: ${event.durationMinutes} minutes"); if (event.ongoing) Text("Ongoing"); if (event.bodyLocation.isNotBlank()) Text("Location: ${event.bodyLocation}"); if (event.associatedSymptoms.isNotBlank()) Text("Associated symptoms: ${event.associatedSymptoms}"); if (event.possibleTrigger.isNotBlank()) Text("Observed possible trigger: ${event.possibleTrigger}"); if (event.relatedMedication.isNotBlank()) Text("Related medication: ${event.relatedMedication}"); Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ vm.archive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; if (event.durationMinutes != null) Text("Duration: ${event.durationMinutes} minutes"); if (event.ongoing) Text("Ongoing"); if (event.bodyLocation.isNotBlank()) Text("Location: ${event.bodyLocation}"); if (event.associatedSymptoms.isNotBlank()) Text("Associated symptoms: ${event.associatedSymptoms}"); if (event.possibleTrigger.isNotBlank()) Text("Observed possible trigger: ${event.possibleTrigger}"); if (event.relatedMedication.isNotBlank()) Text("Related medication: ${event.relatedMedication}"); event.episodeId?.let { Text("Episode or flare ID: $it") }; Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ vm.archive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
         } }
     }
     if (showAdd) CaptureDialog("OTHER", "Add health event", { showAdd = false }, vm::addEvent)
