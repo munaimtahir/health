@@ -17,4 +17,11 @@ class BackupCryptoTest {
         val encrypted = BackupCrypto.encrypt("synthetic".toByteArray(), "correct horse battery".toCharArray())
         BackupCrypto.decrypt(encrypted, "wrong password".toCharArray())
     }
+
+    @Test(expected = Exception::class)
+    fun tampered_ciphertext_is_rejected() {
+        val encrypted = BackupCrypto.encrypt("synthetic".toByteArray(), "correct horse battery".toCharArray())
+        encrypted[encrypted.lastIndex] = (encrypted.last().toInt() xor 0x01).toByte()
+        BackupCrypto.decrypt(encrypted, "correct horse battery".toCharArray())
+    }
 }
