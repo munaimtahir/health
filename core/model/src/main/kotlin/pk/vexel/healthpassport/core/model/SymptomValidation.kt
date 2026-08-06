@@ -12,6 +12,7 @@ data class SymptomDraft(
     val associatedSymptoms: String = "",
     val possibleTrigger: String = "",
     val relatedMedication: String = "",
+    val episodeId: String = "",
 )
 
 fun SymptomDraft.validationErrors(): Map<String, String> = buildMap {
@@ -27,4 +28,5 @@ fun SymptomDraft.validationErrors(): Map<String, String> = buildMap {
     if (associatedSymptoms.length > 500) put("associatedSymptoms", "Use 500 characters or fewer")
     if (possibleTrigger.length > 500) put("possibleTrigger", "Use 500 characters or fewer")
     if (relatedMedication.length > 160) put("relatedMedication", "Use 160 characters or fewer")
+    if (episodeId.length > 80) put("episodeId", "Use 80 characters or fewer")
 }

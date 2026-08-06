@@ -23,4 +23,6 @@ data class HealthEventEntity(
     val associatedSymptoms: String = "",
     val possibleTrigger: String = "",
     val relatedMedication: String = "",
+    val imageAttachmentId: String? = null,
+    val episodeId: String? = null,
 )

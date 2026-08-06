@@ -14,6 +14,7 @@ object DatabaseProvider {
             .addMigrations(MIGRATION_4_5)
             .addMigrations(MIGRATION_5_6)
             .addMigrations(MIGRATION_6_7)
+            .addMigrations(MIGRATION_7_8)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -115,6 +116,13 @@ object DatabaseProvider {
                 status TEXT NOT NULL DEFAULT 'CURRENT',
                 notes TEXT NOT NULL DEFAULT ''
             )""")
+        }
+    }
+
+    private val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE health_events ADD COLUMN imageAttachmentId TEXT")
+            db.execSQL("ALTER TABLE health_events ADD COLUMN episodeId TEXT")
         }
     }
 }

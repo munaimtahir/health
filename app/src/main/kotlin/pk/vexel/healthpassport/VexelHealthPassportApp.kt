@@ -159,15 +159,23 @@ class PassportViewModel @Inject constructor(
         val now = System.currentTimeMillis()
         database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), title, details, kind, now, now, now, "ACTIVE", severity))
     }
-    fun addSymptom(draft: SymptomDraft) = viewModelScope.launch {
+    fun addSymptom(context: Context, draft: SymptomDraft, imageUri: Uri? = null) = viewModelScope.launch {
         val now = System.currentTimeMillis()
         val parser = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }
         val start = runCatching { parser.parse(draft.startAtText)?.time }.getOrNull() ?: now
         val end = runCatching { parser.parse(draft.endAtText)?.time }.getOrNull()
-        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), draft.notes.trim(), "SYMPTOM", start, now, now, "ACTIVE", draft.severity, false, draft.durationMinutes, start, end, draft.ongoing, draft.bodyLocation.trim(), draft.associatedSymptoms.trim(), draft.possibleTrigger.trim(), draft.relatedMedication.trim()))
+        val imageId = imageUri?.let { uri ->
+            val mime = context.contentResolver.getType(uri) ?: return@let null
+            if (mime !in setOf("image/jpeg", "image/png")) null else context.contentResolver.openInputStream(uri)?.use { input ->
+                val preserved = secureFileStore.preserveOriginal(input, mime, "symptom-image")
+                database.documentDao().insert(DocumentEntity(preserved.id, "Symptom image", "SYMPTOM_IMAGE", "", "Attached to symptom", "symptom-image", preserved.mimeType, preserved.byteCount, preserved.sha256, now))
+                preserved.id
+            }
+        }
+        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), draft.notes.trim(), "SYMPTOM", start, now, now, "ACTIVE", draft.severity, false, draft.durationMinutes, start, end, draft.ongoing, draft.bodyLocation.trim(), draft.associatedSymptoms.trim(), draft.possibleTrigger.trim(), draft.relatedMedication.trim(), imageId, draft.episodeId.trim().ifBlank { null }))
     }
     fun archive(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().archive(event.id, System.currentTimeMillis()) }
-    fun delete(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().delete(event.id) }
+    fun delete(event: HealthEventEntity) = viewModelScope.launch { event.imageAttachmentId?.let { secureFileStore.delete(it); database.documentDao().delete(it) }; database.healthEventDao().delete(event.id) }
     fun addMedication(draft: MedicationDraft) = viewModelScope.launch {
         val now = System.currentTimeMillis()
         val medicationId = UUID.randomUUID().toString()
@@ -259,7 +267,7 @@ class PassportViewModel @Inject constructor(
         fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
         val root = JSONObject().put("formatVersion", 1).put("generatedAtEpochMillis", System.currentTimeMillis())
         profile.value?.let { p -> root.put("profile", JSONObject().put("name", p.name).put("dateOfBirth", p.dateOfBirth).put("bloodGroup", p.bloodGroup).put("allergies", p.allergies).put("conditions", p.conditions).put("emergencyContact", p.emergencyContact)) }
-        root.put("events", JSONArray(events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity).put("durationMinutes", e.durationMinutes).put("startAtEpochMillis", e.startAtEpochMillis).put("endAtEpochMillis", e.endAtEpochMillis).put("ongoing", e.ongoing).put("bodyLocation", e.bodyLocation).put("associatedSymptoms", e.associatedSymptoms).put("possibleTrigger", e.possibleTrigger).put("relatedMedication", e.relatedMedication) }))
+        root.put("events", JSONArray(events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity).put("durationMinutes", e.durationMinutes).put("startAtEpochMillis", e.startAtEpochMillis).put("endAtEpochMillis", e.endAtEpochMillis).put("ongoing", e.ongoing).put("bodyLocation", e.bodyLocation).put("associatedSymptoms", e.associatedSymptoms).put("possibleTrigger", e.possibleTrigger).put("relatedMedication", e.relatedMedication).put("imageAttachmentId", e.imageAttachmentId).put("episodeId", e.episodeId) }))
         root.put("medications", JSONArray(medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { m -> JSONObject().put("id", m.id).put("name", m.name).put("genericName", m.genericName).put("strength", m.strength).put("dose", m.dose).put("unit", m.unit).put("route", m.route).put("frequency", m.frequency).put("startDate", m.startDate).put("stopDate", m.stopDate).put("status", m.status).put("indication", m.indication).put("physician", m.physician).put("notes", m.notes) }))
         root.put("medicationChanges", JSONArray(medicationChanges.value.filter { inRange(it.changedAtEpochMillis) }.map { c -> JSONObject().put("id", c.id).put("medicationId", c.medicationId).put("changedAtEpochMillis", c.changedAtEpochMillis).put("changeType", c.changeType).put("strength", c.strength).put("dose", c.dose).put("unit", c.unit).put("frequency", c.frequency).put("status", c.status).put("notes", c.notes) }))
         root.put("documents", JSONArray(documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256) }))
@@ -335,12 +343,14 @@ class PassportViewModel @Inject constructor(
         val data = JSONObject(String(dataBytes, Charsets.UTF_8))
         require(data.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
         val restoredDocuments = mutableListOf<DocumentEntity>()
+        val restoredDocumentIds = mutableMapOf<String, String>()
         val documentData = data.optJSONArray("documents") ?: JSONArray()
         for (index in 0 until documentData.length()) {
             val source = documentData.getJSONObject(index); val bytes = entries["documents/${source.getString("id")}"] ?: error("Missing document binary")
             val digest = sha256Hex(bytes)
             require(digest.equals(source.getString("sha256"), ignoreCase = true)) { "Document integrity check failed" }
             val preserved = secureFileStore.preserveOriginal(ByteArrayInputStream(bytes), source.getString("mimeType"), source.optString("originalFileName", "document"))
+            restoredDocumentIds[source.getString("id")] = preserved.id
             restoredDocuments += DocumentEntity(preserved.id, source.optString("title"), source.optString("category", "OTHER"), source.optString("documentDate"), source.optString("notes"), source.optString("originalFileName", "document"), preserved.mimeType, preserved.byteCount, preserved.sha256, System.currentTimeMillis())
         }
         val scheduledReminders = mutableListOf<ReminderEntity>()
@@ -348,7 +358,7 @@ class PassportViewModel @Inject constructor(
             database.withTransaction {
                 database.healthEventDao().deleteAll(); database.medicationDao().deleteAll(); database.medicationChangeDao().deleteAll(); database.profileDao().deleteAll(); database.documentDao().deleteAll(); database.reminderDao().deleteAll()
                 data.optJSONObject("profile")?.let { p -> database.profileDao().upsert(ProfileEntity(name = p.optString("name"), dateOfBirth = p.optString("dateOfBirth"), bloodGroup = p.optString("bloodGroup"), allergies = p.optString("allergies"), conditions = p.optString("conditions"), emergencyContact = p.optString("emergencyContact"), updatedAtEpochMillis = System.currentTimeMillis())) }
-                (data.optJSONArray("events") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val e = array.getJSONObject(i); database.healthEventDao().insert(HealthEventEntity(e.getString("id"), e.optString("title"), e.optString("details"), e.optString("kind", "OTHER"), if (e.isNull("effectiveAtEpochMillis")) null else e.optLong("effectiveAtEpochMillis"), e.optLong("createdAtEpochMillis"), status = e.optString("status", "ACTIVE"), severity = if (e.isNull("severity")) null else e.optInt("severity"), durationMinutes = if (e.isNull("durationMinutes")) null else e.optInt("durationMinutes"), startAtEpochMillis = if (e.isNull("startAtEpochMillis")) null else e.optLong("startAtEpochMillis"), endAtEpochMillis = if (e.isNull("endAtEpochMillis")) null else e.optLong("endAtEpochMillis"), ongoing = e.optBoolean("ongoing"), bodyLocation = e.optString("bodyLocation"), associatedSymptoms = e.optString("associatedSymptoms"), possibleTrigger = e.optString("possibleTrigger"), relatedMedication = e.optString("relatedMedication"))) } }
+                (data.optJSONArray("events") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val e = array.getJSONObject(i); val oldImageId = e.optString("imageAttachmentId").ifBlank { null }; database.healthEventDao().insert(HealthEventEntity(e.getString("id"), e.optString("title"), e.optString("details"), e.optString("kind", "OTHER"), if (e.isNull("effectiveAtEpochMillis")) null else e.optLong("effectiveAtEpochMillis"), e.optLong("createdAtEpochMillis"), status = e.optString("status", "ACTIVE"), severity = if (e.isNull("severity")) null else e.optInt("severity"), durationMinutes = if (e.isNull("durationMinutes")) null else e.optInt("durationMinutes"), startAtEpochMillis = if (e.isNull("startAtEpochMillis")) null else e.optLong("startAtEpochMillis"), endAtEpochMillis = if (e.isNull("endAtEpochMillis")) null else e.optLong("endAtEpochMillis"), ongoing = e.optBoolean("ongoing"), bodyLocation = e.optString("bodyLocation"), associatedSymptoms = e.optString("associatedSymptoms"), possibleTrigger = e.optString("possibleTrigger"), relatedMedication = e.optString("relatedMedication"), imageAttachmentId = oldImageId?.let(restoredDocumentIds::get), episodeId = e.optString("episodeId").ifBlank { null })) } }
                 (data.optJSONArray("medications") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val m = array.getJSONObject(i); database.medicationDao().insert(MedicationEntity(m.getString("id"), m.optString("name"), m.optString("genericName"), m.optString("strength"), m.optString("dose"), m.optString("unit"), m.optString("route"), m.optString("frequency"), m.optString("startDate"), m.optString("stopDate"), m.optString("status", "CURRENT"), m.optString("indication"), m.optString("physician"), m.optString("notes"), System.currentTimeMillis(), System.currentTimeMillis())) } }
                 (data.optJSONArray("medicationChanges") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val c = array.getJSONObject(i); database.medicationChangeDao().insert(MedicationChangeEntity(c.getString("id"), c.getString("medicationId"), c.optLong("changedAtEpochMillis"), c.optString("changeType", "DOSE_CHANGED"), c.optString("strength"), c.optString("dose"), c.optString("unit"), c.optString("frequency"), c.optString("status", "CURRENT"), c.optString("notes"))) } }
                 restoredDocuments.forEach { database.documentDao().insert(it) }
@@ -487,6 +497,7 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
     var showSymptom by rememberSaveable { mutableStateOf(false) }
     var showMedication by rememberSaveable { mutableStateOf(false) }
     var changeMedication by remember { mutableStateOf<MedicationEntity?>(null) }
+    val context = LocalContext.current
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
         item {
             Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
@@ -531,7 +542,7 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
             OutlinedButton(onClick = { showMedication = true }, modifier = Modifier.fillMaxWidth()) { Text("Add medication record") }
         }
     }
-    if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent, vm::addSymptom)
+    if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent) { draft, imageUri -> vm.addSymptom(context, draft, imageUri) }
     if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
     changeMedication?.let { medication -> MedicationChangeDialog(medication, { changeMedication = null }) { strength, dose, unit, frequency, status, notes -> vm.recordMedicationChange(medication, strength, dose, unit, frequency, status, notes); changeMedication = null } }
 }
@@ -846,9 +857,11 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     } }, confirmButton = { Button({ if (pin != confirmation) error = "PINs do not match" else if (pin.length !in 4..12) error = "Use 4–12 digits" else if (vm.savePin(pin, confirmation)) onDismiss() }) { Text("Enable") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
-@Composable private fun CaptureDialog(kind: String, heading: String, onDismiss: () -> Unit, onSave: (String, String, String, Int?) -> Unit, onSaveSymptom: ((SymptomDraft) -> Unit)? = null) {
+@Composable private fun CaptureDialog(kind: String, heading: String, onDismiss: () -> Unit, onSave: (String, String, String, Int?) -> Unit, onSaveSymptom: ((SymptomDraft, Uri?) -> Unit)? = null) {
     var title by remember { mutableStateOf("") }; var details by remember { mutableStateOf("") }; var severityText by remember { mutableStateOf("") }
     var startAtText by rememberSaveable { mutableStateOf("") }; var endAtText by rememberSaveable { mutableStateOf("") }; var durationText by rememberSaveable { mutableStateOf("") }; var ongoing by rememberSaveable { mutableStateOf(false) }; var bodyLocation by rememberSaveable { mutableStateOf("") }; var associatedSymptoms by rememberSaveable { mutableStateOf("") }; var possibleTrigger by rememberSaveable { mutableStateOf("") }; var relatedMedication by rememberSaveable { mutableStateOf("") }
+    var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { imageUri = it }
     val severity = severityText.toIntOrNull()
     val draft = SymptomDraft(title, if (kind == "SYMPTOM") severity else null, details, startAtText, endAtText, durationText.toIntOrNull(), ongoing, bodyLocation, associatedSymptoms, possibleTrigger, relatedMedication)
     val errors = draft.validationErrors()
@@ -866,8 +879,9 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
             OutlinedTextField(associatedSymptoms, { associatedSymptoms = it }, label = { Text("Associated symptoms (optional)") })
             OutlinedTextField(possibleTrigger, { possibleTrigger = it }, label = { Text("Possible trigger, as you observed (optional)") })
             OutlinedTextField(relatedMedication, { relatedMedication = it }, label = { Text("Related medication (optional)") })
+            OutlinedButton({ imagePicker.launch(arrayOf("image/jpeg", "image/png")) }) { Text(if (imageUri == null) "Attach symptom image (optional)" else "Image attached") }
         }
-    } }, confirmButton = { Button(enabled = errors.isEmpty(), onClick = { if (kind == "SYMPTOM" && onSaveSymptom != null) onSaveSymptom(draft) else onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { Button(enabled = errors.isEmpty(), onClick = { if (kind == "SYMPTOM" && onSaveSymptom != null) onSaveSymptom(draft, imageUri) else onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable

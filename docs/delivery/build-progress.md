@@ -10,7 +10,7 @@ Implemented the Compose shell, Material 3 theme switch, Hilt, Room v2 migration,
 
 ## Implemented feature slices — TESTED PARTIAL
 
-Added validated symptom drafts, searchable and confirmed-deletable timeline entries, private document-byte preservation and replacement, metadata editing, scoped document sharing, salted PBKDF2 PIN verification, Keystore-backed PIN-material encryption, lifecycle-gated PIN/biometric UI, WorkManager reminders with persisted-schedule reconciliation, structured and readable date-ranged exports, versioned/integrity-checked transactional backup restore, selectable/date-ranged PDF generation with secure sharing, structured medication fields, and neutral symptom summaries. Full acceptance workflows and dedicated UI/device coverage remain incomplete.
+Added validated symptom drafts, searchable and confirmed-deletable timeline entries, private document-byte preservation and replacement, metadata editing, scoped document sharing, salted PBKDF2 PIN verification, Keystore-backed PIN-material encryption, lifecycle-gated PIN/biometric UI, WorkManager reminders with persisted-schedule reconciliation, structured and readable date-ranged exports, password-encrypted versioned/integrity-checked transactional backup restore, selectable/date-ranged PDF generation with secure sharing, structured medication fields and dose-change/stop/restart history, and neutral symptom summaries. Optional private symptom-image attachment and episode identifiers are now represented in the Room model and capture flow. Full acceptance workflows and dedicated UI/device coverage remain incomplete.
 
 ## Sprints 2–12 — INCOMPLETE
 
