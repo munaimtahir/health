@@ -32,3 +32,7 @@ Existing history is minimal (`initial` commits), so no established convention ca
 ## Architecture & Security Notes
 
 Treat `CLAUDE.md` and the numbered specification pack as implementation guidance until canonical docs replace them. Preserve the non-diagnostic product boundary. The planned app is offline-first, single-user, and local-storage oriented: do not add analytics, advertising, mandatory accounts, cloud sync, or network-dependent core behavior without an explicit decision record. Never commit secrets or health information.
+
+## Mandatory continuous-completion rule
+
+The active implementation sprint must continue until every engineering item in `docs/verification/DEFERRED_ITEMS.md` is implemented, tested, documented, and passed through the applicable quality gate. Completing one gap and passing its gate is a transition into the next gap, not a stopping point. After each closure, update the documentation and immediately select the next remaining gap. Do not pause for owner input; if a step requires unavailable input, skip only that step, record it precisely, and continue all other engineering work. The only permitted final deferred item is Play Console submission/publication, which is a manual owner action.
