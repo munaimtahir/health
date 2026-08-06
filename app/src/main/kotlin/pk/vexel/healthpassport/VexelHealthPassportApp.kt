@@ -837,12 +837,17 @@ private fun BackupPasswordDialog(
 @Composable
 private fun ReportOptionsDialog(onDismiss: () -> Unit, onGenerate: () -> Unit, setProfile: (Boolean) -> Unit, setEvents: (Boolean) -> Unit, setMedications: (Boolean) -> Unit, setDocuments: (Boolean) -> Unit, setReminders: (Boolean) -> Unit, from: String, setFrom: (String) -> Unit, to: String, setTo: (String) -> Unit) {
     var profileChecked by remember { mutableStateOf(true) }; var eventsChecked by remember { mutableStateOf(true) }; var medicationsChecked by remember { mutableStateOf(true) }; var documentsChecked by remember { mutableStateOf(true) }; var remindersChecked by remember { mutableStateOf(true) }
+    val parser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false } }
+    val validFrom = from.isBlank() || runCatching { parser.parse(from) }.isSuccess
+    val validTo = to.isBlank() || runCatching { parser.parse(to) }.isSuccess
+    val datesOrdered = if (from.isBlank() || to.isBlank()) true else runCatching { parser.parse(from)!!.time <= parser.parse(to)!!.time }.getOrDefault(false)
+    val hasSection = profileChecked || eventsChecked || medicationsChecked || documentsChecked || remindersChecked
     AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("Select sections and optional date range. Use yyyy-MM-dd.")
         listOf("Profile" to profileChecked, "Health events" to eventsChecked, "Medications" to medicationsChecked, "Documents" to documentsChecked, "Reminders" to remindersChecked).forEach { (label, checked) -> Row { Checkbox(checked, { value -> when (label) { "Profile" -> { profileChecked = value; setProfile(value) }; "Health events" -> { eventsChecked = value; setEvents(value) }; "Medications" -> { medicationsChecked = value; setMedications(value) }; "Documents" -> { documentsChecked = value; setDocuments(value) }; else -> { remindersChecked = value; setReminders(value) } } }); Text(label) } }
-        OutlinedTextField(from, setFrom, label = { Text("From (optional)") })
-        OutlinedTextField(to, setTo, label = { Text("To (optional)") })
-    } }, confirmButton = { Button(onGenerate) { Text("Save PDF") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+        OutlinedTextField(from, setFrom, label = { Text("From (optional)") }, isError = !validFrom, supportingText = { if (!validFrom) Text("Use yyyy-MM-dd") })
+        OutlinedTextField(to, setTo, label = { Text("To (optional)") }, isError = !validTo || !datesOrdered, supportingText = { if (!validTo) Text("Use yyyy-MM-dd") else if (!datesOrdered) Text("To must be on or after From") })
+    } }, confirmButton = { Button(enabled = hasSection && validFrom && validTo && datesOrdered, onClick = onGenerate) { Text("Save PDF") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable
