@@ -114,6 +114,9 @@ import pk.vexel.healthpassport.core.model.summarizeSymptoms
 import pk.vexel.healthpassport.core.model.EpisodeEvent
 import pk.vexel.healthpassport.core.model.summarizeSymptomEpisodes
 import pk.vexel.healthpassport.core.model.remapRestoredSymptomReferences
+import pk.vexel.healthpassport.core.model.ExportFormat
+import pk.vexel.healthpassport.core.model.exportShareDescriptor
+import pk.vexel.healthpassport.core.model.hasSelectedReportSection
 import pk.vexel.healthpassport.core.model.isWithinDateScope
 import pk.vexel.healthpassport.core.model.validateDateScope
 import pk.vexel.healthpassport.core.security.PinVerifier
@@ -751,7 +754,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
     var generatedReportUri by remember { mutableStateOf<Uri?>(null) }
     val dateScope = validateDateScope(reportFrom, reportTo)
     val context = LocalContext.current
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.JSON).mimeType)) { uri ->
         if (uri != null) {
             val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
             val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
@@ -759,7 +762,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
             context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportJson(from, to).toByteArray(Charsets.UTF_8)) }
         }
     }
-    val readableExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+    val readableExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.READABLE).mimeType)) { uri ->
         if (uri != null) {
             val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
             val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
@@ -769,7 +772,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
     }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri -> if (uri != null) vm.createBackup(context, uri, backupPassword) }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(context, uri, backupPassword) }
-    val reportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
+    val reportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.PDF).mimeType)) { uri ->
         if (uri != null) {
             generatedReportUri = uri
             val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
@@ -805,7 +808,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
                 TextButton({ backupAction = "CREATE"; showBackupPassword = true }) { Text("Create encrypted backup") }
                 TextButton({ backupAction = "RESTORE"; showBackupPassword = true }) { Text("Restore backup") }
                 TextButton({ showReportOptions = true }) { Text("Create PDF report") }
-                generatedReportUri?.let { uri -> TextButton({ shareContentUri(context, uri, "application/pdf", "Share health report") }) { Text("Share last PDF report") } }
+                generatedReportUri?.let { uri -> TextButton({ shareContentUri(context, uri, exportShareDescriptor(ExportFormat.PDF).mimeType, "Share health report") }) { Text("Share last PDF report") } }
             } }
         }
         item {
@@ -874,7 +877,7 @@ private fun ReportOptionsDialog(onDismiss: () -> Unit, onGenerate: () -> Unit, s
     val validFrom = dateScope.fromValid
     val validTo = dateScope.toValid
     val datesOrdered = dateScope.ordered
-    val hasSection = profileChecked || eventsChecked || medicationsChecked || documentsChecked || remindersChecked
+    val hasSection = hasSelectedReportSection(profileChecked, eventsChecked, medicationsChecked, documentsChecked, remindersChecked)
     AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("Select sections and optional date range. Use yyyy-MM-dd.")
         listOf("Profile" to profileChecked, "Health events" to eventsChecked, "Medications" to medicationsChecked, "Documents" to documentsChecked, "Reminders" to remindersChecked).forEach { (label, checked) -> Row { Checkbox(checked, { value -> when (label) { "Profile" -> { profileChecked = value; setProfile(value) }; "Health events" -> { eventsChecked = value; setEvents(value) }; "Medications" -> { medicationsChecked = value; setMedications(value) }; "Documents" -> { documentsChecked = value; setDocuments(value) }; else -> { remindersChecked = value; setReminders(value) } } }); Text(label) } }
