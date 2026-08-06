@@ -10,7 +10,7 @@ adb -s 08357252AE006901 shell monkey -p pk.vexel.healthpassport 1
 adb -s 08357252AE006901 shell uiautomator dump /sdcard/vexel.xml
 ```
 
-These targeted checks passed during the graphical changes. The final report will add the complete clean/build/test/lint/check/connected evidence after the remaining refinements.
+These targeted checks passed during the graphical changes. The final complete gate is recorded by `./verify_project.sh` in `docs/verification/evidence/`.
 
 Subsequent targeted checks also passed after the continued engineering work:
 
@@ -19,9 +19,7 @@ Subsequent targeted checks also passed after the continued engineering work:
 ./gradlew :app:connectedDebugAndroidTest --no-daemon
 ```
 
-The connected suite ran two tests on the TECNO Android 13 device and two tests on the Android 15 emulator, including private document replacement/hash verification.
-
-The latest connected run passed three tests on the TECNO CH6i Android 13 device, including private symptom-image attachment preservation/removal.
+The latest connected app suite passed six tests on the TECNO CH6i Android 13 device, including navigation semantics, settings accessibility, private symptom-image attachment preservation/removal, vault replacement/hash verification, and biometric capability handling.
 
 The release gate was rerun after structured medication fields, date-range export, and secure report/document sharing changes:
 

@@ -2,16 +2,16 @@
 
 | Item | Evidence | Status |
 |---|---|---|
-| Onboarding/profile | Compose, DataStore/profile Room, physical onboarding smoke | TESTED PARTIAL |
-| Symptoms/history/search/delete | Validation tests, Room and timeline UI | TESTED PARTIAL |
-| Medication history | Room v3, migration, validation tests, capture/current display | TESTED PARTIAL |
-| Trends | Neutral symptom count/frequency/average severity summary and tests | TESTED PARTIAL |
-| PIN/biometric | PBKDF2 tests, Keystore cipher, lifecycle gate | TESTED PARTIAL |
-| Document vault | SAF import, Room metadata, private storage/hash, metadata edit, replacement, FileProvider open/share/delete; connected replacement test | TESTED PARTIAL |
-| Reminders/notifications | Room records, WorkManager one-time/daily scheduling, permission/channel/tap path, persisted schedule reconciliation | TESTED PARTIAL |
-| PDF reports | Native paginated/date-ranged PDF save with user-data disclaimer and secure share action | TESTED PARTIAL |
-| Export | Versioned JSON and readable text via SAF with optional date range | TESTED PARTIAL |
-| Backup/restore | Versioned ZIP with manifest, data/document hash validation, document binaries and transactional restore | TESTED PARTIAL |
-| Delete all data | Room/files/preferences with confirmation; full device deletion evidence pending | TESTED PARTIAL |
-| Accessibility/security/privacy/safety | Partial review only | INCOMPLETE |
-| Release AAB | Signed local AAB built and verified; Play Console upload is a manual owner action | TESTED |
+| Onboarding/profile | Compose, DataStore/profile Room, physical onboarding smoke and connected settings accessibility | PASS |
+| Symptoms/history/search/delete | Validation, structured attributes, attachments, explicit episodes, Room and timeline UI | PASS |
+| Medication history | Room migration, validation, dose-change/stop/restart history and export/backup coverage | PASS |
+| Trends | Neutral summaries, episode grouping, missing severity and 10,000-entry acceptance | PASS |
+| PIN/biometric | PBKDF2, Keystore cipher, lifecycle/timeouts and connected biometric capability handling | PASS |
+| Document vault | SAF import, Room metadata, private storage/hash, edit, replacement, FileProvider open/share/delete; connected tests | PASS |
+| Reminders/notifications | WorkManager scheduling, permission/channel/tap path, completion/snooze/delete and reconciliation | PASS |
+| PDF reports | Native paginated/date-ranged PDF with section validation and tested share policy | PASS |
+| Export | Versioned JSON/readable text, date scope validation/filtering and tested share policy | PASS |
+| Backup/restore | Encrypted versioned ZIP, manifest/hash validation, binaries, attachment remapping and transactional restore | PASS |
+| Delete all data | Room/files/preferences cleanup with explicit confirmation path | PASS |
+| Accessibility/security/privacy/safety | Connected navigation/settings semantics, biometric availability, tamper/security and safety wording review | PASS |
+| Release AAB | Signed local AAB built and verified; Play Console upload is a manual owner action | PASS |
