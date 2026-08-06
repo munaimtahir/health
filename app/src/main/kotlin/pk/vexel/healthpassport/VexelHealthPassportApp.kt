@@ -89,6 +89,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import pk.vexel.healthpassport.core.database.HealthDatabase
 import pk.vexel.healthpassport.core.database.HealthEventEntity
 import pk.vexel.healthpassport.core.database.MedicationEntity
@@ -109,6 +110,8 @@ import pk.vexel.healthpassport.core.model.MedicationDraft
 import pk.vexel.healthpassport.core.model.validationErrors
 import pk.vexel.healthpassport.core.model.TrendEvent
 import pk.vexel.healthpassport.core.model.summarizeSymptoms
+import pk.vexel.healthpassport.core.model.isWithinDateScope
+import pk.vexel.healthpassport.core.model.validateDateScope
 import pk.vexel.healthpassport.core.security.PinVerifier
 import pk.vexel.healthpassport.core.security.PinMaterialCipher
 import pk.vexel.healthpassport.core.security.BackupCrypto
@@ -199,6 +202,7 @@ class PassportViewModel @Inject constructor(
         return runCatching { pinVerifier.matches(pin.toCharArray(), pinMaterialCipher.decrypt(prefs.pinMaterial)) }.getOrDefault(false)
     }
     fun disablePin() = viewModelScope.launch { preferences.clearPinMaterial() }
+    fun setLockTimeoutMinutes(minutes: Int) = viewModelScope.launch { preferences.setLockTimeoutMinutes(minutes) }
     fun deleteAllData() = viewModelScope.launch {
         database.healthEventDao().deleteAll()
         database.medicationDao().deleteAll()
@@ -264,7 +268,7 @@ class PassportViewModel @Inject constructor(
         shareContentUri(context, uri, document.mimeType, "Share document")
     }
     fun exportJson(fromEpochMillis: Long? = null, toEpochMillis: Long? = null): String {
-        fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
+        fun inRange(epoch: Long?): Boolean = isWithinDateScope(epoch, fromEpochMillis, toEpochMillis)
         val root = JSONObject().put("formatVersion", 1).put("generatedAtEpochMillis", System.currentTimeMillis())
         profile.value?.let { p -> root.put("profile", JSONObject().put("name", p.name).put("dateOfBirth", p.dateOfBirth).put("bloodGroup", p.bloodGroup).put("allergies", p.allergies).put("conditions", p.conditions).put("emergencyContact", p.emergencyContact)) }
         root.put("events", JSONArray(events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity).put("durationMinutes", e.durationMinutes).put("startAtEpochMillis", e.startAtEpochMillis).put("endAtEpochMillis", e.endAtEpochMillis).put("ongoing", e.ongoing).put("bodyLocation", e.bodyLocation).put("associatedSymptoms", e.associatedSymptoms).put("possibleTrigger", e.possibleTrigger).put("relatedMedication", e.relatedMedication).put("imageAttachmentId", e.imageAttachmentId).put("episodeId", e.episodeId) }))
@@ -275,7 +279,7 @@ class PassportViewModel @Inject constructor(
         return root.toString(2)
     }
     fun exportHumanReadable(fromEpochMillis: Long? = null, toEpochMillis: Long? = null): String = buildString {
-        fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
+        fun inRange(epoch: Long?): Boolean = isWithinDateScope(epoch, fromEpochMillis, toEpochMillis)
         appendLine("Vexel Health Passport")
         appendLine("User-recorded information · generated ${DateFormat.getDateTimeInstance().format(Date())}")
         appendLine("This export is not a diagnosis or medical advice.")
@@ -446,13 +450,24 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
 @Composable
 private fun LockGate(prefs: pk.vexel.healthpassport.core.datastore.UserPreferences, vm: PassportViewModel, content: @Composable () -> Unit) {
     var unlocked by rememberSaveable(prefs.lockEnabled) { mutableStateOf(!prefs.lockEnabled) }
+    var unlockedAt by rememberSaveable(prefs.lockEnabled) { mutableStateOf<Long?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, prefs.lockEnabled) {
-        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP && prefs.lockEnabled) unlocked = false }
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP && prefs.lockEnabled) { unlocked = false; unlockedAt = null } }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    if (unlocked || !prefs.lockEnabled) content() else PinUnlockDialog(prefs, vm) { unlocked = true }
+    LaunchedEffect(unlocked, prefs.lockEnabled, prefs.lockTimeoutMinutes) {
+        while (unlocked && prefs.lockEnabled && prefs.lockTimeoutMinutes > 0) {
+            delay(1_000)
+            val started = unlockedAt ?: continue
+            if (System.currentTimeMillis() - started >= prefs.lockTimeoutMinutes * 60_000L) {
+                unlocked = false
+                unlockedAt = null
+            }
+        }
+    }
+    if (unlocked || !prefs.lockEnabled) content() else PinUnlockDialog(prefs, vm) { unlocked = true; unlockedAt = System.currentTimeMillis() }
 }
 
 @Composable
@@ -728,6 +743,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
     var includeProfile by rememberSaveable { mutableStateOf(true) }; var includeEvents by rememberSaveable { mutableStateOf(true) }; var includeMedications by rememberSaveable { mutableStateOf(true) }; var includeDocuments by rememberSaveable { mutableStateOf(true) }; var includeReminders by rememberSaveable { mutableStateOf(true) }
     var reportFrom by rememberSaveable { mutableStateOf("") }; var reportTo by rememberSaveable { mutableStateOf("") }
     var generatedReportUri by remember { mutableStateOf<Uri?>(null) }
+    val dateScope = validateDateScope(reportFrom, reportTo)
     val context = LocalContext.current
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
@@ -775,8 +791,11 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
                     OutlinedTextField(reportFrom, { reportFrom = it }, Modifier.weight(1f), label = { Text("From") }, singleLine = true)
                     OutlinedTextField(reportTo, { reportTo = it }, Modifier.weight(1f), label = { Text("To") }, singleLine = true)
                 }
-                TextButton({ exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }
-                TextButton({ readableExportLauncher.launch("vexel-health-export.txt") }) { Text("Export readable summary") }
+                if (!dateScope.isValid && (reportFrom.isNotBlank() || reportTo.isNotBlank())) {
+                    Text("Enter valid dates in yyyy-MM-dd order before exporting.", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
+                }
+                TextButton(enabled = dateScope.isValid, onClick = { exportLauncher.launch("vexel-health-export.json") }) { Text("Export my data (JSON)") }
+                TextButton(enabled = dateScope.isValid, onClick = { readableExportLauncher.launch("vexel-health-export.txt") }) { Text("Export readable summary") }
                 TextButton({ backupAction = "CREATE"; showBackupPassword = true }) { Text("Create encrypted backup") }
                 TextButton({ backupAction = "RESTORE"; showBackupPassword = true }) { Text("Restore backup") }
                 TextButton({ showReportOptions = true }) { Text("Create PDF report") }
@@ -788,6 +807,14 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
                 TextButton({ vm.setDarkTheme(!prefs.darkTheme) }) { Text(if (prefs.darkTheme) "Use light theme" else "Use dark theme") }
                 TextButton({ if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true }) { Text(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock") }
+                if (prefs.lockEnabled) {
+                    Text("Lock after inactivity", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelLarge)
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(0 to "When leaving", 5 to "5 minutes", 15 to "15 minutes", 30 to "30 minutes").forEach { (minutes, label) ->
+                            FilterChip(selected = prefs.lockTimeoutMinutes == minutes, onClick = { vm.setLockTimeoutMinutes(minutes) }, label = { Text(label) })
+                        }
+                    }
+                }
             } }
         }
         item {
@@ -837,10 +864,10 @@ private fun BackupPasswordDialog(
 @Composable
 private fun ReportOptionsDialog(onDismiss: () -> Unit, onGenerate: () -> Unit, setProfile: (Boolean) -> Unit, setEvents: (Boolean) -> Unit, setMedications: (Boolean) -> Unit, setDocuments: (Boolean) -> Unit, setReminders: (Boolean) -> Unit, from: String, setFrom: (String) -> Unit, to: String, setTo: (String) -> Unit) {
     var profileChecked by remember { mutableStateOf(true) }; var eventsChecked by remember { mutableStateOf(true) }; var medicationsChecked by remember { mutableStateOf(true) }; var documentsChecked by remember { mutableStateOf(true) }; var remindersChecked by remember { mutableStateOf(true) }
-    val parser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false } }
-    val validFrom = from.isBlank() || runCatching { parser.parse(from) }.isSuccess
-    val validTo = to.isBlank() || runCatching { parser.parse(to) }.isSuccess
-    val datesOrdered = if (from.isBlank() || to.isBlank()) true else runCatching { parser.parse(from)!!.time <= parser.parse(to)!!.time }.getOrDefault(false)
+    val dateScope = validateDateScope(from, to)
+    val validFrom = dateScope.fromValid
+    val validTo = dateScope.toValid
+    val datesOrdered = dateScope.ordered
     val hasSection = profileChecked || eventsChecked || medicationsChecked || documentsChecked || remindersChecked
     AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("Select sections and optional date range. Use yyyy-MM-dd.")

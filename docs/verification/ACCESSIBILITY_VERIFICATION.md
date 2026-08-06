@@ -8,6 +8,7 @@
 - Forms and dialogs use scrollable content so larger text can remain reachable.
 - Primary actions use full-width or comfortably padded controls where appropriate.
 - Error and confirmation content remains textual and actionable.
+- Inactivity lock choices expose visible text labels in filter chips; the selected timeout is not communicated by color alone.
 
 ## Evidence and remaining manual checks
 

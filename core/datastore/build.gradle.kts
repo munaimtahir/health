@@ -8,5 +8,8 @@ android { namespace = "pk.vexel.healthpassport.datastore"; compileSdk = 36
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     lint { abortOnError = true }
 }
-dependencies { implementation(libs.androidx.datastore.preferences) }
+dependencies {
+    implementation(libs.androidx.datastore.preferences)
+    testImplementation(libs.junit)
+}
 dependencies { implementation(libs.coroutines.core) }

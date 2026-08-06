@@ -3,6 +3,7 @@ package pk.vexel.healthpassport.core.datastore
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -14,12 +15,14 @@ class PreferencesStore(private val context: Context) {
     private val darkThemeKey = booleanPreferencesKey("dark_theme")
     private val onboardingKey = booleanPreferencesKey("onboarding_complete")
     private val pinMaterialKey = stringPreferencesKey("pin_material")
+    private val lockTimeoutMinutesKey = intPreferencesKey("lock_timeout_minutes")
 
     val preferences: Flow<UserPreferences> = context.preferencesDataStore.data.map { values ->
         UserPreferences(
             darkTheme = values[darkThemeKey] ?: false,
             onboardingComplete = values[onboardingKey] ?: false,
             pinMaterial = values[pinMaterialKey] ?: "",
+            lockTimeoutMinutes = values[lockTimeoutMinutesKey] ?: 0,
         )
     }
 
@@ -39,6 +42,11 @@ class PreferencesStore(private val context: Context) {
         context.preferencesDataStore.edit { values ->
             values.remove(pinMaterialKey)
         }
+    }
+
+    suspend fun setLockTimeoutMinutes(minutes: Int) {
+        require(isSupportedLockTimeoutMinutes(minutes))
+        context.preferencesDataStore.edit { values -> values[lockTimeoutMinutesKey] = minutes }
     }
 
     suspend fun clearAll() {
