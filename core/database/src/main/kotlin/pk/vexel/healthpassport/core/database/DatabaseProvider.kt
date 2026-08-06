@@ -13,6 +13,7 @@ object DatabaseProvider {
             .addMigrations(MIGRATION_3_4)
             .addMigrations(MIGRATION_4_5)
             .addMigrations(MIGRATION_5_6)
+            .addMigrations(MIGRATION_6_7)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -97,6 +98,23 @@ object DatabaseProvider {
             db.execSQL("ALTER TABLE health_events ADD COLUMN associatedSymptoms TEXT NOT NULL DEFAULT ''")
             db.execSQL("ALTER TABLE health_events ADD COLUMN possibleTrigger TEXT NOT NULL DEFAULT ''")
             db.execSQL("ALTER TABLE health_events ADD COLUMN relatedMedication TEXT NOT NULL DEFAULT ''")
+        }
+    }
+
+    private val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""CREATE TABLE IF NOT EXISTS medication_changes (
+                id TEXT NOT NULL PRIMARY KEY,
+                medicationId TEXT NOT NULL,
+                changedAtEpochMillis INTEGER NOT NULL,
+                changeType TEXT NOT NULL,
+                strength TEXT NOT NULL DEFAULT '',
+                dose TEXT NOT NULL DEFAULT '',
+                unit TEXT NOT NULL DEFAULT '',
+                frequency TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'CURRENT',
+                notes TEXT NOT NULL DEFAULT ''
+            )""")
         }
     }
 }

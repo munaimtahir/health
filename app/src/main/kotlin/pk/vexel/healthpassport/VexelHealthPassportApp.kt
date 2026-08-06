@@ -92,6 +92,7 @@ import kotlinx.coroutines.launch
 import pk.vexel.healthpassport.core.database.HealthDatabase
 import pk.vexel.healthpassport.core.database.HealthEventEntity
 import pk.vexel.healthpassport.core.database.MedicationEntity
+import pk.vexel.healthpassport.core.database.MedicationChangeEntity
 import pk.vexel.healthpassport.core.database.DocumentEntity
 import pk.vexel.healthpassport.core.database.ReminderEntity
 import pk.vexel.healthpassport.core.database.ProfileEntity
@@ -146,6 +147,7 @@ class PassportViewModel @Inject constructor(
     val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val profile = database.profileDao().observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     val medications = database.medicationDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val medicationChanges = database.medicationChangeDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val documents = database.documentDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val reminders = database.reminderDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), pk.vexel.healthpassport.core.datastore.UserPreferences())
@@ -168,8 +170,15 @@ class PassportViewModel @Inject constructor(
     fun delete(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().delete(event.id) }
     fun addMedication(draft: MedicationDraft) = viewModelScope.launch {
         val now = System.currentTimeMillis()
-        database.medicationDao().insert(MedicationEntity(UUID.randomUUID().toString(), draft.name.trim(), genericName = draft.genericName.trim(), strength = draft.strength.trim(), dose = draft.dose.trim(), unit = draft.unit.trim(), route = draft.route.trim(), frequency = draft.frequency.trim(), startDate = draft.startDate.trim(), stopDate = draft.stopDate.trim(), status = draft.status, indication = draft.indication.trim(), physician = draft.physician.trim(), notes = draft.notes.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
+        val medicationId = UUID.randomUUID().toString()
+        database.medicationDao().insert(MedicationEntity(medicationId, draft.name.trim(), genericName = draft.genericName.trim(), strength = draft.strength.trim(), dose = draft.dose.trim(), unit = draft.unit.trim(), route = draft.route.trim(), frequency = draft.frequency.trim(), startDate = draft.startDate.trim(), stopDate = draft.stopDate.trim(), status = draft.status, indication = draft.indication.trim(), physician = draft.physician.trim(), notes = draft.notes.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
+        database.medicationChangeDao().insert(MedicationChangeEntity(UUID.randomUUID().toString(), medicationId, now, "STARTED", draft.strength.trim(), draft.dose.trim(), draft.unit.trim(), draft.frequency.trim(), draft.status, draft.notes.trim()))
         database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), listOf(draft.strength, draft.dose, draft.unit, draft.frequency, draft.status.lowercase()).filter { it.isNotBlank() }.joinToString(" · "), "MEDICATION", now, now, now, "ACTIVE"))
+    }
+    fun recordMedicationChange(medication: MedicationEntity, strength: String, dose: String, unit: String, frequency: String, status: String, notes: String) = viewModelScope.launch {
+        val now = System.currentTimeMillis()
+        database.medicationDao().update(medication.copy(strength = strength.trim(), dose = dose.trim(), unit = unit.trim(), frequency = frequency.trim(), status = status, notes = notes.trim(), updatedAtEpochMillis = now, stopDate = if (status == "STOPPED") SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now)) else medication.stopDate))
+        database.medicationChangeDao().insert(MedicationChangeEntity(UUID.randomUUID().toString(), medication.id, now, if (status == "STOPPED") "STOPPED" else if (medication.status == "STOPPED" && status == "CURRENT") "RESTARTED" else "DOSE_CHANGED", strength.trim(), dose.trim(), unit.trim(), frequency.trim(), status, notes.trim()))
     }
     fun savePin(pin: String, confirmation: String): Boolean {
         if (pin != confirmation || pin.length !in 4..12 || pin.any { !it.isDigit() }) return false
@@ -185,6 +194,7 @@ class PassportViewModel @Inject constructor(
     fun deleteAllData() = viewModelScope.launch {
         database.healthEventDao().deleteAll()
         database.medicationDao().deleteAll()
+        database.medicationChangeDao().deleteAll()
         database.profileDao().deleteAll()
         database.documentDao().deleteAll()
         reminders.value.forEach { reminderScheduler.cancel(it.id) }
@@ -251,6 +261,7 @@ class PassportViewModel @Inject constructor(
         profile.value?.let { p -> root.put("profile", JSONObject().put("name", p.name).put("dateOfBirth", p.dateOfBirth).put("bloodGroup", p.bloodGroup).put("allergies", p.allergies).put("conditions", p.conditions).put("emergencyContact", p.emergencyContact)) }
         root.put("events", JSONArray(events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity).put("durationMinutes", e.durationMinutes).put("startAtEpochMillis", e.startAtEpochMillis).put("endAtEpochMillis", e.endAtEpochMillis).put("ongoing", e.ongoing).put("bodyLocation", e.bodyLocation).put("associatedSymptoms", e.associatedSymptoms).put("possibleTrigger", e.possibleTrigger).put("relatedMedication", e.relatedMedication) }))
         root.put("medications", JSONArray(medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { m -> JSONObject().put("id", m.id).put("name", m.name).put("genericName", m.genericName).put("strength", m.strength).put("dose", m.dose).put("unit", m.unit).put("route", m.route).put("frequency", m.frequency).put("startDate", m.startDate).put("stopDate", m.stopDate).put("status", m.status).put("indication", m.indication).put("physician", m.physician).put("notes", m.notes) }))
+        root.put("medicationChanges", JSONArray(medicationChanges.value.filter { inRange(it.changedAtEpochMillis) }.map { c -> JSONObject().put("id", c.id).put("medicationId", c.medicationId).put("changedAtEpochMillis", c.changedAtEpochMillis).put("changeType", c.changeType).put("strength", c.strength).put("dose", c.dose).put("unit", c.unit).put("frequency", c.frequency).put("status", c.status).put("notes", c.notes) }))
         root.put("documents", JSONArray(documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256) }))
         root.put("reminders", JSONArray(reminders.value.filter { inRange(it.dueAtEpochMillis) }.map { r -> JSONObject().put("id", r.id).put("title", r.title).put("type", r.type).put("notes", r.notes).put("dueAtEpochMillis", r.dueAtEpochMillis).put("recurrence", r.recurrence).put("status", r.status) }))
         return root.toString(2)
@@ -273,6 +284,8 @@ class PassportViewModel @Inject constructor(
         appendLine()
         appendLine("MEDICATIONS")
         medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.name} · ${it.genericName} · ${it.strength} · ${it.dose} ${it.unit} · ${it.frequency} · ${it.status} · ${it.startDate}–${it.stopDate}") }
+        appendLine("MEDICATION CHANGES")
+        medicationChanges.value.filter { inRange(it.changedAtEpochMillis) }.forEach { appendLine("${it.changeType} · ${DateFormat.getDateTimeInstance().format(Date(it.changedAtEpochMillis))} · ${it.strength} · ${it.dose} ${it.unit} · ${it.frequency} · ${it.status} · ${it.notes}") }
         appendLine()
         appendLine("DOCUMENTS")
         documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.category} · ${it.originalFileName} · SHA-256 ${it.sha256}") }
@@ -333,10 +346,11 @@ class PassportViewModel @Inject constructor(
         val scheduledReminders = mutableListOf<ReminderEntity>()
         try {
             database.withTransaction {
-                database.healthEventDao().deleteAll(); database.medicationDao().deleteAll(); database.profileDao().deleteAll(); database.documentDao().deleteAll(); database.reminderDao().deleteAll()
+                database.healthEventDao().deleteAll(); database.medicationDao().deleteAll(); database.medicationChangeDao().deleteAll(); database.profileDao().deleteAll(); database.documentDao().deleteAll(); database.reminderDao().deleteAll()
                 data.optJSONObject("profile")?.let { p -> database.profileDao().upsert(ProfileEntity(name = p.optString("name"), dateOfBirth = p.optString("dateOfBirth"), bloodGroup = p.optString("bloodGroup"), allergies = p.optString("allergies"), conditions = p.optString("conditions"), emergencyContact = p.optString("emergencyContact"), updatedAtEpochMillis = System.currentTimeMillis())) }
                 (data.optJSONArray("events") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val e = array.getJSONObject(i); database.healthEventDao().insert(HealthEventEntity(e.getString("id"), e.optString("title"), e.optString("details"), e.optString("kind", "OTHER"), if (e.isNull("effectiveAtEpochMillis")) null else e.optLong("effectiveAtEpochMillis"), e.optLong("createdAtEpochMillis"), status = e.optString("status", "ACTIVE"), severity = if (e.isNull("severity")) null else e.optInt("severity"), durationMinutes = if (e.isNull("durationMinutes")) null else e.optInt("durationMinutes"), startAtEpochMillis = if (e.isNull("startAtEpochMillis")) null else e.optLong("startAtEpochMillis"), endAtEpochMillis = if (e.isNull("endAtEpochMillis")) null else e.optLong("endAtEpochMillis"), ongoing = e.optBoolean("ongoing"), bodyLocation = e.optString("bodyLocation"), associatedSymptoms = e.optString("associatedSymptoms"), possibleTrigger = e.optString("possibleTrigger"), relatedMedication = e.optString("relatedMedication"))) } }
                 (data.optJSONArray("medications") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val m = array.getJSONObject(i); database.medicationDao().insert(MedicationEntity(m.getString("id"), m.optString("name"), m.optString("genericName"), m.optString("strength"), m.optString("dose"), m.optString("unit"), m.optString("route"), m.optString("frequency"), m.optString("startDate"), m.optString("stopDate"), m.optString("status", "CURRENT"), m.optString("indication"), m.optString("physician"), m.optString("notes"), System.currentTimeMillis(), System.currentTimeMillis())) } }
+                (data.optJSONArray("medicationChanges") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val c = array.getJSONObject(i); database.medicationChangeDao().insert(MedicationChangeEntity(c.getString("id"), c.getString("medicationId"), c.optLong("changedAtEpochMillis"), c.optString("changeType", "DOSE_CHANGED"), c.optString("strength"), c.optString("dose"), c.optString("unit"), c.optString("frequency"), c.optString("status", "CURRENT"), c.optString("notes"))) } }
                 restoredDocuments.forEach { database.documentDao().insert(it) }
                 val reminderData = data.optJSONArray("reminders") ?: JSONArray()
                 for (i in 0 until reminderData.length()) {
@@ -472,6 +486,7 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
 @Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, medications: List<MedicationEntity>, events: List<HealthEventEntity>, modifier: Modifier) {
     var showSymptom by rememberSaveable { mutableStateOf(false) }
     var showMedication by rememberSaveable { mutableStateOf(false) }
+    var changeMedication by remember { mutableStateOf<MedicationEntity?>(null) }
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
         item {
             Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
@@ -504,7 +519,10 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
                 Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SectionHeader("Current medications")
                     medications.filter { it.status == "CURRENT" }.take(3).forEach { medication ->
-                        Text("${medication.name}${medication.strength.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""}")
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("${medication.name}${medication.strength.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""}")
+                            TextButton({ changeMedication = medication }) { Text("Record change") }
+                        }
                     }
                 } }
             }
@@ -515,6 +533,7 @@ private fun PinUnlockDialog(prefs: pk.vexel.healthpassport.core.datastore.UserPr
     }
     if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent, vm::addSymptom)
     if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
+    changeMedication?.let { medication -> MedicationChangeDialog(medication, { changeMedication = null }) { strength, dose, unit, frequency, status, notes -> vm.recordMedicationChange(medication, strength, dose, unit, frequency, status, notes); changeMedication = null } }
 }
 
 @Composable private fun TimelineScreen(vm: PassportViewModel, modifier: Modifier) {
@@ -893,4 +912,23 @@ private fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) ->
         confirmButton = { Button(enabled = errors.isEmpty(), onClick = { onSave(draft); onDismiss() }) { Text("Save") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+@Composable
+private fun MedicationChangeDialog(medication: MedicationEntity, onDismiss: () -> Unit, onSave: (String, String, String, String, String, String) -> Unit) {
+    var strength by rememberSaveable(medication.id) { mutableStateOf(medication.strength) }
+    var dose by rememberSaveable(medication.id) { mutableStateOf(medication.dose) }
+    var unit by rememberSaveable(medication.id) { mutableStateOf(medication.unit) }
+    var frequency by rememberSaveable(medication.id) { mutableStateOf(medication.frequency) }
+    var status by rememberSaveable(medication.id) { mutableStateOf(medication.status) }
+    var notes by rememberSaveable(medication.id) { mutableStateOf("") }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Record medication change") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("This records a new treatment period; it does not recommend a dose or treatment.")
+        OutlinedTextField(strength, { strength = it }, label = { Text("Strength") })
+        OutlinedTextField(dose, { dose = it }, label = { Text("Dose") })
+        OutlinedTextField(unit, { unit = it }, label = { Text("Unit") })
+        OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency") })
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { FilterChip(status == "CURRENT", { status = "CURRENT" }, label = { Text("Current/restarted") }); FilterChip(status == "STOPPED", { status = "STOPPED" }, label = { Text("Stopped") }) }
+        OutlinedTextField(notes, { notes = it }, label = { Text("Change notes (optional)") })
+    } }, confirmButton = { Button({ onSave(strength, dose, unit, frequency, status, notes) }) { Text("Save change") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
