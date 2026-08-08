@@ -1,13 +1,11 @@
 package com.vexel.passport
 
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.performScrollToNode
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -29,11 +27,20 @@ class ProfileSettingsAccessibilityTest {
         composeRule.onNodeWithText("Profile").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Personal profile").assertExists()
-        composeRule.onNodeWithText("Reports and data tools").assertExists()
-        repeat(4) { composeRule.onAllNodes(hasScrollAction()).onFirst().performTouchInput { swipeUp() } }
-        composeRule.onNodeWithText("Appearance and security").assertExists()
-        composeRule.onNodeWithText("Privacy and data").assertExists()
-        composeRule.onNodeWithText("Help and about").assertExists()
-        composeRule.onNodeWithText("Delete all app data").assertExists()
+        scrollUntilVisible("Reports and data tools")
+        scrollUntilVisible("Appearance and security")
+        scrollUntilVisible("Privacy and data")
+        scrollUntilVisible("Help and about")
+        scrollUntilVisible("Delete all app data")
+    }
+
+    // Raw swipe gestures on the LazyColumn are unreliable here: with six stacked
+    // OutlinedTextFields, a synthetic swipeUp() computed from the list's full bounds
+    // often lands its touch-down directly on a field, which consumes the drag instead
+    // of the list. performScrollToNode drives the LazyColumn's scroll state directly
+    // instead of simulating touch, sidestepping that collision entirely.
+    private fun scrollUntilVisible(text: String) {
+        composeRule.onNodeWithTag("profileScroll").performScrollToNode(hasText(text))
+        composeRule.onNodeWithText(text).assertExists()
     }
 }
