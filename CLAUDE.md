@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository
 
-The repository is named `health`; the public application is **Vexel Health Passport** (`com.vexel.passport`) — a private, single-user, offline-first Android health-record organizer. It is a runnable internal-testing build (Kotlin/Compose, multi-module Gradle), not a spec-only pack: `app/`, `core/*`, and `feature/*` all contain real source. Full acceptance/UI/security/accessibility/performance coverage is still incomplete (tracked under `docs/verification/`); don't claim release readiness without checking current gate status.
+The repository is named `health`; the public application is **Vexel Health Passport** (`com.vexel.passport`) — a private, single-user, offline-first Android health-record organizer. It is a runnable internal-testing build (Kotlin/Compose, multi-module Gradle), not a spec-only pack: `app/` and `core/*` contain real source; `feature/*` are placeholder scaffolding (see Module architecture below). Full acceptance/UI/security/accessibility/performance coverage is still incomplete (tracked under `docs/verification/`); don't claim release readiness without checking current gate status.
 
 ## Commands
 
@@ -29,8 +29,8 @@ There is no ktlint/detekt config; formatting is whatever `lint` and reviewer jud
 
 Gradle Kotlin DSL, package root `com.vexel.passport` mirrored under every module (`core.*`, `feature.*`). Dependency direction is strictly `app → feature → core`, enforced by convention, not tooling:
 
-- `app` is the only module that composes features, owns the `NavHost`/routes, and wires Hilt's `AppModule` (`app/src/main/kotlin/com/vexel/passport/di/AppModule.kt`).
-- `feature/*` modules (`onboarding`, `dashboard`, `profile`, `timeline`, `symptoms`, `records`, `medications`, `reminders`, `appointments`, `reports`, `settings`) never depend on each other and never depend on `app`.
+- `app` owns the `NavHost`/routes, wires Hilt's `AppModule` (`app/src/main/kotlin/com/vexel/passport/di/AppModule.kt`), and currently contains **all real screen implementations and the single shared `PassportViewModel`** in `app/src/main/kotlin/com/vexel/passport/VexelHealthPassportApp.kt` — this is the actual current state, not the target end state.
+- `feature/*` modules (`onboarding`, `dashboard`, `profile`, `timeline`, `symptoms`, `records`, `medications`, `reminders`, `appointments`, `reports`, `settings`) are **placeholder scaffolding** (each a 5-line `/** X feature placeholder. */` file) reserved for a future modularization pass, not yet real. See decision log D-008. Don't add real feature logic into these modules under the assumption they're already wired into `app`'s composition — they aren't.
 - `core/model` — pure shared data models, no Android/platform deps.
 - `core/domain` — platform-light contracts/use cases.
 - `core/database` — Room only (`HealthDatabase`, DAOs/entities for profile, health events, medications + medication changes, documents, reminders); migrations must be explicit, forward-only, and tested — destructive migration is forbidden in production.
