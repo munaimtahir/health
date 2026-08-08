@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-android { namespace = "pk.vexel.healthpassport.database"; compileSdk = 36
+android { namespace = "com.vexel.passport.database"; compileSdk = 36
     defaultConfig { minSdk = 26 }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     lint { abortOnError = true }

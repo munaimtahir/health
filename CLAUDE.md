@@ -2,51 +2,57 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository state
+## Repository
 
-This repository currently contains **no application code** — only a numbered pack of planning/specification documents for an Android app called **Vexel Health Passport**. `docs/` is an empty placeholder directory. There is no build system, no source tree, and no tests yet. If asked to build the app, treat the numbered documents below as the spec to implement against, following the sprint order in `05_SPRINT_PLAN_AND_GATES.md`.
+The repository is named `health`; the public application is **Vexel Health Passport** (`com.vexel.passport`) — a private, single-user, offline-first Android health-record organizer. It is a runnable internal-testing build (Kotlin/Compose, multi-module Gradle), not a spec-only pack: `app/`, `core/*`, and `feature/*` all contain real source. Full acceptance/UI/security/accessibility/performance coverage is still incomplete (tracked under `docs/verification/`); don't claim release readiness without checking current gate status.
 
-## Document pack (read in this order)
+## Commands
 
-1. `00_README.md` — product overview and recommended reading order
-2. `01_PRODUCT_REQUIREMENTS.md` — MVP modules, fields, and what's explicitly excluded
-3. `02_UX_SCREEN_SPEC.md` — screen-by-screen UX spec
-4. `03_TECHNICAL_ARCHITECTURE.md` — stack, layers, module structure
-5. `04_DATA_MODEL.md` — entities and data-integrity rules
-6. `05_SPRINT_PLAN_AND_GATES.md` — sprint-by-sprint deliverables and gates (governs build order)
-7. `06_QA_TEST_STRATEGY.md` — required test coverage and severity definitions
-8. `07_SECURITY_PRIVACY.md` — privacy/security requirements and disclaimer wording
-9. `08_PLAY_STORE_RELEASE_CHECKLIST.md` — release checklist
-10. `10_MASTER_AI_AGENT_PROMPT.md` — the controlling prompt for an AI coding agent building this app; **read this before writing any code**
+Requires JDK 17, Android SDK 36, and the included Gradle wrapper (AGP 8.7.3, Kotlin 2.0.21). App module targets minSdk 26 / target+compileSdk 36.
 
-`manifest.json` lists the pack files; `09_BRAND_AND_NAME.md` and `11_MARKET_POSITIONING_SUMMARY.md` are reference/marketing material.
+```bash
+./gradlew assembleDebug              # build debug APK
+./gradlew assembleRelease bundleRelease   # build/bundle release (unsigned unless vexelRelease* gradle properties are set)
+./gradlew test                       # all JVM unit tests
+./gradlew :core:model:test           # unit tests for one module
+./gradlew :core:model:test --tests "com.vexel.passport.core.model.SymptomValidationTest"  # single test class
+./gradlew lint                       # Android lint (abortOnError = true)
+./gradlew check                      # test + lint across modules
+./gradlew connectedCheck             # instrumented tests; needs an attached device/emulator
+./scripts/verify.sh                  # assembleDebug + test + lint (what CI runs)
+./verify_project.sh                  # fuller local pass: clean/assemble/bundle/test/lint/check/verify.sh, writes logs to docs/verification/evidence/, adds connectedCheck if adb finds a device
+```
+
+There is no ktlint/detekt config; formatting is whatever `lint` and reviewer judgment enforce. CI (`.github/workflows/ci.yml`) runs `scripts/verify.sh` plus a doc-link sanity check (`rg` scan for placeholder link text like "latest"/"final-final") on every push and PR.
+
+## Module architecture
+
+Gradle Kotlin DSL, package root `com.vexel.passport` mirrored under every module (`core.*`, `feature.*`). Dependency direction is strictly `app → feature → core`, enforced by convention, not tooling:
+
+- `app` is the only module that composes features, owns the `NavHost`/routes, and wires Hilt's `AppModule` (`app/src/main/kotlin/com/vexel/passport/di/AppModule.kt`).
+- `feature/*` modules (`onboarding`, `dashboard`, `profile`, `timeline`, `symptoms`, `records`, `medications`, `reminders`, `appointments`, `reports`, `settings`) never depend on each other and never depend on `app`.
+- `core/model` — pure shared data models, no Android/platform deps.
+- `core/domain` — platform-light contracts/use cases.
+- `core/database` — Room only (`HealthDatabase`, DAOs/entities for profile, health events, medications + medication changes, documents, reminders); migrations must be explicit, forward-only, and tested — destructive migration is forbidden in production.
+- `core/security` — Keystore-backed PIN material cipher (`KeystorePinMaterialCipher`), `PinVerifier`, and `BackupCrypto` (PBKDF2-HMAC-SHA256 + AES-GCM, per-backup random salt/IV, password never persisted). No custom crypto beyond this — `SECURITY.md` explicitly forbids it.
+- `core/files` — `SecureFileStore`/`LocalSecureFileStore`: copies validated PDF/JPEG/PNG into app-private `files/documents` under UUID identifiers, preserves original bytes, enforces MIME + 50 MiB limit, computes SHA-256.
+- `core/datastore`, `core/notifications` (WorkManager reminder scheduling), `core/designsystem`, `core/ui`, `core/common`, `core/testing` (shared fakes, e.g. `FakeHealthData`).
+
+Data flow (MVVM, unidirectional): Compose UI → ViewModel → domain use case → repository, which writes to Room/DataStore/file store and exposes `Flow` state back to the UI; a write must commit locally before the UI reports success. No core feature may require network access.
+
+Entity relationships worth knowing before touching the schema: one profile owns allergies, diagnoses, procedures, symptoms, records, medications, consultations, reminders, appointments, reports, and backup metadata. Timeline events project source entities rather than copying mutable clinical content. A medication dose change ends the prior regimen and starts a new one — never mutate history in place.
 
 ## Non-negotiable product boundary
 
-Vexel Health Passport is a health-record organization and symptom-logging app. It must **never**:
-- Diagnose disease
-- Recommend treatment or medication changes
-- Independently determine/prescribe follow-up intervals
-- Interpret laboratory reports as a clinician would
-- Perform emergency triage
-- Claim causation between events (use "occurred around the same time" / "temporal association," never "caused by")
+Vexel Health Passport must never diagnose, interpret lab/clinical results as a professional, recommend or prescribe treatment/medication changes, choose follow-up intervals, perform emergency triage, or state causation (use "occurred around the same time," never "caused by"). This overrides any feature request that conflicts with it. Required disclaimer wording lives in `docs/product/medical-safety-boundary.md`. Do not implement AI/OCR, telemedicine, multi-profile, cloud-first architecture, mandatory accounts, ads, or analytics — see `docs/product/deferred-features.md` / `docs/product/non-goals.md`. Any future AI/OCR extension point must be optional, on-device-by-default with explicit consent for external processing, present results as suggestions requiring confirmation, and never overwrite originals.
 
-This boundary overrides feature requests that conflict with it. When source documents conflict, resolve in this order: safety/privacy > product requirements > sprint acceptance gates > architecture > UX preferences.
+## Privacy and logging
 
-## Planned architecture (once implementation starts)
+Never log names, dates of birth, symptoms, medications, diagnoses, report content, filenames, paths, or identifiers — coarse event names and status codes only, and release builds must not carry verbose health-data logging (`docs/privacy/logging-policy.md`). Never use real patient data in code, tests, fixtures, screenshots, or commits — synthetic data only.
 
-- **Stack:** Kotlin, Jetpack Compose, Material 3, Hilt, Room, DataStore, Navigation Compose, WorkManager, Android Storage Access Framework, CameraX/Android document scanner, Android Keystore-backed encryption, native PDF generation.
-- **Pattern:** Feature-based modular architecture, MVVM with unidirectional data flow, separated UI/domain/data layers, repositories + explicit use cases.
-- **Target SDK 36, min SDK 26.** Primary physical test device: TECNO CH6i (Android 13).
-- **Offline-first:** local Room database is the source of truth; no core feature may require network access; writes commit locally before UI reports success.
-- Suggested module layout (`app/`, `core/{common,database,designsystem,domain,files,notifications,security,testing}/`, `feature/{onboarding,dashboard,profile,timeline,symptoms,records,medications,reminders,appointments,reports,settings}/`) — see `03_TECHNICAL_ARCHITECTURE.md` for full details.
-- **Data integrity rules** (from `04_DATA_MODEL.md`): dates stored in UTC with local offset retained where useful; a medication dose change ends the prior regimen and creates a new one rather than mutating it (history must never be destroyed); timeline events link to source entities instead of copying mutable data; every schema change requires a tested migration — destructive migrations are forbidden in production.
-- **File handling:** imported reports/prescriptions are copied into app-controlled private storage with original bytes preserved, opaque generated file identifiers, and validated MIME/extension — never log sensitive file names or expose unrestricted file-provider paths.
-- **Reminders:** defined in Room, scheduled via WorkManager with unique work names, and reconciled after reboot, app update, and time-zone change to avoid duplication.
+## Documentation authority
 
-## Build/execution protocol for an AI agent implementing this app
-
-Per `10_MASTER_AI_AGENT_PROMPT.md`, work strictly sprint by sprint per `05_SPRINT_PLAN_AND_GATES.md`; do not start the next sprint until the current sprint's acceptance gate passes. At the end of each sprint: run formatting, lint, unit tests, database tests, and relevant UI/instrumented tests; build debug and release variants; verify acceptance criteria against the gate; do a separate reviewer pass for security, data integrity, accessibility, and scope compliance. Do not introduce cloud services, analytics, ads, or billing. Do not implement AI/OCR features in the MVP — extension points only (future AI/OCR must be optional, on-device-by-default with explicit consent for external processing, present extracted data as suggestions requiring user confirmation, and never overwrite original documents).
+`docs/README.md` is the canonical documentation index (governance, product, design, architecture, data, privacy, testing, delivery, release, archive). When sources conflict, resolve in this order: fixed project decisions → current canonical `docs/` documents → ADRs (`docs/architecture/architecture-decisions/`) → approved entries in `docs/governance/decision-log.md` → the archived original spec pack (`docs/archive/original-ai-development-pack/`) → agent assumptions. Record any newly discovered contradiction in the decision log rather than resolving it silently. Before starting a sprint-sized change, check `docs/product/mvp-scope.md`, the relevant architecture/privacy docs, and the applicable gate in `docs/testing/quality-gates.md` / `docs/delivery/definition-of-done.md`.
 
 ## Quality priorities (in order)
 

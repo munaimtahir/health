@@ -8,7 +8,7 @@ The technical repository is named `health`, while the product has a fixed public
 
 ## Decision
 
-All user-facing surfaces use **Vexel Health Passport**; only technical paths and repository references may use `health`. The application ID is `pk.vexel.healthpassport`.
+All user-facing surfaces use **Vexel Health Passport**; only technical paths and repository references may use `health`. The application ID is `com.vexel.passport`.
 
 ## Alternatives considered
 

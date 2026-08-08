@@ -7,7 +7,7 @@ Date: 2026-08-04
 - Branch: `main`
 - Commit at assessment: `46596d7`
 - Working tree was clean before implementation.
-- Application ID: `pk.vexel.healthpassport`
+- Application ID: `com.vexel.passport`
 - SDKs: min 26, compile/target 36
 - Kotlin: 2.0.21; AGP: 8.7.3; Compose/Material 3
 - Persistence: Room v2 and DataStore

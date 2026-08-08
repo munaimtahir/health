@@ -7,10 +7,10 @@ plugins {
 }
 
 android {
-    namespace = "pk.vexel.healthpassport"
+    namespace = "com.vexel.passport"
     compileSdk = 36
     defaultConfig {
-        applicationId = "pk.vexel.healthpassport"
+        applicationId = "com.vexel.passport"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

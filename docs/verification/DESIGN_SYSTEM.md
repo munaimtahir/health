@@ -4,8 +4,8 @@
 
 The controlled theme and shared states live in:
 
-- `core/designsystem/src/main/kotlin/pk/vexel/healthpassport/core/designsystem/Theme.kt`
-- `core/designsystem/src/main/kotlin/pk/vexel/healthpassport/core/designsystem/Components.kt`
+- `core/designsystem/src/main/kotlin/com/vexel/passport/core/designsystem/Theme.kt`
+- `core/designsystem/src/main/kotlin/com/vexel/passport/core/designsystem/Components.kt`
 
 ## Tokens
 

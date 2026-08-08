@@ -365,8 +365,8 @@ to this project's gradle.properties.
 > Task :app:transformDebugClassesWithAsm UP-TO-DATE
 > Task :app:processDebugJavaRes UP-TO-DATE
 > Task :app:bundleDebugClassesToRuntimeJar
-> Task :app:bundleDebugClassesToCompileJar
 > Task :app:javaPreCompileDebugUnitTest
+> Task :app:bundleDebugClassesToCompileJar
 > Task :core:database:processDebugJavaRes UP-TO-DATE
 > Task :core:datastore:processDebugJavaRes UP-TO-DATE
 > Task :core:designsystem:processDebugJavaRes UP-TO-DATE
@@ -629,10 +629,10 @@ to this project's gradle.properties.
 > Task :feature:profile:javaPreCompileRelease UP-TO-DATE
 > Task :feature:profile:compileReleaseJavaWithJavac NO-SOURCE
 > Task :feature:profile:bundleLibCompileToJarRelease UP-TO-DATE
-> Task :app:kspDebugUnitTestKotlin
 > Task :feature:records:compileReleaseKotlin UP-TO-DATE
 > Task :feature:records:javaPreCompileRelease UP-TO-DATE
 > Task :feature:records:compileReleaseJavaWithJavac NO-SOURCE
+> Task :app:kspDebugUnitTestKotlin
 > Task :feature:records:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :feature:reminders:compileReleaseKotlin UP-TO-DATE
 > Task :feature:reminders:javaPreCompileRelease UP-TO-DATE
@@ -682,9 +682,9 @@ to this project's gradle.properties.
 > Task :app:bundleReleaseClassesToRuntimeJar
 > Task :app:preReleaseUnitTestBuild UP-TO-DATE
 > Task :app:processReleaseJavaRes UP-TO-DATE
+> Task :app:bundleReleaseClassesToCompileJar
 > Task :app:compileDebugUnitTestKotlin
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
-> Task :app:bundleReleaseClassesToCompileJar
 > Task :app:hiltAggregateDepsDebugUnitTest
 > Task :app:hiltJavaCompileDebugUnitTest NO-SOURCE
 > Task :app:processDebugUnitTestJavaRes
@@ -723,43 +723,43 @@ to this project's gradle.properties.
 > Task :app:processReleaseUnitTestJavaRes
 > Task :core:database:generateDebugUnitTestStubRFile
 > Task :core:database:kspDebugUnitTestKotlin NO-SOURCE
-> Task :core:database:compileDebugUnitTestKotlin NO-SOURCE
 > Task :app:transformReleaseUnitTestClassesWithAsm
-> Task :core:database:javaPreCompileDebugUnitTest
+> Task :core:database:compileDebugUnitTestKotlin NO-SOURCE
 > Task :app:testReleaseUnitTest
 > Task :app:test
-> Task :core:database:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :core:database:javaPreCompileDebugUnitTest
 > Task :core:database:processDebugUnitTestJavaRes NO-SOURCE
+> Task :core:database:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :core:database:testDebugUnitTest NO-SOURCE
 > Task :core:database:preReleaseUnitTestBuild UP-TO-DATE
 > Task :core:database:javaPreCompileReleaseUnitTest
 > Task :core:datastore:preDebugUnitTestBuild UP-TO-DATE
 > Task :core:database:generateReleaseUnitTestStubRFile
 > Task :core:database:kspReleaseUnitTestKotlin NO-SOURCE
-> Task :core:datastore:generateDebugUnitTestStubRFile
 > Task :core:database:compileReleaseUnitTestKotlin NO-SOURCE
 > Task :core:database:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :core:database:processReleaseUnitTestJavaRes NO-SOURCE
+> Task :core:datastore:generateDebugUnitTestStubRFile
 > Task :core:database:testReleaseUnitTest NO-SOURCE
 > Task :core:database:test UP-TO-DATE
 > Task :core:datastore:javaPreCompileDebugUnitTest
 > Task :core:datastore:preReleaseUnitTestBuild UP-TO-DATE
 > Task :core:datastore:generateReleaseUnitTestStubRFile
+> Task :core:datastore:compileReleaseUnitTestKotlin
+> Task :core:datastore:javaPreCompileReleaseUnitTest
+> Task :core:datastore:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :core:datastore:compileDebugUnitTestKotlin
+> Task :core:datastore:processReleaseUnitTestJavaRes
 > Task :core:datastore:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :core:datastore:processDebugUnitTestJavaRes
-> Task :core:datastore:compileReleaseUnitTestKotlin
 > Task :core:datastore:testDebugUnitTest
-> Task :core:datastore:javaPreCompileReleaseUnitTest
-> Task :core:datastore:processReleaseUnitTestJavaRes
-> Task :core:datastore:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :core:datastore:testReleaseUnitTest
 > Task :core:datastore:test
 > Task :core:designsystem:preDebugUnitTestBuild UP-TO-DATE
 > Task :core:designsystem:javaPreCompileDebugUnitTest
 > Task :core:designsystem:preReleaseUnitTestBuild UP-TO-DATE
-> Task :core:designsystem:generateReleaseUnitTestStubRFile
 > Task :core:designsystem:generateDebugUnitTestStubRFile
+> Task :core:designsystem:generateReleaseUnitTestStubRFile
 > Task :core:designsystem:compileDebugUnitTestKotlin NO-SOURCE
 > Task :core:designsystem:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :core:designsystem:processDebugUnitTestJavaRes NO-SOURCE
@@ -785,8 +785,8 @@ to this project's gradle.properties.
 > Task :core:files:processDebugUnitTestJavaRes NO-SOURCE
 > Task :core:files:testDebugUnitTest NO-SOURCE
 > Task :core:files:compileReleaseUnitTestKotlin NO-SOURCE
-> Task :core:files:javaPreCompileReleaseUnitTest
 > Task :core:files:processReleaseUnitTestJavaRes NO-SOURCE
+> Task :core:files:javaPreCompileReleaseUnitTest
 > Task :core:files:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :core:files:testReleaseUnitTest NO-SOURCE
 > Task :core:files:test UP-TO-DATE
@@ -808,19 +808,19 @@ to this project's gradle.properties.
 > Task :core:notifications:test UP-TO-DATE
 > Task :core:security:preDebugUnitTestBuild UP-TO-DATE
 > Task :core:security:generateDebugUnitTestStubRFile
+> Task :core:security:compileDebugUnitTestKotlin
+> Task :core:security:javaPreCompileDebugUnitTest
+> Task :core:security:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :core:security:processDebugUnitTestJavaRes
 > Task :core:model:compileTestKotlin
+> Task :core:security:testDebugUnitTest
 > Task :core:model:compileTestJava NO-SOURCE
 > Task :core:model:testClasses UP-TO-DATE
-> Task :core:security:compileDebugUnitTestKotlin
 > Task :core:model:test
-> Task :core:security:javaPreCompileDebugUnitTest
-> Task :core:security:processDebugUnitTestJavaRes
-> Task :core:security:compileDebugUnitTestJavaWithJavac NO-SOURCE
-> Task :core:security:testDebugUnitTest
 > Task :core:security:preReleaseUnitTestBuild UP-TO-DATE
 > Task :core:security:javaPreCompileReleaseUnitTest
-> Task :core:testing:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:security:generateReleaseUnitTestStubRFile
+> Task :core:testing:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:testing:compileKotlin
 > Task :core:testing:compileJava NO-SOURCE
 > Task :core:testing:processResources NO-SOURCE
@@ -834,8 +834,8 @@ to this project's gradle.properties.
 > Task :core:ui:preDebugUnitTestBuild UP-TO-DATE
 > Task :core:security:compileReleaseUnitTestKotlin
 > Task :core:security:compileReleaseUnitTestJavaWithJavac NO-SOURCE
-> Task :core:ui:generateDebugUnitTestStubRFile
 > Task :core:security:processReleaseUnitTestJavaRes
+> Task :core:ui:generateDebugUnitTestStubRFile
 > Task :core:security:testReleaseUnitTest
 > Task :core:security:test
 > Task :core:ui:compileDebugUnitTestKotlin NO-SOURCE
@@ -852,13 +852,13 @@ to this project's gradle.properties.
 > Task :core:ui:processReleaseUnitTestJavaRes NO-SOURCE
 > Task :core:ui:testReleaseUnitTest NO-SOURCE
 > Task :core:ui:test UP-TO-DATE
-> Task :feature:appointments:generateDebugUnitTestStubRFile
 > Task :feature:appointments:javaPreCompileDebugUnitTest
+> Task :feature:appointments:preReleaseUnitTestBuild UP-TO-DATE
+> Task :feature:appointments:generateDebugUnitTestStubRFile
 > Task :feature:appointments:compileDebugUnitTestKotlin NO-SOURCE
 > Task :feature:appointments:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:appointments:processDebugUnitTestJavaRes NO-SOURCE
 > Task :feature:appointments:testDebugUnitTest NO-SOURCE
-> Task :feature:appointments:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:appointments:javaPreCompileReleaseUnitTest
 > Task :feature:dashboard:preDebugUnitTestBuild UP-TO-DATE
 > Task :feature:appointments:generateReleaseUnitTestStubRFile
@@ -867,8 +867,8 @@ to this project's gradle.properties.
 > Task :feature:appointments:processReleaseUnitTestJavaRes NO-SOURCE
 > Task :feature:appointments:testReleaseUnitTest NO-SOURCE
 > Task :feature:appointments:test UP-TO-DATE
-> Task :feature:dashboard:generateDebugUnitTestStubRFile
 > Task :feature:dashboard:javaPreCompileDebugUnitTest
+> Task :feature:dashboard:generateDebugUnitTestStubRFile
 > Task :feature:dashboard:compileDebugUnitTestKotlin NO-SOURCE
 > Task :feature:dashboard:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:dashboard:processDebugUnitTestJavaRes NO-SOURCE
@@ -890,13 +890,13 @@ to this project's gradle.properties.
 > Task :feature:medications:processDebugUnitTestJavaRes NO-SOURCE
 > Task :feature:medications:testDebugUnitTest NO-SOURCE
 > Task :feature:medications:javaPreCompileReleaseUnitTest
-> Task :feature:onboarding:preDebugUnitTestBuild UP-TO-DATE
 > Task :feature:medications:generateReleaseUnitTestStubRFile
 > Task :feature:medications:compileReleaseUnitTestKotlin NO-SOURCE
 > Task :feature:medications:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:medications:processReleaseUnitTestJavaRes NO-SOURCE
 > Task :feature:medications:testReleaseUnitTest NO-SOURCE
 > Task :feature:medications:test UP-TO-DATE
+> Task :feature:onboarding:preDebugUnitTestBuild UP-TO-DATE
 > Task :feature:onboarding:javaPreCompileDebugUnitTest
 > Task :feature:onboarding:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:onboarding:generateDebugUnitTestStubRFile
@@ -912,63 +912,63 @@ to this project's gradle.properties.
 > Task :feature:onboarding:processReleaseUnitTestJavaRes NO-SOURCE
 > Task :feature:onboarding:testReleaseUnitTest NO-SOURCE
 > Task :feature:onboarding:test UP-TO-DATE
-> Task :feature:profile:javaPreCompileDebugUnitTest
-> Task :feature:profile:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:profile:generateDebugUnitTestStubRFile
+> Task :feature:profile:javaPreCompileDebugUnitTest
 > Task :feature:profile:compileDebugUnitTestKotlin NO-SOURCE
 > Task :feature:profile:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:profile:processDebugUnitTestJavaRes NO-SOURCE
-> Task :feature:profile:generateReleaseUnitTestStubRFile
 > Task :feature:profile:testDebugUnitTest NO-SOURCE
-> Task :feature:profile:compileReleaseUnitTestKotlin NO-SOURCE
+> Task :feature:profile:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:profile:javaPreCompileReleaseUnitTest
-> Task :feature:profile:processReleaseUnitTestJavaRes NO-SOURCE
+> Task :feature:records:preDebugUnitTestBuild UP-TO-DATE
+> Task :feature:profile:generateReleaseUnitTestStubRFile
+> Task :feature:profile:compileReleaseUnitTestKotlin NO-SOURCE
 > Task :feature:profile:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :feature:profile:processReleaseUnitTestJavaRes NO-SOURCE
 > Task :feature:profile:testReleaseUnitTest NO-SOURCE
 > Task :feature:profile:test UP-TO-DATE
-> Task :feature:records:preDebugUnitTestBuild UP-TO-DATE
-> Task :feature:records:javaPreCompileDebugUnitTest
-> Task :feature:records:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:records:generateDebugUnitTestStubRFile
+> Task :feature:records:javaPreCompileDebugUnitTest
 > Task :feature:records:compileDebugUnitTestKotlin NO-SOURCE
 > Task :feature:records:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:records:processDebugUnitTestJavaRes NO-SOURCE
 > Task :feature:records:testDebugUnitTest NO-SOURCE
-> Task :feature:records:generateReleaseUnitTestStubRFile
+> Task :feature:records:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:records:javaPreCompileReleaseUnitTest
+> Task :feature:reminders:preDebugUnitTestBuild UP-TO-DATE
+> Task :feature:records:generateReleaseUnitTestStubRFile
 > Task :feature:records:compileReleaseUnitTestKotlin NO-SOURCE
 > Task :feature:records:compileReleaseUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:records:processReleaseUnitTestJavaRes NO-SOURCE
+> Task :feature:reminders:generateDebugUnitTestStubRFile
 > Task :feature:records:testReleaseUnitTest NO-SOURCE
 > Task :feature:records:test UP-TO-DATE
-> Task :feature:reminders:preDebugUnitTestBuild UP-TO-DATE
-> Task :feature:reminders:javaPreCompileDebugUnitTest
-> Task :feature:reminders:preReleaseUnitTestBuild UP-TO-DATE
-> Task :feature:reminders:generateDebugUnitTestStubRFile
 > Task :feature:reminders:compileDebugUnitTestKotlin NO-SOURCE
-> Task :feature:reminders:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :feature:reminders:javaPreCompileDebugUnitTest
 > Task :feature:reminders:processDebugUnitTestJavaRes NO-SOURCE
-> Task :feature:reminders:generateReleaseUnitTestStubRFile
+> Task :feature:reminders:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:reminders:testDebugUnitTest NO-SOURCE
-> Task :feature:reminders:compileReleaseUnitTestKotlin NO-SOURCE
+> Task :feature:reminders:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:reminders:javaPreCompileReleaseUnitTest
-> Task :feature:reminders:processReleaseUnitTestJavaRes NO-SOURCE
+> Task :feature:reports:preDebugUnitTestBuild UP-TO-DATE
+> Task :feature:reminders:generateReleaseUnitTestStubRFile
+> Task :feature:reminders:compileReleaseUnitTestKotlin NO-SOURCE
 > Task :feature:reminders:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :feature:reminders:processReleaseUnitTestJavaRes NO-SOURCE
 > Task :feature:reminders:testReleaseUnitTest NO-SOURCE
 > Task :feature:reminders:test UP-TO-DATE
-> Task :feature:reports:preDebugUnitTestBuild UP-TO-DATE
 > Task :feature:reports:javaPreCompileDebugUnitTest
 > Task :feature:reports:preReleaseUnitTestBuild UP-TO-DATE
 > Task :feature:reports:generateDebugUnitTestStubRFile
 > Task :feature:reports:compileDebugUnitTestKotlin NO-SOURCE
-> Task :feature:reports:generateReleaseUnitTestStubRFile
 > Task :feature:reports:compileDebugUnitTestJavaWithJavac NO-SOURCE
 > Task :feature:reports:processDebugUnitTestJavaRes NO-SOURCE
 > Task :feature:reports:testDebugUnitTest NO-SOURCE
-> Task :feature:reports:compileReleaseUnitTestKotlin NO-SOURCE
+> Task :feature:reports:generateReleaseUnitTestStubRFile
 > Task :feature:reports:javaPreCompileReleaseUnitTest
-> Task :feature:reports:processReleaseUnitTestJavaRes NO-SOURCE
+> Task :feature:reports:compileReleaseUnitTestKotlin NO-SOURCE
 > Task :feature:reports:compileReleaseUnitTestJavaWithJavac NO-SOURCE
+> Task :feature:reports:processReleaseUnitTestJavaRes NO-SOURCE
 > Task :feature:reports:testReleaseUnitTest NO-SOURCE
 > Task :feature:reports:test UP-TO-DATE
 > Task :feature:settings:preDebugUnitTestBuild UP-TO-DATE

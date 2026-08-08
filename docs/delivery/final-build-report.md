@@ -4,7 +4,7 @@
 
 - Repository: `health`
 - Application: Vexel Health Passport
-- Application ID: `pk.vexel.healthpassport`
+- Application ID: `com.vexel.passport`
 - Version: `0.1.0` / version code `1`
 - Minimum SDK: 26
 - Target/compile SDK: 36

@@ -11,7 +11,7 @@ Do not stop at plans, mock screens, or placeholders. Do not disable tests, suppr
 Repository: `/home/munaim/srv/apps/health`
 
 - Public name: `Vexel Health Passport`
-- Application ID: `pk.vexel.healthpassport`
+- Application ID: `com.vexel.passport`
 - Tagline: `Your health history, organized.`
 - Minimum SDK: 26
 - Compile/target SDK: 36
@@ -67,8 +67,8 @@ Build, install, and launch:
 ```bash
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am force-stop pk.vexel.healthpassport
-adb shell monkey -p pk.vexel.healthpassport 1
+adb shell am force-stop com.vexel.passport
+adb shell monkey -p com.vexel.passport 1
 ```
 
 Use synthetic data only. Verify through ADB/manual interaction:

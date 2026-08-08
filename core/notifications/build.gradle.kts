@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
-android { namespace = "pk.vexel.healthpassport.notifications"; compileSdk = 36
+android { namespace = "com.vexel.passport.notifications"; compileSdk = 36
     defaultConfig { minSdk = 26 }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     lint { abortOnError = true }
