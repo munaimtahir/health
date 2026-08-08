@@ -34,7 +34,7 @@ fun VexelHealthPassportTheme(darkTheme: Boolean = false, content: @Composable ()
         onSurface = Color(0xFF0F172A),
         surfaceVariant = Color(0xFFF1F5F9),
         onSurfaceVariant = VexelSlate,
-        outline = Color(0xFFCBD5E1),
+        outline = Color(0xFF64748B),
         outlineVariant = Color(0xFFE2E8F0),
         error = Color(0xFFB91C1C),
     )

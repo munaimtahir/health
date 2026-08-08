@@ -21,8 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -69,7 +72,7 @@ fun LoadingState(message: String = "Loading…", modifier: Modifier = Modifier) 
  * typography, and a trailing chevron so it reads as interactive even without button chrome.
  */
 @Composable
-fun ActionRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, supportingText: String? = null) {
+fun ActionRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, supportingText: String? = null, leadingIcon: ImageVector? = null) {
     val contentColor = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
     Row(
         modifier = modifier
@@ -79,6 +82,10 @@ fun ActionRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (leadingIcon != null) {
+            Icon(leadingIcon, contentDescription = null, tint = contentColor)
+            Spacer(Modifier.width(12.dp))
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text(label, style = MaterialTheme.typography.bodyLarge, color = contentColor)
             if (supportingText != null) Text(supportingText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

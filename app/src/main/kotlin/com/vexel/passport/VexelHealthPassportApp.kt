@@ -26,8 +26,18 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -590,7 +600,7 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
     }
     if (showAdd) CaptureDialog("OTHER", "Add health event", { showAdd = false }, vm::addEvent)
     pendingDelete?.let { event ->
-        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete event?") }, text = { Text("This removes the selected user-entered event from the timeline.") }, confirmButton = { Button({ vm.delete(event); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
+        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete event?") }, text = { Text("This removes the selected user-entered event from the timeline.") }, confirmButton = { Button({ vm.delete(event); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
     }
 }
 
@@ -634,7 +644,7 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
     }
     if (showImport) DocumentImportDialog(vm, context) { showImport = false }
     pendingDelete?.let { document ->
-        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
+        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
     }
     pendingEdit?.let { document -> DocumentEditDialog(vm, document) { pendingEdit = null } }
 }
@@ -686,7 +696,7 @@ private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntit
     }
     if (showAdd) ReminderDialog(vm, { showAdd = false }) { if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
     pendingEdit?.let { reminder -> ReminderEditDialog(vm, reminder) { pendingEdit = null } }
-    pendingDelete?.let { reminder -> AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete reminder?") }, text = { Text("The scheduled notification will be cancelled.") }, confirmButton = { Button({ vm.deleteReminder(reminder); pendingDelete = null }) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } }) }
+    pendingDelete?.let { reminder -> AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete reminder?") }, text = { Text("The scheduled notification will be cancelled.") }, confirmButton = { Button({ vm.deleteReminder(reminder); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } }) }
 }
 
 @Composable
@@ -747,7 +757,11 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
 }
 
 @Composable private fun ProfileScreen(vm: PassportViewModel, profile: ProfileEntity?, modifier: Modifier) {
-    var name by remember(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by remember(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by remember(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }; val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
+    var name by remember(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by remember(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by remember(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }
+    var dateOfBirth by remember(profile?.dateOfBirth) { mutableStateOf(profile?.dateOfBirth.orEmpty()) }; var bloodGroup by remember(profile?.bloodGroup) { mutableStateOf(profile?.bloodGroup.orEmpty()) }; var emergencyContact by remember(profile?.emergencyContact) { mutableStateOf(profile?.emergencyContact.orEmpty()) }
+    val profileDateParser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
+    val dateOfBirthValid = dateOfBirth.isBlank() || runCatching { profileDateParser.parse(dateOfBirth) }.getOrNull() != null
+    val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
     var showDeleteAll by rememberSaveable { mutableStateOf(false) }
     var showReportOptions by rememberSaveable { mutableStateOf(false) }
     var showBackupPassword by rememberSaveable { mutableStateOf(false) }
@@ -791,9 +805,12 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionHeader("Personal details")
                 OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") })
+                OutlinedTextField(dateOfBirth, { dateOfBirth = it }, Modifier.fillMaxWidth(), label = { Text("Date of birth") }, placeholder = { Text("yyyy-MM-dd") }, isError = !dateOfBirthValid, supportingText = { if (!dateOfBirthValid) Text("Use yyyy-MM-dd or leave blank") })
+                OutlinedTextField(bloodGroup, { bloodGroup = it }, Modifier.fillMaxWidth(), label = { Text("Blood group") })
                 OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") })
                 OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Conditions") })
-                Button({ vm.saveProfile(ProfileEntity(name = name, allergies = allergies, conditions = conditions, updatedAtEpochMillis = System.currentTimeMillis())) }, modifier = Modifier.fillMaxWidth()) { Text("Save profile") }
+                OutlinedTextField(emergencyContact, { emergencyContact = it }, Modifier.fillMaxWidth(), label = { Text("Emergency contact") })
+                Button({ vm.saveProfile(ProfileEntity(name = name, dateOfBirth = dateOfBirth, bloodGroup = bloodGroup, allergies = allergies, conditions = conditions, emergencyContact = emergencyContact, updatedAtEpochMillis = System.currentTimeMillis())) }, enabled = dateOfBirthValid, modifier = Modifier.fillMaxWidth()) { Text("Save profile") }
             } }
         }
         item {
@@ -807,19 +824,19 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
                 if (!dateScope.isValid && (reportFrom.isNotBlank() || reportTo.isNotBlank())) {
                     Text("Enter valid dates in yyyy-MM-dd order before exporting.", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
                 }
-                ActionRow("Export my data (JSON)", enabled = dateScope.isValid, onClick = { exportLauncher.launch("vexel-health-export.json") })
-                ActionRow("Export readable summary", enabled = dateScope.isValid, onClick = { readableExportLauncher.launch("vexel-health-export.txt") })
-                ActionRow("Create encrypted backup", onClick = { backupAction = "CREATE"; showBackupPassword = true })
-                ActionRow("Restore backup", onClick = { backupAction = "RESTORE"; showBackupPassword = true })
-                ActionRow("Create PDF report", onClick = { showReportOptions = true })
-                generatedReportUri?.let { uri -> ActionRow("Share last PDF report", onClick = { shareContentUri(context, uri, exportShareDescriptor(ExportFormat.PDF).mimeType, "Share health report") }) }
+                ActionRow("Export my data (JSON)", enabled = dateScope.isValid, leadingIcon = Icons.Outlined.Download, onClick = { exportLauncher.launch("vexel-health-export.json") })
+                ActionRow("Export readable summary", enabled = dateScope.isValid, leadingIcon = Icons.Outlined.Description, onClick = { readableExportLauncher.launch("vexel-health-export.txt") })
+                ActionRow("Create encrypted backup", leadingIcon = Icons.Outlined.Lock, onClick = { backupAction = "CREATE"; showBackupPassword = true })
+                ActionRow("Restore backup", leadingIcon = Icons.Outlined.LockOpen, onClick = { backupAction = "RESTORE"; showBackupPassword = true })
+                ActionRow("Create PDF report", leadingIcon = Icons.Outlined.PictureAsPdf, onClick = { showReportOptions = true })
+                generatedReportUri?.let { uri -> ActionRow("Share last PDF report", leadingIcon = Icons.Outlined.Share, onClick = { shareContentUri(context, uri, exportShareDescriptor(ExportFormat.PDF).mimeType, "Share health report") }) }
             } }
         }
         item {
             SectionHeader("Appearance and security")
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
-                ActionRow(if (prefs.darkTheme) "Use light theme" else "Use dark theme", onClick = { vm.setDarkTheme(!prefs.darkTheme) })
-                ActionRow(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock", onClick = { if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true })
+                ActionRow(if (prefs.darkTheme) "Use light theme" else "Use dark theme", leadingIcon = if (prefs.darkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, onClick = { vm.setDarkTheme(!prefs.darkTheme) })
+                ActionRow(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock", leadingIcon = Icons.Outlined.Password, onClick = { if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true })
                 if (prefs.lockEnabled) {
                     Text("Lock after inactivity", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelLarge)
                     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -850,7 +867,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
     if (showReportOptions) ReportOptionsDialog({ showReportOptions = false }, { showReportOptions = false; reportLauncher.launch("vexel-health-report.pdf") }, { includeProfile = it }, { includeEvents = it }, { includeMedications = it }, { includeDocuments = it }, { includeReminders = it }, reportFrom, { reportFrom = it }, reportTo, { reportTo = it })
     if (showBackupPassword) BackupPasswordDialog(backupAction == "CREATE", backupPassword, { backupPassword = it }, { password -> backupPassword = password; showBackupPassword = false; if (backupAction == "CREATE") backupLauncher.launch("vexel-health-backup.vexel") else restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) }, { showBackupPassword = false })
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
-    if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
+    if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
 }
 
 @Composable
@@ -882,7 +899,7 @@ private fun ReportOptionsDialog(onDismiss: () -> Unit, onGenerate: () -> Unit, s
     val validTo = dateScope.toValid
     val datesOrdered = dateScope.ordered
     val hasSection = hasSelectedReportSection(profileChecked, eventsChecked, medicationsChecked, documentsChecked, remindersChecked)
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Select sections and optional date range. Use yyyy-MM-dd.")
         listOf("Profile" to profileChecked, "Health events" to eventsChecked, "Medications" to medicationsChecked, "Documents" to documentsChecked, "Reminders" to remindersChecked).forEach { (label, checked) -> Row { Checkbox(checked, { value -> when (label) { "Profile" -> { profileChecked = value; setProfile(value) }; "Health events" -> { eventsChecked = value; setEvents(value) }; "Medications" -> { medicationsChecked = value; setMedications(value) }; "Documents" -> { documentsChecked = value; setDocuments(value) }; else -> { remindersChecked = value; setReminders(value) } } }); Text(label) } }
         OutlinedTextField(from, setFrom, label = { Text("From (optional)") }, isError = !validFrom, supportingText = { if (!validFrom) Text("Use yyyy-MM-dd") })
