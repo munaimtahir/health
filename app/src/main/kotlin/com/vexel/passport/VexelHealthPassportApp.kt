@@ -1,6 +1,7 @@
 package com.vexel.passport
 
 import android.content.Context
+import android.content.ClipData
 import android.content.Intent
 import android.Manifest
 import android.net.Uri
@@ -68,9 +69,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -147,12 +150,16 @@ internal val primaryDestinationLabels: List<String> = destinations.map { it.labe
 private fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
     .digest(bytes).joinToString("") { "%02x".format(it) }
 
-private fun shareContentUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String) {
-    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+internal fun readOnlyShareIntent(context: Context, uri: Uri, mimeType: String): Intent =
+    Intent(Intent.ACTION_SEND).apply {
         type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = ClipData.newUri(context.contentResolver, "Vexel shared content", uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }, chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+private fun shareContentUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String) {
+    context.startActivity(Intent.createChooser(readOnlyShareIntent(context, uri, mimeType), chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
 @HiltViewModel
@@ -440,6 +447,12 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
             OnboardingScreen(onComplete = viewModel::completeOnboarding)
         } else {
             LockGate(prefs, viewModel) {
+                val fontScale = LocalDensity.current.fontScale
+                val navigationLabelStyle = if (fontScale >= 1.8f) {
+                    MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, lineHeight = 10.sp)
+                } else {
+                    MaterialTheme.typography.labelMedium
+                }
                 Scaffold(
                 topBar = { TopAppBar(title = { Text(destinations[selectedIndex].label) }) },
                 bottomBar = { NavigationBar(
@@ -450,7 +463,7 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                         selected = index == selectedIndex,
                         onClick = { selectedIndex = index },
                         icon = { Icon(destination.icon, contentDescription = destination.label) },
-                        label = { Text(destination.label) },
+                        label = { Text(destination.label, maxLines = 1, style = navigationLabelStyle) },
                     )
                 } } },
                 ) { padding ->

@@ -1,4 +1,6 @@
 <resources>
-    <style name="Theme.VexelHealthPassport" parent="android:style/Theme.Material.Light.NoActionBar" />
+    <!-- AndroidX Biometric renders an AppCompat DialogFragment on API 26-27. The Compose UI still
+         owns all in-app colors/typography, but the host must inherit AppCompat for that system
+         authentication surface to inflate safely on the minimum supported API. -->
+    <style name="Theme.VexelHealthPassport" parent="Theme.AppCompat.Light.NoActionBar" />
 </resources>
-

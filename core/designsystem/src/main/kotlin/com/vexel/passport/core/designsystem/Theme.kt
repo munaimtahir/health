@@ -8,54 +8,81 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 
-private val VexelTeal = Color(0xFF0F766E)
-private val VexelTealContainer = Color(0xFFCCFBF1)
-private val VexelSlate = Color(0xFF475569)
-private val VexelLightBackground = Color(0xFFF8FAFC)
-private val VexelLightSurface = Color(0xFFFFFFFF)
-private val VexelDarkBackground = Color(0xFF0F172A)
-private val VexelDarkSurface = Color(0xFF1E293B)
-private val VexelDarkSurfaceVariant = Color(0xFF334155)
+internal object VexelColors {
+    const val TEAL: Long = 0xFF0F766E
+    const val TEAL_CONTAINER: Long = 0xFFCCFBF1
+    const val SLATE: Long = 0xFF475569
+    const val LIGHT_BACKGROUND: Long = 0xFFF8FAFC
+    const val LIGHT_SURFACE: Long = 0xFFFFFFFF
+    const val LIGHT_TEXT: Long = 0xFF0F172A
+    const val LIGHT_CONTAINER_TEXT: Long = 0xFF134E4A
+    const val LIGHT_SECONDARY_CONTAINER: Long = 0xFFE2E8F0
+    const val LIGHT_SECONDARY_CONTAINER_TEXT: Long = 0xFF1E293B
+    const val LIGHT_ERROR: Long = 0xFFB91C1C
+    const val DARK_BACKGROUND: Long = 0xFF0F172A
+    const val DARK_SURFACE: Long = 0xFF1E293B
+    const val DARK_SURFACE_VARIANT: Long = 0xFF334155
+    const val DARK_TEXT: Long = 0xFFF8FAFC
+    const val DARK_VARIANT_TEXT: Long = 0xFFCBD5E1
+    const val DARK_PRIMARY: Long = 0xFF5EEAD4
+    const val DARK_PRIMARY_CONTAINER: Long = 0xFF115E59
+    const val DARK_PRIMARY_CONTAINER_TEXT: Long = 0xFFCCFBF1
+    const val DARK_SECONDARY_CONTAINER_TEXT: Long = 0xFFE2E8F0
+    const val DARK_ERROR: Long = 0xFFFCA5A5
+}
+
+internal fun contrastRatio(foreground: Long, background: Long): Double {
+    fun luminance(argb: Long): Double {
+        fun channel(shift: Int): Double {
+            val value = ((argb shr shift) and 0xFF).toDouble() / 255.0
+            return if (value <= 0.04045) value / 12.92 else Math.pow((value + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0)
+    }
+    val first = luminance(foreground)
+    val second = luminance(background)
+    return (maxOf(first, second) + 0.05) / (minOf(first, second) + 0.05)
+}
 
 @Composable
 fun VexelHealthPassportTheme(darkTheme: Boolean = false, content: @Composable () -> Unit) {
     val lightColors = lightColorScheme(
-        primary = VexelTeal,
+        primary = Color(VexelColors.TEAL),
         onPrimary = Color.White,
-        primaryContainer = VexelTealContainer,
-        onPrimaryContainer = Color(0xFF134E4A),
-        secondary = VexelSlate,
+        primaryContainer = Color(VexelColors.TEAL_CONTAINER),
+        onPrimaryContainer = Color(VexelColors.LIGHT_CONTAINER_TEXT),
+        secondary = Color(VexelColors.SLATE),
         onSecondary = Color.White,
-        secondaryContainer = Color(0xFFE2E8F0),
-        onSecondaryContainer = Color(0xFF1E293B),
-        background = VexelLightBackground,
-        onBackground = Color(0xFF0F172A),
-        surface = VexelLightSurface,
-        onSurface = Color(0xFF0F172A),
+        secondaryContainer = Color(VexelColors.LIGHT_SECONDARY_CONTAINER),
+        onSecondaryContainer = Color(VexelColors.LIGHT_SECONDARY_CONTAINER_TEXT),
+        background = Color(VexelColors.LIGHT_BACKGROUND),
+        onBackground = Color(VexelColors.LIGHT_TEXT),
+        surface = Color(VexelColors.LIGHT_SURFACE),
+        onSurface = Color(VexelColors.LIGHT_TEXT),
         surfaceVariant = Color(0xFFF1F5F9),
-        onSurfaceVariant = VexelSlate,
+        onSurfaceVariant = Color(VexelColors.SLATE),
         outline = Color(0xFF64748B),
         outlineVariant = Color(0xFFE2E8F0),
-        error = Color(0xFFB91C1C),
+        error = Color(VexelColors.LIGHT_ERROR),
     )
     val darkColors = darkColorScheme(
-        primary = Color(0xFF5EEAD4),
+        primary = Color(VexelColors.DARK_PRIMARY),
         onPrimary = Color(0xFF003735),
-        primaryContainer = Color(0xFF115E59),
-        onPrimaryContainer = Color(0xFFCCFBF1),
-        secondary = Color(0xFFCBD5E1),
+        primaryContainer = Color(VexelColors.DARK_PRIMARY_CONTAINER),
+        onPrimaryContainer = Color(VexelColors.DARK_PRIMARY_CONTAINER_TEXT),
+        secondary = Color(VexelColors.DARK_VARIANT_TEXT),
         onSecondary = Color(0xFF1E293B),
-        secondaryContainer = Color(0xFF334155),
-        onSecondaryContainer = Color(0xFFE2E8F0),
-        background = VexelDarkBackground,
-        onBackground = Color(0xFFF8FAFC),
-        surface = VexelDarkSurface,
-        onSurface = Color(0xFFF8FAFC),
-        surfaceVariant = VexelDarkSurfaceVariant,
-        onSurfaceVariant = Color(0xFFCBD5E1),
+        secondaryContainer = Color(VexelColors.DARK_SURFACE_VARIANT),
+        onSecondaryContainer = Color(VexelColors.DARK_SECONDARY_CONTAINER_TEXT),
+        background = Color(VexelColors.DARK_BACKGROUND),
+        onBackground = Color(VexelColors.DARK_TEXT),
+        surface = Color(VexelColors.DARK_SURFACE),
+        onSurface = Color(VexelColors.DARK_TEXT),
+        surfaceVariant = Color(VexelColors.DARK_SURFACE_VARIANT),
+        onSurfaceVariant = Color(VexelColors.DARK_VARIANT_TEXT),
         outline = Color(0xFF64748B),
         outlineVariant = Color(0xFF334155),
-        error = Color(0xFFFCA5A5),
+        error = Color(VexelColors.DARK_ERROR),
     )
     MaterialTheme(
         colorScheme = if (darkTheme) darkColors else lightColors,

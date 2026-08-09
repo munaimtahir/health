@@ -4,7 +4,14 @@ import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import java.io.File
 
-private const val SHARE_CACHE_MAX_AGE_MILLIS = 24 * 60 * 60 * 1000L
+internal const val SHARE_CACHE_MAX_AGE_MILLIS = 24 * 60 * 60 * 1000L
+
+internal fun clearStaleShareCache(shareCacheDir: File, nowEpochMillis: Long = System.currentTimeMillis()): Int {
+    val cutoff = nowEpochMillis - SHARE_CACHE_MAX_AGE_MILLIS
+    return shareCacheDir.listFiles().orEmpty().count { file ->
+        file.isFile && file.lastModified() < cutoff && file.delete()
+    }
+}
 
 @HiltAndroidApp
 class VexelHealthPassportApplication : Application() {
@@ -20,8 +27,6 @@ class VexelHealthPassportApplication : Application() {
     // is not disrupted.
     private fun clearStaleShareCache() {
         val shareCacheDir = File(cacheDir, "shared")
-        val cutoff = System.currentTimeMillis() - SHARE_CACHE_MAX_AGE_MILLIS
-        shareCacheDir.listFiles()?.forEach { file -> if (file.lastModified() < cutoff) file.delete() }
+        clearStaleShareCache(shareCacheDir)
     }
 }
-

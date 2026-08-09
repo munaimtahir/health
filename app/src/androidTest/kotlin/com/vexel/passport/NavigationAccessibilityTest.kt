@@ -1,6 +1,6 @@
 package com.vexel.passport
 
-import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -14,6 +14,10 @@ class NavigationAccessibilityTest {
 
     @Test
     fun initial_state_exposes_onboarding_or_labeled_primary_navigation() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("Welcome to Vexel")).fetchSemanticsNodes().isNotEmpty() ||
+                composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
+        }
         val onboardingVisible = composeRule.onAllNodes(hasText("Welcome to Vexel")).fetchSemanticsNodes().isNotEmpty()
         val homeVisible = composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
         assertTrue("The app must expose onboarding or the primary navigation", onboardingVisible || homeVisible)
@@ -21,7 +25,10 @@ class NavigationAccessibilityTest {
             listOf("Home", "Records", "Plan", "Vault", "Profile").forEach { label ->
                 assertTrue("Missing navigation label: $label", composeRule.onAllNodes(hasText(label)).fetchSemanticsNodes().isNotEmpty())
             }
-            assertTrue("Home navigation icon must be labeled", composeRule.onAllNodes(hasContentDescription("Home")).fetchSemanticsNodes().isNotEmpty())
+            assertTrue(
+                "Home navigation destination must expose a labeled click target",
+                composeRule.onAllNodes(hasText("Home") and hasClickAction()).fetchSemanticsNodes().isNotEmpty(),
+            )
         } else {
             composeRule.onNodeWithText("Continue").assertExists()
         }

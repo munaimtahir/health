@@ -16,11 +16,17 @@ class ProfileSettingsAccessibilityTest {
 
     @Test
     fun profile_exposes_privacy_security_help_and_data_actions() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("Welcome to Vexel")).fetchSemanticsNodes().isNotEmpty() ||
+                composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
+        }
         val onboarding = composeRule.onAllNodes(hasText("Welcome to Vexel")).fetchSemanticsNodes().isNotEmpty()
         if (onboarding) {
             composeRule.onNodeWithText("I understand and want to continue").performClick()
             composeRule.onNodeWithText("Continue").performClick()
-            composeRule.waitForIdle()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
+            }
         }
         val home = composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
         assertTrue("Home must be reachable before profile acceptance checks", home)
