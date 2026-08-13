@@ -1,12 +1,24 @@
 package com.vexel.passport.core.designsystem
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 internal object VexelColors {
     const val TEAL: Long = 0xFF0F766E
@@ -84,6 +96,17 @@ fun VexelHealthPassportTheme(darkTheme: Boolean = false, content: @Composable ()
         outlineVariant = Color(0xFF334155),
         error = Color(VexelColors.DARK_ERROR),
     )
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        val window = view.context.findActivity()?.window
+        SideEffect {
+            window?.let {
+                val controller = WindowCompat.getInsetsController(it, view)
+                controller.isAppearanceLightStatusBars = !darkTheme
+                controller.isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
     MaterialTheme(
         colorScheme = if (darkTheme) darkColors else lightColors,
         typography = Typography().let { typography ->

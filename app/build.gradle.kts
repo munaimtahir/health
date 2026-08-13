@@ -13,8 +13,8 @@ android {
         applicationId = "com.vexel.passport"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 4
+        versionName = "1.0.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -43,6 +43,13 @@ android {
     buildTypes {
         getByName("release") {
             if (releaseSigningConfigured) signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Bundles native debug symbols directly into the release AAB so Play Console
+            // deobfuscates native crashes automatically, instead of requiring a manual,
+            // separately uploaded native-debug-symbols.zip.
+            ndk { debugSymbolLevel = "FULL" }
         }
     }
 }
