@@ -291,13 +291,30 @@ class PassportViewModel @Inject constructor(
         reminderScheduler.schedule(reminder.id, dueAt, reminder.recurrence)
     }
     fun importDocument(uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
-        val mimeType = appContext.contentResolver.getType(uri) ?: return@launch
+      try {
+        val mimeType = appContext.contentResolver.getType(uri)
+        if (mimeType == null) {
+            _operationError.value = "Could not read the selected file's type. Try choosing it again."
+            return@launch
+        }
         val displayName = appContext.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else "document"
         } ?: "document"
-        val preserved = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.preserveOriginal(input, mimeType, displayName) } ?: return@launch
+        val preserved = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.preserveOriginal(input, mimeType, displayName) }
+        if (preserved == null) {
+            _operationError.value = "Could not open the selected file. It may have been moved or access was revoked."
+            return@launch
+        }
         val now = System.currentTimeMillis()
         database.documentDao().insert(DocumentEntity(preserved.id, title.trim().ifBlank { displayName }, category.trim().ifBlank { "OTHER" }, documentDate.trim(), notes.trim(), displayName, preserved.mimeType, preserved.byteCount, preserved.sha256, now))
+        _statusEvents.tryEmit("Document imported")
+      } catch (cancellation: kotlinx.coroutines.CancellationException) {
+        throw cancellation
+      } catch (failure: IllegalArgumentException) {
+        _operationError.value = "That file type isn't supported, or it's larger than the 50 MB limit."
+      } catch (failure: Exception) {
+        _operationError.value = "Import failed. Try again."
+      }
     }
     fun deleteDocument(document: DocumentEntity) = viewModelScope.launch {
         secureFileStore.delete(document.id)
@@ -307,12 +324,29 @@ class PassportViewModel @Inject constructor(
         database.documentDao().update(document.copy(title = title.trim().ifBlank { document.title }, category = category.trim().ifBlank { document.category }, documentDate = documentDate.trim(), notes = notes.trim()))
     }
     fun replaceDocument(document: DocumentEntity, uri: Uri) = viewModelScope.launch {
-        val mimeType = appContext.contentResolver.getType(uri) ?: return@launch
+      try {
+        val mimeType = appContext.contentResolver.getType(uri)
+        if (mimeType == null) {
+            _operationError.value = "Could not read the selected file's type. Try choosing it again."
+            return@launch
+        }
         val displayName = appContext.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else document.originalFileName
         } ?: document.originalFileName
-        val replaced = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.replaceOriginal(document.id, input, mimeType, displayName) } ?: return@launch
+        val replaced = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.replaceOriginal(document.id, input, mimeType, displayName) }
+        if (replaced == null) {
+            _operationError.value = "Could not open the selected file. It may have been moved or access was revoked."
+            return@launch
+        }
         database.documentDao().update(document.copy(originalFileName = displayName, mimeType = replaced.mimeType, byteCount = replaced.byteCount, sha256 = replaced.sha256))
+        _statusEvents.tryEmit("Document replaced")
+      } catch (cancellation: kotlinx.coroutines.CancellationException) {
+        throw cancellation
+      } catch (failure: IllegalArgumentException) {
+        _operationError.value = "That file type isn't supported, or it's larger than the 50 MB limit."
+      } catch (failure: Exception) {
+        _operationError.value = "Replace failed. Try again."
+      }
     }
     fun openDocument(document: DocumentEntity) = viewModelScope.launch {
         val file = secureFileStore.copyToShareCache(appContext, document.id, document.originalFileName)
@@ -549,6 +583,8 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                     composable(Routes.PROFILE) { ProfileScreen(viewModel, profile, Modifier.padding(padding)) }
                 }
                 }
+                val operationError by viewModel.operationError.collectAsState()
+                operationError?.let { message -> AlertDialog(onDismissRequest = viewModel::dismissOperationError, title = { Text("Something went wrong") }, text = { Text(message) }, confirmButton = { TextButton(viewModel::dismissOperationError) { Text("OK") } }) }
             }
         }
     }
@@ -848,7 +884,6 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     val profileDateParser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
     val dateOfBirthValid = dateOfBirth.isBlank() || runCatching { profileDateParser.parse(dateOfBirth) }.getOrNull() != null
     val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
-    val operationError by vm.operationError.collectAsState()
     var showDeleteAll by rememberSaveable { mutableStateOf(false) }
     var showReportOptions by rememberSaveable { mutableStateOf(false) }
     var showBackupPassword by rememberSaveable { mutableStateOf(false) }
@@ -960,7 +995,6 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     if (showBackupPassword) BackupPasswordDialog(backupAction == "CREATE", backupPassword, { backupPassword = it }, { password -> backupPassword = password; showBackupPassword = false; if (backupAction == "CREATE") backupLauncher.launch("vexel-health-backup.vexel") else restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) }, { showBackupPassword = false })
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
     if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
-    operationError?.let { message -> AlertDialog(onDismissRequest = vm::dismissOperationError, title = { Text("Something went wrong") }, text = { Text(message) }, confirmButton = { TextButton(vm::dismissOperationError) { Text("OK") } }) }
 }
 
 @Composable
