@@ -48,6 +48,7 @@ class BackupRestoreTest {
         .digest(bytes).joinToString("") { "%02x".format(it) }
 
     private fun newViewModel(database: HealthDatabase) = PassportViewModel(
+        appContext = context,
         database = database,
         preferences = PreferencesStore(context),
         pinMaterialCipher = KeystorePinMaterialCipher(),
@@ -74,7 +75,7 @@ class BackupRestoreTest {
             sourceVm.saveProfile(ProfileEntity(name = "Test Patient", dateOfBirth = "1990-01-01", bloodGroup = "O+", allergies = "Penicillin", conditions = "Asthma", emergencyContact = "555-0100")).join()
             withTimeout(10_000) { sourceVm.profile.first { it?.name == "Test Patient" } }
 
-            sourceVm.addSymptom(context, SymptomDraft(name = "Headache", severity = 5, notes = "Synthetic test note")).join()
+            sourceVm.addSymptom(SymptomDraft(name = "Headache", severity = 5, notes = "Synthetic test note")).join()
             withTimeout(10_000) { sourceVm.events.first { it.isNotEmpty() } }
 
             sourceVm.addMedication(MedicationDraft(name = "Test Med", strength = "10mg", dose = "1", unit = "tablet", frequency = "daily", status = "CURRENT")).join()
@@ -93,7 +94,7 @@ class BackupRestoreTest {
 
             // Create the encrypted backup.
             val backupUri = Uri.fromFile(backupFile)
-            sourceVm.createBackup(context, backupUri, password).join()
+            sourceVm.createBackup(backupUri, password).join()
             assertTrue("backup file should be written", backupFile.exists() && backupFile.length() > 0)
             val backupBytes = backupFile.readBytes()
             assertTrue("backup must be encrypted", BackupCrypto.isEncrypted(backupBytes))
@@ -114,7 +115,7 @@ class BackupRestoreTest {
             val targetDatabase = Room.inMemoryDatabaseBuilder(context, HealthDatabase::class.java).build()
             try {
                 val targetVm = newViewModel(targetDatabase)
-                targetVm.restoreBackup(context, backupUri, password).join()
+                targetVm.restoreBackup(backupUri, password).join()
 
                 val restoredProfile = withTimeout(10_000) { targetVm.profile.first { it != null } }
                 assertEquals("Test Patient", restoredProfile?.name)

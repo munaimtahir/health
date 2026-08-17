@@ -48,6 +48,7 @@ class LargeDataPerformanceTest {
             }
 
             val viewModel = PassportViewModel(
+                appContext = context,
                 database = database,
                 preferences = PreferencesStore(context),
                 pinMaterialCipher = KeystorePinMaterialCipher(),
@@ -64,7 +65,6 @@ class LargeDataPerformanceTest {
 
             val pdfStarted = SystemClock.elapsedRealtime()
             viewModel.createPdfReport(
-                context = context,
                 uri = Uri.fromFile(pdfFile),
                 includeProfile = false,
                 includeEvents = true,
@@ -77,7 +77,7 @@ class LargeDataPerformanceTest {
             assertTrue("large PDF generation took ${pdfDuration}ms", pdfDuration < OPERATION_BUDGET_MILLIS)
 
             val backupStarted = SystemClock.elapsedRealtime()
-            viewModel.createBackup(context, Uri.fromFile(backupFile), "synthetic-performance-password").join()
+            viewModel.createBackup(Uri.fromFile(backupFile), "synthetic-performance-password").join()
             val backupDuration = SystemClock.elapsedRealtime() - backupStarted
             assertTrue(backupFile.exists() && backupFile.length() > 0)
             assertTrue("large encrypted backup took ${backupDuration}ms", backupDuration < OPERATION_BUDGET_MILLIS)

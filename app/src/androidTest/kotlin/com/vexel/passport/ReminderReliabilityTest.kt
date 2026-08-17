@@ -33,6 +33,7 @@ class ReminderReliabilityTest {
     private val scheduledIds = mutableListOf<String>()
 
     private fun newViewModel(database: HealthDatabase) = PassportViewModel(
+        appContext = context,
         database = database,
         preferences = PreferencesStore(context),
         pinMaterialCipher = KeystorePinMaterialCipher(),

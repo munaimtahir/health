@@ -92,6 +92,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.vexel.passport.core.ui.DateTimeField
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -178,6 +179,7 @@ private fun shareContentUri(context: Context, uri: Uri, mimeType: String, choose
 
 @HiltViewModel
 class PassportViewModel @Inject constructor(
+    @param:ApplicationContext private val appContext: Context,
     private val database: HealthDatabase,
     private val preferences: PreferencesStore,
     private val pinMaterialCipher: PinMaterialCipher,
@@ -203,14 +205,14 @@ class PassportViewModel @Inject constructor(
         val now = System.currentTimeMillis()
         database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), title, details, kind, now, now, now, "ACTIVE", severity))
     }
-    fun addSymptom(context: Context, draft: SymptomDraft, imageUri: Uri? = null) = viewModelScope.launch {
+    fun addSymptom(draft: SymptomDraft, imageUri: Uri? = null) = viewModelScope.launch {
         val now = System.currentTimeMillis()
         val parser = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }
         val start = runCatching { parser.parse(draft.startAtText)?.time }.getOrNull() ?: now
         val end = runCatching { parser.parse(draft.endAtText)?.time }.getOrNull()
         val imageId = imageUri?.let { uri ->
-            val mime = context.contentResolver.getType(uri) ?: return@let null
-            if (mime !in setOf("image/jpeg", "image/png")) null else context.contentResolver.openInputStream(uri)?.use { input ->
+            val mime = appContext.contentResolver.getType(uri) ?: return@let null
+            if (mime !in setOf("image/jpeg", "image/png")) null else appContext.contentResolver.openInputStream(uri)?.use { input ->
                 val preserved = secureFileStore.preserveOriginal(input, mime, "symptom-image")
                 database.documentDao().insert(DocumentEntity(preserved.id, "Symptom image", "SYMPTOM_IMAGE", "", "Attached to symptom", "symptom-image", preserved.mimeType, preserved.byteCount, preserved.sha256, now))
                 preserved.id
@@ -274,12 +276,12 @@ class PassportViewModel @Inject constructor(
         database.reminderDao().reschedule(reminder.id, dueAt, System.currentTimeMillis())
         reminderScheduler.schedule(reminder.id, dueAt, reminder.recurrence)
     }
-    fun importDocument(context: Context, uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
-        val mimeType = context.contentResolver.getType(uri) ?: return@launch
-        val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+    fun importDocument(uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
+        val mimeType = appContext.contentResolver.getType(uri) ?: return@launch
+        val displayName = appContext.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else "document"
         } ?: "document"
-        val preserved = context.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.preserveOriginal(input, mimeType, displayName) } ?: return@launch
+        val preserved = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.preserveOriginal(input, mimeType, displayName) } ?: return@launch
         val now = System.currentTimeMillis()
         database.documentDao().insert(DocumentEntity(preserved.id, title.trim().ifBlank { displayName }, category.trim().ifBlank { "OTHER" }, documentDate.trim(), notes.trim(), displayName, preserved.mimeType, preserved.byteCount, preserved.sha256, now))
     }
@@ -290,23 +292,23 @@ class PassportViewModel @Inject constructor(
     fun updateDocument(document: DocumentEntity, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
         database.documentDao().update(document.copy(title = title.trim().ifBlank { document.title }, category = category.trim().ifBlank { document.category }, documentDate = documentDate.trim(), notes = notes.trim()))
     }
-    fun replaceDocument(context: Context, document: DocumentEntity, uri: Uri) = viewModelScope.launch {
-        val mimeType = context.contentResolver.getType(uri) ?: return@launch
-        val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+    fun replaceDocument(document: DocumentEntity, uri: Uri) = viewModelScope.launch {
+        val mimeType = appContext.contentResolver.getType(uri) ?: return@launch
+        val displayName = appContext.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else document.originalFileName
         } ?: document.originalFileName
-        val replaced = context.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.replaceOriginal(document.id, input, mimeType, displayName) } ?: return@launch
+        val replaced = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.replaceOriginal(document.id, input, mimeType, displayName) } ?: return@launch
         database.documentDao().update(document.copy(originalFileName = displayName, mimeType = replaced.mimeType, byteCount = replaced.byteCount, sha256 = replaced.sha256))
     }
-    fun openDocument(context: Context, document: DocumentEntity) = viewModelScope.launch {
-        val file = secureFileStore.copyToShareCache(context, document.id, document.originalFileName)
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, document.mimeType); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }, "Open document").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    fun openDocument(document: DocumentEntity) = viewModelScope.launch {
+        val file = secureFileStore.copyToShareCache(appContext, document.id, document.originalFileName)
+        val uri = FileProvider.getUriForFile(appContext, "${appContext.packageName}.files", file)
+        appContext.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, document.mimeType); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }, "Open document").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
-    fun shareDocument(context: Context, document: DocumentEntity) = viewModelScope.launch {
-        val file = secureFileStore.copyToShareCache(context, document.id, document.originalFileName)
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-        shareContentUri(context, uri, document.mimeType, "Share document")
+    fun shareDocument(document: DocumentEntity) = viewModelScope.launch {
+        val file = secureFileStore.copyToShareCache(appContext, document.id, document.originalFileName)
+        val uri = FileProvider.getUriForFile(appContext, "${appContext.packageName}.files", file)
+        shareContentUri(appContext, uri, document.mimeType, "Share document")
     }
     fun exportJson(fromEpochMillis: Long? = null, toEpochMillis: Long? = null): String {
         fun inRange(epoch: Long?): Boolean = isWithinDateScope(epoch, fromEpochMillis, toEpochMillis)
@@ -346,7 +348,7 @@ class PassportViewModel @Inject constructor(
         appendLine("REMINDERS")
         reminders.value.filter { inRange(it.dueAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.status} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))}") }
     }
-    fun createBackup(context: Context, uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    fun createBackup(uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
         val zipBytes = ByteArrayOutputStream().use { output ->
             ZipOutputStream(output).use { zip ->
                 val data = exportJson().toByteArray(Charsets.UTF_8)
@@ -365,10 +367,10 @@ class PassportViewModel @Inject constructor(
             }
             output.toByteArray()
         }
-        context.contentResolver.openOutputStream(uri)?.use { it.write(BackupCrypto.encrypt(zipBytes, password.toCharArray())) }
+        appContext.contentResolver.openOutputStream(uri)?.use { it.write(BackupCrypto.encrypt(zipBytes, password.toCharArray())) }
     }
-    fun restoreBackup(context: Context, uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-        val sourceBytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Unable to read backup")
+    fun restoreBackup(uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val sourceBytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Unable to read backup")
         val backupBytes = if (BackupCrypto.isEncrypted(sourceBytes)) BackupCrypto.decrypt(sourceBytes, password.toCharArray()) else sourceBytes
         val entries = linkedMapOf<String, ByteArray>()
         ZipInputStream(ByteArrayInputStream(backupBytes)).use { zip ->
@@ -432,7 +434,7 @@ class PassportViewModel @Inject constructor(
             throw error
         }
     }
-    fun createPdfReport(context: Context, uri: Uri, includeProfile: Boolean = true, includeEvents: Boolean = true, includeMedications: Boolean = true, includeDocuments: Boolean = true, includeReminders: Boolean = true, fromEpochMillis: Long? = null, toEpochMillis: Long? = null) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    fun createPdfReport(uri: Uri, includeProfile: Boolean = true, includeEvents: Boolean = true, includeMedications: Boolean = true, includeDocuments: Boolean = true, includeReminders: Boolean = true, fromEpochMillis: Long? = null, toEpochMillis: Long? = null) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
         fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
         val dateParser = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
         fun dateTextInRange(value: String, fallback: Long): Boolean = value.isBlank() || inRange(runCatching { dateParser.parse(value)?.time }.getOrNull() ?: fallback)
@@ -446,7 +448,7 @@ class PassportViewModel @Inject constructor(
         val pdf = PdfDocument(); val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 11f }; var pageNo = 0; var page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); var y = 48f
         fun finishPage() { paint.textSize = 9f; page.canvas.drawText("Vexel Health Passport · Page $pageNo", 48f, 824f, paint); pdf.finishPage(page) }
         lines.forEach { raw -> raw.chunked(88).ifEmpty { listOf("") }.forEach { text -> if (y > 790f) { finishPage(); page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); y = 48f }; paint.textSize = if (pageNo == 1 && y < 70f) 20f else 11f; page.canvas.drawText(text, 48f, y, paint); y += 18f } }
-        finishPage(); context.contentResolver.openOutputStream(uri)?.use { pdf.writeTo(it) }; pdf.close()
+        finishPage(); appContext.contentResolver.openOutputStream(uri)?.use { pdf.writeTo(it) }; pdf.close()
     }
 }
 
@@ -568,7 +570,6 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
     var showSymptom by rememberSaveable { mutableStateOf(false) }
     var showMedication by rememberSaveable { mutableStateOf(false) }
     var changeMedication by remember { mutableStateOf<MedicationEntity?>(null) }
-    val context = LocalContext.current
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
         item {
             Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
@@ -613,7 +614,7 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
             OutlinedButton(onClick = { showMedication = true }, modifier = Modifier.fillMaxWidth()) { Text("Add medication record") }
         }
     }
-    if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent) { draft, imageUri -> vm.addSymptom(context, draft, imageUri) }
+    if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent) { draft, imageUri -> vm.addSymptom(draft, imageUri) }
     if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
     changeMedication?.let { medication -> MedicationChangeDialog(medication, { changeMedication = null }) { strength, dose, unit, frequency, status, notes -> vm.recordMedicationChange(medication, strength, dose, unit, frequency, status, notes); changeMedication = null } }
 }
@@ -647,14 +648,13 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
 
 @Composable
 private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntity>, modifier: Modifier) {
-    val context = LocalContext.current
     var showImport by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<DocumentEntity?>(null) }
     var pendingEdit by remember { mutableStateOf<DocumentEntity?>(null) }
     var pendingReplace by remember { mutableStateOf<DocumentEntity?>(null) }
     val replaceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val document = pendingReplace
-        if (uri != null && document != null) vm.replaceDocument(context, document, uri)
+        if (uri != null && document != null) vm.replaceDocument(document, uri)
         pendingReplace = null
     }
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
@@ -675,11 +675,11 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
                 }
                 if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
                 if (document.notes.isNotBlank()) Text(document.notes)
-                Row { TextButton({ vm.openDocument(context, document) }) { Text("Open") }; TextButton({ vm.shareDocument(context, document) }) { Text("Share") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingReplace = document; replaceLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Replace") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
+                Row { TextButton({ vm.openDocument(document) }) { Text("Open") }; TextButton({ vm.shareDocument(document) }) { Text("Share") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingReplace = document; replaceLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Replace") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
             } }
         }
     }
-    if (showImport) DocumentImportDialog(vm, context) { showImport = false }
+    if (showImport) DocumentImportDialog(vm) { showImport = false }
     pendingDelete?.let { document ->
         AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
     }
@@ -775,13 +775,13 @@ private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit, onSched
 }
 
 @Composable
-private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDismiss: () -> Unit) {
+private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("OTHER") }
     var documentDate by rememberSaveable { mutableStateOf("") }
     var notes by rememberSaveable { mutableStateOf("") }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.importDocument(context, uri, title, category, documentDate, notes)
+        if (uri != null) vm.importDocument(uri, title, category, documentDate, notes)
         if (uri != null) onDismiss()
     }
     AlertDialog(onDismissRequest = onDismiss, title = { Text("Import private document") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -825,15 +825,15 @@ private fun DocumentImportDialog(vm: PassportViewModel, context: Context, onDism
             context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportHumanReadable(from, to).toByteArray(Charsets.UTF_8)) }
         }
     }
-    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri -> if (uri != null) vm.createBackup(context, uri, backupPassword) }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(context, uri, backupPassword) }
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri -> if (uri != null) vm.createBackup(uri, backupPassword) }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(uri, backupPassword) }
     val reportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.PDF).mimeType)) { uri ->
         if (uri != null) {
             generatedReportUri = uri
             val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
             val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
             val to = runCatching { parser.parse(reportTo)?.time?.plus(86_399_999L) }.getOrNull()
-            vm.createPdfReport(context, uri, includeProfile, includeEvents, includeMedications, includeDocuments, includeReminders, from, to)
+            vm.createPdfReport(uri, includeProfile, includeEvents, includeMedications, includeDocuments, includeReminders, from, to)
         }
     }
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("profileScroll"), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
