@@ -111,6 +111,20 @@ class BackupRestoreTest {
                 BackupCrypto.decrypt(tampered, password.toCharArray())
             }
 
+            // The same wrong password, driven through the ViewModel's own restoreBackup() coroutine,
+            // must surface a safe user-facing error instead of crashing the app with an uncaught
+            // exception from viewModelScope.launch.
+            val wrongPasswordDatabase = Room.inMemoryDatabaseBuilder(context, HealthDatabase::class.java).build()
+            try {
+                val wrongPasswordVm = newViewModel(wrongPasswordDatabase)
+                wrongPasswordVm.restoreBackup(backupUri, "totally-wrong-password").join()
+                val error = withTimeout(10_000) { wrongPasswordVm.operationError.first { it != null } }
+                assertTrue("error message must not be blank", error!!.isNotBlank())
+                assertTrue("error message must not leak the raw exception type", !error.contains("AEADBadTagException"))
+            } finally {
+                wrongPasswordDatabase.close()
+            }
+
             // Restore into a fresh database + fresh document store, simulating a clean install.
             val targetDatabase = Room.inMemoryDatabaseBuilder(context, HealthDatabase::class.java).build()
             try {

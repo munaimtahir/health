@@ -198,6 +198,10 @@ class PassportViewModel @Inject constructor(
     val documents = database.documentDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val reminders = database.reminderDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.vexel.passport.core.datastore.UserPreferences())
+    private val _operationError = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    /** A safe, user-facing message for the most recent failed backup/restore/report operation, or null. */
+    val operationError: kotlinx.coroutines.flow.StateFlow<String?> = _operationError
+    fun dismissOperationError() { _operationError.value = null }
 
     fun completeOnboarding() = viewModelScope.launch { preferences.setOnboardingComplete(true) }
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { preferences.setDarkTheme(value) }
@@ -353,6 +357,7 @@ class PassportViewModel @Inject constructor(
         reminders.value.filter { inRange(it.dueAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.status} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))}") }
     }
     fun createBackup(uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+      try {
         val zipBytes = ByteArrayOutputStream().use { output ->
             ZipOutputStream(output).use { zip ->
                 val data = exportJson().toByteArray(Charsets.UTF_8)
@@ -372,8 +377,14 @@ class PassportViewModel @Inject constructor(
             output.toByteArray()
         }
         appContext.contentResolver.openOutputStream(uri)?.use { it.write(BackupCrypto.encrypt(zipBytes, password.toCharArray())) }
+      } catch (cancellation: kotlinx.coroutines.CancellationException) {
+        throw cancellation
+      } catch (failure: Exception) {
+        _operationError.value = "Backup could not be created. Check available storage and try again."
+      }
     }
     fun restoreBackup(uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+      try {
         val sourceBytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Unable to read backup")
         val backupBytes = if (BackupCrypto.isEncrypted(sourceBytes)) BackupCrypto.decrypt(sourceBytes, password.toCharArray()) else sourceBytes
         val entries = linkedMapOf<String, ByteArray>()
@@ -437,8 +448,16 @@ class PassportViewModel @Inject constructor(
             restoredDocuments.forEach { secureFileStore.delete(it.id) }
             throw error
         }
+      } catch (cancellation: kotlinx.coroutines.CancellationException) {
+        throw cancellation
+      } catch (failure: javax.crypto.AEADBadTagException) {
+        _operationError.value = "Incorrect password, or the backup file is corrupted."
+      } catch (failure: Exception) {
+        _operationError.value = "Restore failed. The backup file may be corrupted or in an unsupported format."
+      }
     }
     fun createPdfReport(uri: Uri, includeProfile: Boolean = true, includeEvents: Boolean = true, includeMedications: Boolean = true, includeDocuments: Boolean = true, includeReminders: Boolean = true, fromEpochMillis: Long? = null, toEpochMillis: Long? = null) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+      try {
         fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
         val dateParser = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
         fun dateTextInRange(value: String, fallback: Long): Boolean = value.isBlank() || inRange(runCatching { dateParser.parse(value)?.time }.getOrNull() ?: fallback)
@@ -453,6 +472,11 @@ class PassportViewModel @Inject constructor(
         fun finishPage() { paint.textSize = 9f; page.canvas.drawText("Vexel Health Passport · Page $pageNo", 48f, 824f, paint); pdf.finishPage(page) }
         lines.forEach { raw -> raw.chunked(88).ifEmpty { listOf("") }.forEach { text -> if (y > 790f) { finishPage(); page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); y = 48f }; paint.textSize = if (pageNo == 1 && y < 70f) 20f else 11f; page.canvas.drawText(text, 48f, y, paint); y += 18f } }
         finishPage(); appContext.contentResolver.openOutputStream(uri)?.use { pdf.writeTo(it) }; pdf.close()
+      } catch (cancellation: kotlinx.coroutines.CancellationException) {
+        throw cancellation
+      } catch (failure: Exception) {
+        _operationError.value = "Report generation failed. Try again."
+      }
     }
 }
 
@@ -803,6 +827,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     val profileDateParser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
     val dateOfBirthValid = dateOfBirth.isBlank() || runCatching { profileDateParser.parse(dateOfBirth) }.getOrNull() != null
     val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
+    val operationError by vm.operationError.collectAsState()
     var showDeleteAll by rememberSaveable { mutableStateOf(false) }
     var showReportOptions by rememberSaveable { mutableStateOf(false) }
     var showBackupPassword by rememberSaveable { mutableStateOf(false) }
@@ -909,6 +934,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     if (showBackupPassword) BackupPasswordDialog(backupAction == "CREATE", backupPassword, { backupPassword = it }, { password -> backupPassword = password; showBackupPassword = false; if (backupAction == "CREATE") backupLauncher.launch("vexel-health-backup.vexel") else restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) }, { showBackupPassword = false })
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
     if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
+    operationError?.let { message -> AlertDialog(onDismissRequest = vm::dismissOperationError, title = { Text("Something went wrong") }, text = { Text(message) }, confirmButton = { TextButton(vm::dismissOperationError) { Text("OK") } }) }
 }
 
 @Composable
