@@ -1,19 +1,6 @@
-WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 36
-
-This Android Gradle plugin (8.7.3) was tested up to compileSdk = 35.
-
-You are strongly encouraged to update your project to use a newer
-Android Gradle plugin that has been tested with compileSdk = 36.
-
-If you are already using the latest version of the Android Gradle plugin,
-you may need to wait until a newer version with support for compileSdk = 36 is available.
-
-For more information refer to the compatibility table:
-https://d.android.com/r/tools/api-level-support
-
-To suppress this warning, add/update
-    android.suppressUnsupportedCompileSdk=36
-to this project's gradle.properties.
+openjdk version "17.0.18" 2026-01-20
+OpenJDK Runtime Environment Temurin-17.0.18+8 (build 17.0.18+8)
+OpenJDK 64-Bit Server VM Temurin-17.0.18+8 (build 17.0.18+8, mixed mode, sharing)
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
@@ -79,6 +66,26 @@ to this project's gradle.properties.
 > Task :feature:timeline:preDebugBuild UP-TO-DATE
 > Task :feature:timeline:writeDebugAarMetadata
 > Task :app:checkDebugAarMetadata
+> Task :core:database:processDebugNavigationResources
+> Task :core:datastore:processDebugNavigationResources
+> Task :core:designsystem:processDebugNavigationResources
+> Task :core:files:processDebugNavigationResources
+> Task :core:notifications:processDebugNavigationResources
+> Task :core:security:processDebugNavigationResources
+> Task :core:ui:processDebugNavigationResources
+> Task :feature:appointments:processDebugNavigationResources
+> Task :feature:dashboard:processDebugNavigationResources
+> Task :feature:medications:processDebugNavigationResources
+> Task :feature:onboarding:processDebugNavigationResources
+> Task :feature:profile:processDebugNavigationResources
+> Task :feature:records:processDebugNavigationResources
+> Task :feature:reminders:processDebugNavigationResources
+> Task :feature:reports:processDebugNavigationResources
+> Task :feature:settings:processDebugNavigationResources
+> Task :feature:symptoms:processDebugNavigationResources
+> Task :feature:timeline:processDebugNavigationResources
+> Task :app:processDebugNavigationResources
+> Task :app:compileDebugNavigationResources
 > Task :app:generateDebugResValues
 > Task :core:database:generateDebugResValues
 > Task :core:database:generateDebugResources
@@ -136,10 +143,6 @@ to this project's gradle.properties.
 > Task :feature:timeline:packageDebugResources
 > Task :app:mapDebugSourceSetPaths
 > Task :app:generateDebugResources
-> Task :core:common:compileKotlin
-> Task :core:common:compileJava NO-SOURCE
-> Task :core:common:classes UP-TO-DATE
-> Task :core:common:jar
 > Task :app:mergeDebugResources
 > Task :app:packageDebugResources
 > Task :app:parseDebugLocalResources
@@ -172,7 +175,11 @@ to this project's gradle.properties.
 > Task :feature:records:extractDeepLinksDebug
 > Task :feature:records:processDebugManifest
 > Task :feature:reminders:extractDeepLinksDebug
+> Task :core:common:compileKotlin
+> Task :core:common:compileJava NO-SOURCE
+> Task :core:common:classes UP-TO-DATE
 > Task :feature:reminders:processDebugManifest
+> Task :core:common:jar
 > Task :feature:reports:extractDeepLinksDebug
 > Task :feature:reports:processDebugManifest
 > Task :feature:settings:extractDeepLinksDebug
@@ -242,12 +249,13 @@ to this project's gradle.properties.
 > Task :core:model:compileJava NO-SOURCE
 > Task :core:model:classes UP-TO-DATE
 > Task :core:model:jar
+> Task :app:processDebugResources
+> Task :core:database:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:domain:compileKotlin
+> Task :core:database:kspDebugKotlin
 > Task :core:domain:compileJava NO-SOURCE
 > Task :core:domain:classes UP-TO-DATE
 > Task :core:domain:jar
-> Task :core:database:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :app:processDebugResources
 > Task :core:database:javaPreCompileDebug
 > Task :core:datastore:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:datastore:compileDebugKotlin
@@ -255,85 +263,51 @@ to this project's gradle.properties.
 > Task :core:datastore:compileDebugJavaWithJavac NO-SOURCE
 > Task :core:datastore:bundleLibCompileToJarDebug
 > Task :core:designsystem:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:designsystem:compileDebugKotlin
+> Task :core:database:compileDebugKotlin
+> Task :core:database:compileDebugJavaWithJavac
+> Task :core:database:bundleLibCompileToJarDebug
 > Task :core:designsystem:javaPreCompileDebug
+> Task :core:files:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:designsystem:compileDebugKotlin
 > Task :core:designsystem:compileDebugJavaWithJavac NO-SOURCE
 > Task :core:designsystem:bundleLibCompileToJarDebug
-> Task :core:files:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:files:compileDebugKotlin
 > Task :core:files:javaPreCompileDebug
+> Task :core:notifications:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:files:compileDebugKotlin
 > Task :core:files:compileDebugJavaWithJavac NO-SOURCE
 > Task :core:files:bundleLibCompileToJarDebug
-> Task :core:notifications:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:notifications:javaPreCompileDebug
 > Task :core:security:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:security:compileDebugKotlin
-> Task :core:security:javaPreCompileDebug
-> Task :core:security:compileDebugJavaWithJavac NO-SOURCE
-> Task :core:security:bundleLibCompileToJarDebug
-> Task :core:ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:database:kspDebugKotlin
-> Task :core:ui:compileDebugKotlin
-> Task :core:ui:javaPreCompileDebug
-> Task :core:ui:compileDebugJavaWithJavac NO-SOURCE
-> Task :core:ui:bundleLibCompileToJarDebug
-> Task :feature:appointments:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :core:database:compileDebugKotlin
-> Task :feature:appointments:compileDebugKotlin
-> Task :core:database:compileDebugJavaWithJavac
-> Task :feature:appointments:javaPreCompileDebug
-> Task :feature:appointments:compileDebugJavaWithJavac NO-SOURCE
-> Task :core:database:bundleLibCompileToJarDebug
-> Task :feature:appointments:bundleLibCompileToJarDebug
-> Task :feature:dashboard:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:dashboard:compileDebugKotlin
-> Task :feature:dashboard:javaPreCompileDebug
-> Task :feature:dashboard:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:dashboard:bundleLibCompileToJarDebug
-> Task :feature:medications:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :core:notifications:compileDebugKotlin
 > Task :core:notifications:compileDebugJavaWithJavac NO-SOURCE
 > Task :core:notifications:bundleLibCompileToJarDebug
+> Task :core:security:javaPreCompileDebug
+> Task :core:ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :core:security:compileDebugKotlin
+> Task :core:security:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:security:bundleLibCompileToJarDebug
+> Task :core:ui:javaPreCompileDebug
+> Task :feature:appointments:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:appointments:javaPreCompileDebug
+> Task :feature:dashboard:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :feature:dashboard:javaPreCompileDebug
+> Task :feature:medications:checkKotlinGradlePluginConfigurationErrors SKIPPED
 > Task :feature:medications:javaPreCompileDebug
 > Task :feature:onboarding:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:medications:compileDebugKotlin
-> Task :feature:medications:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:medications:bundleLibCompileToJarDebug
 > Task :feature:onboarding:javaPreCompileDebug
 > Task :feature:profile:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:onboarding:compileDebugKotlin
-> Task :feature:onboarding:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:onboarding:bundleLibCompileToJarDebug
 > Task :feature:profile:javaPreCompileDebug
 > Task :feature:records:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:profile:compileDebugKotlin
-> Task :feature:profile:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:profile:bundleLibCompileToJarDebug
 > Task :feature:records:javaPreCompileDebug
 > Task :feature:reminders:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:records:compileDebugKotlin
-> Task :feature:records:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:records:bundleLibCompileToJarDebug
 > Task :feature:reminders:javaPreCompileDebug
 > Task :feature:reports:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:reminders:compileDebugKotlin
-> Task :feature:reminders:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:reminders:bundleLibCompileToJarDebug
 > Task :feature:reports:javaPreCompileDebug
 > Task :feature:settings:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:reports:compileDebugKotlin
-> Task :feature:reports:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:reports:bundleLibCompileToJarDebug
 > Task :feature:settings:javaPreCompileDebug
 > Task :feature:symptoms:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:settings:compileDebugKotlin
-> Task :feature:settings:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:settings:bundleLibCompileToJarDebug
 > Task :feature:symptoms:javaPreCompileDebug
 > Task :feature:timeline:checkKotlinGradlePluginConfigurationErrors SKIPPED
-> Task :feature:symptoms:compileDebugKotlin
-> Task :feature:symptoms:compileDebugJavaWithJavac NO-SOURCE
-> Task :feature:symptoms:bundleLibCompileToJarDebug
 > Task :feature:timeline:javaPreCompileDebug
 > Task :app:javaPreCompileDebug
 > Task :app:mergeDebugShaders
@@ -342,84 +316,117 @@ to this project's gradle.properties.
 > Task :core:database:mergeDebugShaders
 > Task :core:database:compileDebugShaders NO-SOURCE
 > Task :core:database:generateDebugAssets UP-TO-DATE
-> Task :core:database:packageDebugAssets
+> Task :core:database:mergeDebugAssets
 > Task :core:datastore:mergeDebugShaders
 > Task :core:datastore:compileDebugShaders NO-SOURCE
 > Task :core:datastore:generateDebugAssets UP-TO-DATE
-> Task :core:datastore:packageDebugAssets
+> Task :core:datastore:mergeDebugAssets
 > Task :core:designsystem:mergeDebugShaders
 > Task :core:designsystem:compileDebugShaders NO-SOURCE
 > Task :core:designsystem:generateDebugAssets UP-TO-DATE
-> Task :core:designsystem:packageDebugAssets
+> Task :core:designsystem:mergeDebugAssets
 > Task :core:files:mergeDebugShaders
 > Task :core:files:compileDebugShaders NO-SOURCE
 > Task :core:files:generateDebugAssets UP-TO-DATE
-> Task :core:files:packageDebugAssets
+> Task :core:files:mergeDebugAssets
 > Task :core:notifications:mergeDebugShaders
 > Task :core:notifications:compileDebugShaders NO-SOURCE
 > Task :core:notifications:generateDebugAssets UP-TO-DATE
-> Task :core:notifications:packageDebugAssets
+> Task :core:notifications:mergeDebugAssets
 > Task :core:security:mergeDebugShaders
 > Task :core:security:compileDebugShaders NO-SOURCE
 > Task :core:security:generateDebugAssets UP-TO-DATE
-> Task :core:security:packageDebugAssets
+> Task :core:security:mergeDebugAssets
 > Task :core:ui:mergeDebugShaders
 > Task :core:ui:compileDebugShaders NO-SOURCE
 > Task :core:ui:generateDebugAssets UP-TO-DATE
-> Task :core:ui:packageDebugAssets
+> Task :core:ui:mergeDebugAssets
 > Task :feature:appointments:mergeDebugShaders
 > Task :feature:appointments:compileDebugShaders NO-SOURCE
 > Task :feature:appointments:generateDebugAssets UP-TO-DATE
-> Task :feature:appointments:packageDebugAssets
+> Task :feature:appointments:mergeDebugAssets
 > Task :feature:dashboard:mergeDebugShaders
 > Task :feature:dashboard:compileDebugShaders NO-SOURCE
 > Task :feature:dashboard:generateDebugAssets UP-TO-DATE
-> Task :feature:dashboard:packageDebugAssets
+> Task :feature:dashboard:mergeDebugAssets
 > Task :feature:medications:mergeDebugShaders
 > Task :feature:medications:compileDebugShaders NO-SOURCE
 > Task :feature:medications:generateDebugAssets UP-TO-DATE
-> Task :feature:medications:packageDebugAssets
+> Task :feature:medications:mergeDebugAssets
 > Task :feature:onboarding:mergeDebugShaders
 > Task :feature:onboarding:compileDebugShaders NO-SOURCE
 > Task :feature:onboarding:generateDebugAssets UP-TO-DATE
-> Task :feature:onboarding:packageDebugAssets
+> Task :feature:onboarding:mergeDebugAssets
 > Task :feature:profile:mergeDebugShaders
 > Task :feature:profile:compileDebugShaders NO-SOURCE
 > Task :feature:profile:generateDebugAssets UP-TO-DATE
-> Task :feature:profile:packageDebugAssets
+> Task :feature:profile:mergeDebugAssets
 > Task :feature:records:mergeDebugShaders
 > Task :feature:records:compileDebugShaders NO-SOURCE
 > Task :feature:records:generateDebugAssets UP-TO-DATE
-> Task :feature:records:packageDebugAssets
+> Task :feature:records:mergeDebugAssets
 > Task :feature:reminders:mergeDebugShaders
 > Task :feature:reminders:compileDebugShaders NO-SOURCE
 > Task :feature:reminders:generateDebugAssets UP-TO-DATE
-> Task :feature:reminders:packageDebugAssets
+> Task :feature:reminders:mergeDebugAssets
 > Task :feature:reports:mergeDebugShaders
 > Task :feature:reports:compileDebugShaders NO-SOURCE
 > Task :feature:reports:generateDebugAssets UP-TO-DATE
-> Task :feature:reports:packageDebugAssets
+> Task :feature:reports:mergeDebugAssets
 > Task :feature:settings:mergeDebugShaders
 > Task :feature:settings:compileDebugShaders NO-SOURCE
 > Task :feature:settings:generateDebugAssets UP-TO-DATE
-> Task :feature:settings:packageDebugAssets
+> Task :feature:settings:mergeDebugAssets
 > Task :feature:symptoms:mergeDebugShaders
 > Task :feature:symptoms:compileDebugShaders NO-SOURCE
 > Task :feature:symptoms:generateDebugAssets UP-TO-DATE
-> Task :feature:symptoms:packageDebugAssets
+> Task :feature:symptoms:mergeDebugAssets
 > Task :feature:timeline:mergeDebugShaders
 > Task :feature:timeline:compileDebugShaders NO-SOURCE
 > Task :feature:timeline:generateDebugAssets UP-TO-DATE
-> Task :feature:timeline:packageDebugAssets
+> Task :feature:timeline:mergeDebugAssets
 > Task :app:mergeDebugAssets
 > Task :app:compressDebugAssets
 > Task :core:notifications:bundleLibRuntimeToJarDebug
 > Task :core:database:bundleLibRuntimeToJarDebug
+> Task :core:ui:compileDebugKotlin
+> Task :core:ui:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:ui:bundleLibCompileToJarDebug
+> Task :feature:appointments:compileDebugKotlin
+> Task :feature:appointments:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:appointments:bundleLibCompileToJarDebug
+> Task :feature:dashboard:compileDebugKotlin
+> Task :feature:dashboard:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:dashboard:bundleLibCompileToJarDebug
+> Task :feature:onboarding:compileDebugKotlin
+> Task :feature:medications:compileDebugKotlin
+> Task :feature:onboarding:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:medications:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:medications:bundleLibCompileToJarDebug
+> Task :feature:onboarding:bundleLibCompileToJarDebug
+> Task :feature:records:compileDebugKotlin
+> Task :feature:records:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:records:bundleLibCompileToJarDebug
+> Task :feature:profile:compileDebugKotlin
+> Task :feature:profile:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:profile:bundleLibCompileToJarDebug
+> Task :feature:reminders:compileDebugKotlin
+> Task :feature:reminders:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:reminders:bundleLibCompileToJarDebug
+> Task :feature:reports:compileDebugKotlin
+> Task :feature:reports:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:reports:bundleLibCompileToJarDebug
+> Task :feature:settings:compileDebugKotlin
+> Task :feature:settings:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:settings:bundleLibCompileToJarDebug
+> Task :feature:symptoms:compileDebugKotlin
+> Task :feature:symptoms:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:symptoms:bundleLibCompileToJarDebug
+> Task :core:security:bundleLibRuntimeToJarDebug
+> Task :core:files:bundleLibRuntimeToJarDebug
 > Task :feature:timeline:compileDebugKotlin
 > Task :feature:timeline:compileDebugJavaWithJavac NO-SOURCE
 > Task :feature:timeline:bundleLibCompileToJarDebug
-> Task :core:security:bundleLibRuntimeToJarDebug
-> Task :core:files:bundleLibRuntimeToJarDebug
 > Task :core:datastore:bundleLibRuntimeToJarDebug
 > Task :feature:onboarding:bundleLibRuntimeToJarDebug
 > Task :feature:dashboard:bundleLibRuntimeToJarDebug
@@ -533,11 +540,12 @@ to this project's gradle.properties.
 > Task :app:mergeDebugNativeLibs
 
 > Task :app:stripDebugDebugSymbols
-Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so.
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libdatastore_shared_counter.so. Run with --info option to learn more.
 
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
+> Task :core:database:checkDebugAarMetadata
 > Task :core:database:stripDebugDebugSymbols NO-SOURCE
 > Task :core:database:copyDebugJniLibsProjectAndLocalJars
 > Task :core:database:extractDebugAnnotations
@@ -550,6 +558,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:database:syncDebugLibJars
 > Task :core:database:bundleDebugAar
 > Task :core:database:assembleDebug
+> Task :core:datastore:checkDebugAarMetadata
 > Task :core:datastore:stripDebugDebugSymbols NO-SOURCE
 > Task :core:datastore:copyDebugJniLibsProjectAndLocalJars
 > Task :core:datastore:extractDebugAnnotations
@@ -562,6 +571,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:datastore:syncDebugLibJars
 > Task :core:datastore:bundleDebugAar
 > Task :core:datastore:assembleDebug
+> Task :core:designsystem:checkDebugAarMetadata
 > Task :core:designsystem:stripDebugDebugSymbols NO-SOURCE
 > Task :core:designsystem:copyDebugJniLibsProjectAndLocalJars
 > Task :core:designsystem:extractDebugAnnotations
@@ -574,6 +584,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:designsystem:syncDebugLibJars
 > Task :core:designsystem:bundleDebugAar
 > Task :core:designsystem:assembleDebug
+> Task :core:files:checkDebugAarMetadata
 > Task :core:files:stripDebugDebugSymbols NO-SOURCE
 > Task :core:files:copyDebugJniLibsProjectAndLocalJars
 > Task :core:files:extractDebugAnnotations
@@ -586,6 +597,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:files:syncDebugLibJars
 > Task :core:files:bundleDebugAar
 > Task :core:files:assembleDebug
+> Task :core:notifications:checkDebugAarMetadata
 > Task :core:notifications:stripDebugDebugSymbols NO-SOURCE
 > Task :core:notifications:copyDebugJniLibsProjectAndLocalJars
 > Task :core:notifications:extractDebugAnnotations
@@ -598,6 +610,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:notifications:syncDebugLibJars
 > Task :core:notifications:bundleDebugAar
 > Task :core:notifications:assembleDebug
+> Task :core:security:checkDebugAarMetadata
 > Task :core:security:stripDebugDebugSymbols NO-SOURCE
 > Task :core:security:copyDebugJniLibsProjectAndLocalJars
 > Task :core:security:extractDebugAnnotations
@@ -610,6 +623,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:security:syncDebugLibJars
 > Task :core:security:bundleDebugAar
 > Task :core:security:assembleDebug
+> Task :core:ui:checkDebugAarMetadata
 > Task :core:ui:stripDebugDebugSymbols NO-SOURCE
 > Task :core:ui:copyDebugJniLibsProjectAndLocalJars
 > Task :core:ui:extractDebugAnnotations
@@ -622,6 +636,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:ui:syncDebugLibJars
 > Task :core:ui:bundleDebugAar
 > Task :core:ui:assembleDebug
+> Task :feature:appointments:checkDebugAarMetadata
 > Task :feature:appointments:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:appointments:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:appointments:extractDebugAnnotations
@@ -634,6 +649,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:appointments:syncDebugLibJars
 > Task :feature:appointments:bundleDebugAar
 > Task :feature:appointments:assembleDebug
+> Task :feature:dashboard:checkDebugAarMetadata
 > Task :feature:dashboard:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:dashboard:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:dashboard:extractDebugAnnotations
@@ -646,6 +662,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:dashboard:syncDebugLibJars
 > Task :feature:dashboard:bundleDebugAar
 > Task :feature:dashboard:assembleDebug
+> Task :feature:medications:checkDebugAarMetadata
 > Task :feature:medications:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:medications:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:medications:extractDebugAnnotations
@@ -658,6 +675,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:medications:syncDebugLibJars
 > Task :feature:medications:bundleDebugAar
 > Task :feature:medications:assembleDebug
+> Task :feature:onboarding:checkDebugAarMetadata
 > Task :feature:onboarding:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:onboarding:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:onboarding:extractDebugAnnotations
@@ -670,6 +688,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:onboarding:syncDebugLibJars
 > Task :feature:onboarding:bundleDebugAar
 > Task :feature:onboarding:assembleDebug
+> Task :feature:profile:checkDebugAarMetadata
 > Task :feature:profile:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:profile:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:profile:extractDebugAnnotations
@@ -682,6 +701,8 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:profile:syncDebugLibJars
 > Task :feature:profile:bundleDebugAar
 > Task :feature:profile:assembleDebug
+> Task :app:compileDebugKotlin
+> Task :feature:records:checkDebugAarMetadata
 > Task :feature:records:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:records:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:records:extractDebugAnnotations
@@ -694,6 +715,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:records:syncDebugLibJars
 > Task :feature:records:bundleDebugAar
 > Task :feature:records:assembleDebug
+> Task :feature:reminders:checkDebugAarMetadata
 > Task :feature:reminders:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:reminders:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:reminders:extractDebugAnnotations
@@ -706,6 +728,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:reminders:syncDebugLibJars
 > Task :feature:reminders:bundleDebugAar
 > Task :feature:reminders:assembleDebug
+> Task :feature:reports:checkDebugAarMetadata
 > Task :feature:reports:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:reports:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:reports:extractDebugAnnotations
@@ -718,6 +741,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:reports:syncDebugLibJars
 > Task :feature:reports:bundleDebugAar
 > Task :feature:reports:assembleDebug
+> Task :feature:settings:checkDebugAarMetadata
 > Task :feature:settings:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:settings:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:settings:extractDebugAnnotations
@@ -730,6 +754,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:settings:syncDebugLibJars
 > Task :feature:settings:bundleDebugAar
 > Task :feature:settings:assembleDebug
+> Task :feature:symptoms:checkDebugAarMetadata
 > Task :feature:symptoms:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:symptoms:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:symptoms:extractDebugAnnotations
@@ -742,6 +767,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:symptoms:syncDebugLibJars
 > Task :feature:symptoms:bundleDebugAar
 > Task :feature:symptoms:assembleDebug
+> Task :feature:timeline:checkDebugAarMetadata
 > Task :feature:timeline:stripDebugDebugSymbols NO-SOURCE
 > Task :feature:timeline:copyDebugJniLibsProjectAndLocalJars
 > Task :feature:timeline:extractDebugAnnotations
@@ -754,7 +780,6 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:timeline:syncDebugLibJars
 > Task :feature:timeline:bundleDebugAar
 > Task :feature:timeline:assembleDebug
-> Task :app:compileDebugKotlin
 > Task :app:compileDebugJavaWithJavac
 > Task :app:hiltAggregateDepsDebug
 > Task :app:hiltJavaCompileDebug
@@ -768,5 +793,5 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:createDebugApkListingFileRedirect
 > Task :app:assembleDebug
 
-BUILD SUCCESSFUL in 55s
-570 actionable tasks: 480 executed, 90 up-to-date
+BUILD SUCCESSFUL in 3m 19s
+608 actionable tasks: 518 executed, 90 up-to-date

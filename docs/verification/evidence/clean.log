@@ -1,3 +1,7 @@
+openjdk version "17.0.18" 2026-01-20
+OpenJDK Runtime Environment Temurin-17.0.18+8 (build 17.0.18+8)
+OpenJDK 64-Bit Server VM Temurin-17.0.18+8 (build 17.0.18+8, mixed mode, sharing)
+Starting a Gradle Daemon, 2 busy and 1 incompatible Daemons could not be reused, use --status for details
 > Task :app:clean
 > Task :core:common:clean
 > Task :core:database:clean
@@ -8,7 +12,7 @@
 > Task :core:model:clean
 > Task :core:notifications:clean
 > Task :core:security:clean
-> Task :core:testing:clean
+> Task :core:testing:clean UP-TO-DATE
 > Task :core:ui:clean
 > Task :feature:appointments:clean
 > Task :feature:dashboard:clean
@@ -22,5 +26,5 @@
 > Task :feature:symptoms:clean
 > Task :feature:timeline:clean
 
-BUILD SUCCESSFUL in 5s
-23 actionable tasks: 23 executed
+BUILD SUCCESSFUL in 1m 7s
+23 actionable tasks: 22 executed, 1 up-to-date
