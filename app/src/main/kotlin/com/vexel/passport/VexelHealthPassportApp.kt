@@ -86,6 +86,11 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.vexel.passport.core.ui.DateTimeField
 import java.text.DateFormat
@@ -139,13 +144,22 @@ import com.vexel.passport.core.security.PinVerifier
 import com.vexel.passport.core.security.PinMaterialCipher
 import com.vexel.passport.core.security.BackupCrypto
 
-private data class Destination(val label: String, val icon: ImageVector)
+private data class Destination(val route: String, val label: String, val icon: ImageVector)
 private val destinations = listOf(
-    Destination("Home", Icons.Outlined.Home), Destination("Records", Icons.Outlined.Event),
-    Destination("Plan", Icons.Outlined.Schedule), Destination("Vault", Icons.Outlined.Folder),
-    Destination("Profile", Icons.Outlined.Person),
+    Destination(Routes.HOME, "Home", Icons.Outlined.Home), Destination(Routes.RECORDS, "Records", Icons.Outlined.Event),
+    Destination(Routes.PLAN, "Plan", Icons.Outlined.Schedule), Destination(Routes.VAULT, "Vault", Icons.Outlined.Folder),
+    Destination(Routes.PROFILE, "Profile", Icons.Outlined.Person),
 )
 internal val primaryDestinationLabels: List<String> = destinations.map { it.label }
+
+/** Centralized, stable string routes for the primary bottom-navigation destinations. */
+internal object Routes {
+    const val HOME = "home"
+    const val RECORDS = "records"
+    const val PLAN = "plan"
+    const val VAULT = "vault"
+    const val PROFILE = "profile"
+}
 
 private fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
     .digest(bytes).joinToString("") { "%02x".format(it) }
@@ -441,7 +455,6 @@ class PassportViewModel @Inject constructor(
 fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
     val prefs by viewModel.settings.collectAsState()
     val profile by viewModel.profile.collectAsState()
-    var selectedIndex by rememberSaveable { mutableStateOf(0) }
     VexelHealthPassportTheme(darkTheme = prefs.darkTheme) {
         if (!prefs.onboardingComplete) {
             OnboardingScreen(onComplete = viewModel::completeOnboarding)
@@ -453,26 +466,36 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 } else {
                     MaterialTheme.typography.labelMedium
                 }
+                val navController = rememberNavController()
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = backStackEntry?.destination?.route ?: Routes.HOME
+                val currentLabel = destinations.firstOrNull { it.route == currentRoute }?.label ?: destinations.first().label
                 Scaffold(
-                topBar = { TopAppBar(title = { Text(destinations[selectedIndex].label) }) },
+                topBar = { TopAppBar(title = { Text(currentLabel) }) },
                 bottomBar = { NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
-                ) { destinations.forEachIndexed { index, destination ->
+                ) { destinations.forEach { destination ->
                     NavigationBarItem(
-                        selected = index == selectedIndex,
-                        onClick = { selectedIndex = index },
+                        selected = destination.route == currentRoute,
+                        onClick = {
+                            navController.navigate(destination.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                         icon = { Icon(destination.icon, contentDescription = destination.label) },
                         label = { Text(destination.label, maxLines = 1, style = navigationLabelStyle) },
                     )
                 } } },
                 ) { padding ->
-                when (selectedIndex) {
-                    0 -> HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, viewModel.events.collectAsState().value, Modifier.padding(padding))
-                    1 -> TimelineScreen(viewModel, Modifier.padding(padding))
-                    2 -> RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding))
-                    3 -> DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding))
-                    else -> ProfileScreen(viewModel, profile, Modifier.padding(padding))
+                NavHost(navController = navController, startDestination = Routes.HOME) {
+                    composable(Routes.HOME) { HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, viewModel.events.collectAsState().value, Modifier.padding(padding)) }
+                    composable(Routes.RECORDS) { TimelineScreen(viewModel, Modifier.padding(padding)) }
+                    composable(Routes.PLAN) { RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding)) }
+                    composable(Routes.VAULT) { DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding)) }
+                    composable(Routes.PROFILE) { ProfileScreen(viewModel, profile, Modifier.padding(padding)) }
                 }
                 }
             }

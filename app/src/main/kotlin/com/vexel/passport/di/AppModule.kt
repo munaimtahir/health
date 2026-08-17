@@ -41,5 +41,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideReminderScheduler(@ApplicationContext context: Context): ReminderScheduler = WorkManagerReminderScheduler(context)
+    fun provideReminderScheduler(@ApplicationContext context: Context, database: HealthDatabase): ReminderScheduler =
+        WorkManagerReminderScheduler(context, database)
 }

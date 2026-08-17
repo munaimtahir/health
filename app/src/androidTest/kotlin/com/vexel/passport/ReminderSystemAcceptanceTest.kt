@@ -70,7 +70,7 @@ class ReminderSystemAcceptanceTest {
                     updatedAtEpochMillis = now,
                 )
             )
-            WorkManagerReminderScheduler(context).schedule(id, dueAt, "ONCE")
+            WorkManagerReminderScheduler(context, database).schedule(id, dueAt, "ONCE")
             val work = WorkManager.getInstance(context).getWorkInfosForUniqueWork(id).get()
             assertTrue("expected durable work for $id", work.isNotEmpty())
         } finally {

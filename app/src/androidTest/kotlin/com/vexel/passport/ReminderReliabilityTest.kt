@@ -37,7 +37,7 @@ class ReminderReliabilityTest {
         preferences = PreferencesStore(context),
         pinMaterialCipher = KeystorePinMaterialCipher(),
         secureFileStore = LocalSecureFileStore(context),
-        reminderScheduler = WorkManagerReminderScheduler(context),
+        reminderScheduler = WorkManagerReminderScheduler(context, database),
     )
 
     @Test
@@ -94,7 +94,7 @@ class ReminderReliabilityTest {
 
             // A fresh scheduler instance, exactly as PassportViewModel.init constructs one on
             // every app process start (including the first launch after a device reboot).
-            val freshScheduler = WorkManagerReminderScheduler(context)
+            val freshScheduler = WorkManagerReminderScheduler(context, database)
             freshScheduler.reconcile()
 
             val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(reminderId).get()

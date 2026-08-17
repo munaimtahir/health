@@ -52,14 +52,14 @@ class BackupRestoreTest {
         preferences = PreferencesStore(context),
         pinMaterialCipher = KeystorePinMaterialCipher(),
         secureFileStore = fileStore,
-        reminderScheduler = WorkManagerReminderScheduler(context),
+        reminderScheduler = WorkManagerReminderScheduler(context, database),
     )
 
     @After
     fun cleanUp() {
         backupFile.delete()
         createdDocumentIds.forEach { runCatching { fileStore.delete(it) } }
-        val scheduler = WorkManagerReminderScheduler(context)
+        val scheduler = WorkManagerReminderScheduler(context, Room.inMemoryDatabaseBuilder(context, HealthDatabase::class.java).build())
         runBlocking { scheduledReminderIds.forEach { runCatching { scheduler.cancel(it) } } }
     }
 

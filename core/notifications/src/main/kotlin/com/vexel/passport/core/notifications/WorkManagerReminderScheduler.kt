@@ -22,8 +22,12 @@ import androidx.work.WorkerParameters
 import androidx.work.Data
 import java.util.concurrent.TimeUnit
 import com.vexel.passport.core.database.DatabaseProvider
+import com.vexel.passport.core.database.HealthDatabase
 
-class WorkManagerReminderScheduler(private val context: Context) : ReminderScheduler {
+class WorkManagerReminderScheduler(
+    private val context: Context,
+    private val database: HealthDatabase,
+) : ReminderScheduler {
     private val workManager = WorkManager.getInstance(context)
 
     override suspend fun schedule(id: String, dueAtEpochMillis: Long, recurrence: String) {
@@ -43,13 +47,8 @@ class WorkManagerReminderScheduler(private val context: Context) : ReminderSched
     override suspend fun cancel(id: String) { workManager.cancelUniqueWork(id) }
 
     override suspend fun reconcile() {
-        val database = DatabaseProvider.create(context)
-        try {
-            database.reminderDao().findScheduled().forEach { reminder ->
-                schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence)
-            }
-        } finally {
-            database.close()
+        database.reminderDao().findScheduled().forEach { reminder ->
+            schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence)
         }
     }
 
