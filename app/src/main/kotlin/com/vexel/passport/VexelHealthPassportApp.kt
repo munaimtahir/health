@@ -129,6 +129,7 @@ import com.vexel.passport.core.designsystem.SectionHeader
 import com.vexel.passport.core.designsystem.StatusPill
 import com.vexel.passport.core.designsystem.VexelHealthPassportTheme
 import com.vexel.passport.core.model.SymptomDraft
+import com.vexel.passport.core.model.parseSymptomDateTime
 import com.vexel.passport.core.model.MedicationDraft
 import com.vexel.passport.core.model.validationErrors
 import com.vexel.passport.core.model.TrendEvent
@@ -207,9 +208,12 @@ class PassportViewModel @Inject constructor(
     }
     fun addSymptom(draft: SymptomDraft, imageUri: Uri? = null) = viewModelScope.launch {
         val now = System.currentTimeMillis()
-        val parser = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }
-        val start = runCatching { parser.parse(draft.startAtText)?.time }.getOrNull() ?: now
-        val end = runCatching { parser.parse(draft.endAtText)?.time }.getOrNull()
+        fun epochMillisOf(text: String): Long? = parseSymptomDateTime(text)
+            ?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+        // draft is expected to have already passed validationErrors(), which rejects
+        // unparsable non-blank text; a blank start intentionally defaults to "now".
+        val start = epochMillisOf(draft.startAtText) ?: now
+        val end = epochMillisOf(draft.endAtText)
         val imageId = imageUri?.let { uri ->
             val mime = appContext.contentResolver.getType(uri) ?: return@let null
             if (mime !in setOf("image/jpeg", "image/png")) null else appContext.contentResolver.openInputStream(uri)?.use { input ->
