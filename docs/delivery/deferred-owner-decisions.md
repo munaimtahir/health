@@ -24,6 +24,16 @@ Items parked for owner input rather than resolved unilaterally, per the repair-p
 - **Blocks internal release:** Only blocks a *signed, distributable* release artifact — not internal engineering completion.
 - **Action required at check-in:** Owner decides whether/when to supply signing credentials outside the repository.
 
+## DOD-004 — Default value for "hide recent-apps preview / screenshots"
+
+- **Decision or input required:** Whether `hideRecentAppsPreview` (FLAG_SECURE) should default ON instead of OFF.
+- **Affected phase/task:** Phase 6 privacy hardening.
+- **Safe options:** Default OFF (current, non-breaking, opt-in) vs. default ON (safer per the "no data loss > no privacy exposure > ..." quality ordering in `CLAUDE.md`, but changes existing behavior — blocks screenshots/screen-casting/recent-app-preview app-wide unless the user opts back out).
+- **Recommended option:** Keep default OFF. Changing an existing default to something more restrictive is a product decision, not something to infer unilaterally, and the feature is fully available either way.
+- **Work already completed:** Preference, `FLAG_SECURE` wiring, and the Profile-screen toggle are implemented and gate-verified (commit `b632ad5`).
+- **Blocks internal release:** No.
+- **Action required at check-in:** Owner decides the default; flipping it is a one-line change (`hideRecentAppsPreview: Boolean = true` in `UserPreferences`).
+
 ## DOD-003 — Play Console / external publication
 
 - **Decision or input required:** Play Console access, data-safety questionnaire submission, production rollout.
