@@ -51,6 +51,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -202,6 +204,9 @@ class PassportViewModel @Inject constructor(
     /** A safe, user-facing message for the most recent failed backup/restore/report operation, or null. */
     val operationError: kotlinx.coroutines.flow.StateFlow<String?> = _operationError
     fun dismissOperationError() { _operationError.value = null }
+    private val _statusEvents = kotlinx.coroutines.flow.MutableSharedFlow<String>(extraBufferCapacity = 1)
+    /** One-time, generic success confirmations (never health data) for a Snackbar to show. */
+    val statusEvents: kotlinx.coroutines.flow.SharedFlow<String> = _statusEvents
 
     fun completeOnboarding() = viewModelScope.launch { preferences.setOnboardingComplete(true) }
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { preferences.setDarkTheme(value) }
@@ -377,6 +382,7 @@ class PassportViewModel @Inject constructor(
             output.toByteArray()
         }
         appContext.contentResolver.openOutputStream(uri)?.use { it.write(BackupCrypto.encrypt(zipBytes, password.toCharArray())) }
+        _statusEvents.tryEmit("Backup created")
       } catch (cancellation: kotlinx.coroutines.CancellationException) {
         throw cancellation
       } catch (failure: Exception) {
@@ -444,6 +450,7 @@ class PassportViewModel @Inject constructor(
             }
             reminders.value.forEach { reminderScheduler.cancel(it.id) }
             scheduledReminders.forEach { reminderScheduler.schedule(it.id, it.dueAtEpochMillis, it.recurrence) }
+            _statusEvents.tryEmit("Restore completed")
         } catch (error: Throwable) {
             restoredDocuments.forEach { secureFileStore.delete(it.id) }
             throw error
@@ -500,8 +507,13 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = backStackEntry?.destination?.route ?: Routes.HOME
                 val currentLabel = destinations.firstOrNull { it.route == currentRoute }?.label ?: destinations.first().label
+                val snackbarHostState = remember { SnackbarHostState() }
+                LaunchedEffect(viewModel) {
+                    viewModel.statusEvents.collect { message -> snackbarHostState.showSnackbar(message) }
+                }
                 Scaffold(
                 topBar = { TopAppBar(title = { Text(currentLabel) }) },
+                snackbarHost = { SnackbarHost(snackbarHostState) },
                 bottomBar = { NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp,
