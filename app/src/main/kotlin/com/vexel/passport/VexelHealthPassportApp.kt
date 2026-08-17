@@ -1069,8 +1069,8 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
         OutlinedTextField(details, { details = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"), supportingText = { errors["notes"]?.let { Text(it) } })
         if (kind == "SYMPTOM") {
             SectionHeader("Timing and details")
-            DateTimeField("Start (optional)", startAtText, { startAtText = it }, isError = errors.containsKey("startAt"))
-            DateTimeField("End (optional)", endAtText, { endAtText = it }, enabled = !ongoing, isError = errors.containsKey("endAt"))
+            DateTimeField("Start (optional)", startAtText, { startAtText = it }, isError = errors.containsKey("startAt"), supportingText = errors["startAt"]?.let { message -> { Text(message) } })
+            DateTimeField("End (optional)", endAtText, { endAtText = it }, enabled = !ongoing, isError = errors.containsKey("endAt"), supportingText = errors["endAt"]?.let { message -> { Text(message) } })
             OutlinedTextField(durationText, { durationText = it.filter(Char::isDigit) }, label = { Text("Duration in minutes (optional)") }, isError = errors.containsKey("duration"))
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) { Checkbox(ongoing, { ongoing = it }); Text("Ongoing") }
             OutlinedTextField(bodyLocation, { bodyLocation = it }, label = { Text("Body location (optional)") })
@@ -1117,8 +1117,8 @@ private fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) ->
             OutlinedTextField(unit, { unit = it }, label = { Text("Unit (optional)") })
             OutlinedTextField(route, { route = it }, label = { Text("Route (optional)") })
             OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency (optional)") })
-            OutlinedTextField(startDate, { startDate = it }, label = { Text("Start date (optional)") })
-            OutlinedTextField(stopDate, { stopDate = it }, label = { Text("Stop date (optional)") })
+            OutlinedTextField(startDate, { startDate = it }, label = { Text("Start date, as yyyy-MM-dd (optional)") }, isError = errors.containsKey("startDate"), supportingText = { errors["startDate"]?.let { Text(it) } })
+            OutlinedTextField(stopDate, { stopDate = it }, label = { Text("Stop date, as yyyy-MM-dd (optional)") }, isError = errors.containsKey("stopDate"), supportingText = { errors["stopDate"]?.let { Text(it) } })
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = status == "CURRENT", onClick = { status = "CURRENT" }, label = { Text("Current") })
                 FilterChip(selected = status == "STOPPED", onClick = { status = "STOPPED" }, label = { Text("Stopped") })
