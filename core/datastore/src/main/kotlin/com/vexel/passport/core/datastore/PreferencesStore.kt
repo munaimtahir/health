@@ -16,6 +16,7 @@ class PreferencesStore(private val context: Context) {
     private val onboardingKey = booleanPreferencesKey("onboarding_complete")
     private val pinMaterialKey = stringPreferencesKey("pin_material")
     private val lockTimeoutMinutesKey = intPreferencesKey("lock_timeout_minutes")
+    private val hideRecentAppsPreviewKey = booleanPreferencesKey("hide_recent_apps_preview")
 
     val preferences: Flow<UserPreferences> = context.preferencesDataStore.data.map { values ->
         UserPreferences(
@@ -23,6 +24,7 @@ class PreferencesStore(private val context: Context) {
             onboardingComplete = values[onboardingKey] ?: false,
             pinMaterial = values[pinMaterialKey] ?: "",
             lockTimeoutMinutes = values[lockTimeoutMinutesKey] ?: 0,
+            hideRecentAppsPreview = values[hideRecentAppsPreviewKey] ?: false,
         )
     }
 
@@ -47,6 +49,10 @@ class PreferencesStore(private val context: Context) {
     suspend fun setLockTimeoutMinutes(minutes: Int) {
         require(isSupportedLockTimeoutMinutes(minutes))
         context.preferencesDataStore.edit { values -> values[lockTimeoutMinutesKey] = minutes }
+    }
+
+    suspend fun setHideRecentAppsPreview(enabled: Boolean) {
+        context.preferencesDataStore.edit { values -> values[hideRecentAppsPreviewKey] = enabled }
     }
 
     suspend fun clearAll() {

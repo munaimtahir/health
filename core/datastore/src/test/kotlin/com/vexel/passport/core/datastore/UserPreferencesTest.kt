@@ -17,4 +17,8 @@ class UserPreferencesTest {
     @Test fun default_preferences_leave_lock_timeout_disabled() {
         assertTrue(UserPreferences().lockTimeoutMinutes == 0)
     }
+
+    @Test fun default_preferences_do_not_hide_recent_apps_preview() {
+        assertFalse(UserPreferences().hideRecentAppsPreview)
+    }
 }

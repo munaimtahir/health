@@ -259,6 +259,7 @@ class PassportViewModel @Inject constructor(
     }
     fun disablePin() = viewModelScope.launch { preferences.clearPinMaterial() }
     fun setLockTimeoutMinutes(minutes: Int) = viewModelScope.launch { preferences.setLockTimeoutMinutes(minutes) }
+    fun setHideRecentAppsPreview(enabled: Boolean) = viewModelScope.launch { preferences.setHideRecentAppsPreview(enabled) }
     fun deleteAllData() = viewModelScope.launch {
         database.healthEventDao().deleteAll()
         database.medicationDao().deleteAll()
@@ -492,6 +493,14 @@ class PassportViewModel @Inject constructor(
 fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
     val prefs by viewModel.settings.collectAsState()
     val profile by viewModel.profile.collectAsState()
+    val currentWindow = (androidx.compose.ui.platform.LocalView.current.context as? android.app.Activity)?.window
+    LaunchedEffect(currentWindow, prefs.hideRecentAppsPreview) {
+        if (prefs.hideRecentAppsPreview) {
+            currentWindow?.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            currentWindow?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
     VexelHealthPassportTheme(darkTheme = prefs.darkTheme) {
         if (!prefs.onboardingComplete) {
             OnboardingScreen(onComplete = viewModel::completeOnboarding)
@@ -923,6 +932,11 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
                         }
                     }
                 }
+                ActionRow(
+                    if (prefs.hideRecentAppsPreview) "Show app preview in recent apps" else "Hide app preview in recent apps and screenshots",
+                    leadingIcon = if (prefs.hideRecentAppsPreview) Icons.Outlined.LockOpen else Icons.Outlined.Lock,
+                    onClick = { vm.setHideRecentAppsPreview(!prefs.hideRecentAppsPreview) },
+                )
             } }
         }
         item {

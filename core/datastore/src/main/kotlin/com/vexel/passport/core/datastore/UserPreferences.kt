@@ -9,6 +9,7 @@ data class UserPreferences(
     val onboardingComplete: Boolean = false,
     val pinMaterial: String = "",
     val lockTimeoutMinutes: Int = 0,
+    val hideRecentAppsPreview: Boolean = false,
 ) {
     val lockEnabled: Boolean get() = pinMaterial.isNotBlank()
 }
