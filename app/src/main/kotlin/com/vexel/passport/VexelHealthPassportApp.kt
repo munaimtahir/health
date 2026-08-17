@@ -753,12 +753,22 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(heading, style = MaterialTheme.typography.headlineSmall); Text("Add information you entered or confirmed yourself."); Button({ vm.addEvent(kind, heading, "User-entered reminder or record") }) { Text("Add") } }
 }
 
+private enum class DocumentSort(val label: String) { DATE("Date"), CATEGORY("Category"), TYPE("Type") }
+
+private fun sortedDocuments(documents: List<DocumentEntity>, sort: DocumentSort): List<DocumentEntity> = when (sort) {
+    DocumentSort.DATE -> documents.sortedByDescending { it.createdAtEpochMillis }
+    DocumentSort.CATEGORY -> documents.sortedBy { it.category }
+    DocumentSort.TYPE -> documents.sortedBy { it.mimeType }
+}
+
 @Composable
 private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntity>, modifier: Modifier) {
     var showImport by rememberSaveable { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<DocumentEntity?>(null) }
     var pendingEdit by remember { mutableStateOf<DocumentEntity?>(null) }
     var pendingReplace by remember { mutableStateOf<DocumentEntity?>(null) }
+    var sort by rememberSaveable { mutableStateOf(DocumentSort.DATE) }
+    val sortedList = remember(documents, sort) { sortedDocuments(documents, sort) }
     val replaceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val document = pendingReplace
         if (uri != null && document != null) vm.replaceDocument(document, uri)
@@ -772,8 +782,16 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
             }
         }
         item { Text("PDF, JPG, JPEG, and PNG files are copied into app-private storage.") }
+        if (documents.size > 1) item {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Sort by:", modifier = Modifier.align(androidx.compose.ui.Alignment.CenterVertically), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                DocumentSort.entries.forEach { option ->
+                    FilterChip(selected = sort == option, onClick = { sort = option }, label = { Text(option.label) })
+                }
+            }
+        }
         if (documents.isEmpty()) item { EmptyState("Your vault is empty", "Import a PDF or image to keep a private copy on this device.", "Import a document", onAction = { showImport = true }) }
-        else items(documents, key = { it.id }) { document ->
+        else items(sortedList, key = { it.id }) { document ->
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(document.title, style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
