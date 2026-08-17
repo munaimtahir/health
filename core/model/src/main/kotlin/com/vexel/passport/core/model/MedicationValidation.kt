@@ -1,5 +1,26 @@
 package com.vexel.passport.core.model
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.time.format.ResolverStyle
+
+private val MEDICATION_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter
+    .ofPattern("uuuu-MM-dd")
+    .withResolverStyle(ResolverStyle.STRICT)
+
+/** Parses a medication start/stop date strictly; returns null for blank or unparsable input. */
+fun parseMedicationDate(text: String): LocalDate? {
+    if (text.isBlank()) return null
+    return try {
+        LocalDate.parse(text.trim(), MEDICATION_DATE_FORMATTER)
+    } catch (_: DateTimeParseException) {
+        null
+    }
+}
+
+private fun isValidDateOrBlank(text: String): Boolean = text.isBlank() || parseMedicationDate(text) != null
+
 data class MedicationDraft(
     val name: String,
     val genericName: String = "",
@@ -26,7 +47,9 @@ fun MedicationDraft.validationErrors(): Map<String, String> = buildMap {
     if (route.length > 80) put("route", "Route must be 80 characters or fewer")
     if (frequency.length > 120) put("frequency", "Frequency must be 120 characters or fewer")
     if (startDate.length > 32) put("startDate", "Start date must be 32 characters or fewer")
+    else if (!isValidDateOrBlank(startDate)) put("startDate", "Enter a valid date as yyyy-MM-dd, or leave blank")
     if (stopDate.length > 32) put("stopDate", "Stop date must be 32 characters or fewer")
+    else if (!isValidDateOrBlank(stopDate)) put("stopDate", "Enter a valid date as yyyy-MM-dd, or leave blank")
     if (status !in setOf("CURRENT", "STOPPED")) put("status", "Choose current or stopped")
     if (indication.length > 200) put("indication", "Indication must be 200 characters or fewer")
     if (physician.length > 160) put("physician", "Physician must be 160 characters or fewer")
