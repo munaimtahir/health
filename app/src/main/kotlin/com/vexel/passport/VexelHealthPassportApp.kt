@@ -250,7 +250,15 @@ class PassportViewModel @Inject constructor(
     fun savePin(pin: String, confirmation: String): Boolean {
         if (pin != confirmation || pin.length !in 4..12 || pin.any { !it.isDigit() }) return false
         val record = pinVerifier.create(pin.toCharArray())
-        viewModelScope.launch { preferences.setPinMaterial(pinMaterialCipher.encrypt(record)) }
+        viewModelScope.launch {
+            try {
+                preferences.setPinMaterial(pinMaterialCipher.encrypt(record))
+            } catch (cancellation: kotlinx.coroutines.CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                _operationError.value = "Could not enable the PIN lock on this device. Try again."
+            }
+        }
         return true
     }
     fun verifyPin(pin: String, prefs: com.vexel.passport.core.datastore.UserPreferences): Boolean {
