@@ -764,7 +764,8 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
 
 @Composable private fun TimelineScreen(vm: PassportViewModel, modifier: Modifier) {
     val events by vm.events.collectAsState()
-    var showAdd by rememberSaveable { mutableStateOf(false) }
+    var showKindPicker by rememberSaveable { mutableStateOf(false) }
+    var addKind by rememberSaveable { mutableStateOf<String?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var selectedKind by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDelete by remember { mutableStateOf<HealthEventEntity?>(null) }
@@ -775,7 +776,7 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
     }
     val episodeSummaries = summarizeSymptomEpisodes(events.filter { it.kind == "SYMPTOM" }.map { EpisodeEvent(it.title, it.episodeId, it.effectiveAtEpochMillis ?: it.createdAtEpochMillis, it.ongoing) })
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
-        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Health timeline", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } } }
+        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Health timeline", style = MaterialTheme.typography.headlineSmall); TextButton({ showKindPicker = true }) { Text("Add") } } }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Search timeline") }, singleLine = true) }
         if (availableKinds.size > 1) item {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -786,13 +787,41 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
             }
         }
         if (episodeSummaries.isNotEmpty()) item { Text("Recorded episodes: ${episodeSummaries.size} · ${episodeSummaries.sumOf { it.entryCount }} linked entries", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        if (events.isEmpty()) item { EmptyState("No records yet", "Symptoms, medications and other user-entered events will appear here.", "Log a record", onAction = { showAdd = true }) }
+        if (events.isEmpty()) item { EmptyState("No records yet", "Symptoms, medications and other user-entered events will appear here.", "Log a record", onAction = { showKindPicker = true }) }
         else if (visibleEvents.isEmpty()) item { EmptyState("No matches", "Try a different search term, or clear the search and type filters.") }
         else items(visibleEvents, key = { it.id }) { event ->
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; if (event.durationMinutes != null) Text("Duration: ${event.durationMinutes} minutes"); if (event.ongoing) Text("Ongoing"); if (event.bodyLocation.isNotBlank()) Text("Location: ${event.bodyLocation}"); if (event.associatedSymptoms.isNotBlank()) Text("Associated symptoms: ${event.associatedSymptoms}"); if (event.possibleTrigger.isNotBlank()) Text("Observed possible trigger: ${event.possibleTrigger}"); if (event.relatedMedication.isNotBlank()) Text("Related medication: ${event.relatedMedication}"); event.episodeId?.let { Text("Episode or flare ID: $it") }; Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ vm.archive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
         }
     }
-    if (showAdd) CaptureDialog("OTHER", "Add health event", { showAdd = false }, vm::addEvent)
+    if (showKindPicker) {
+        AlertDialog(
+            onDismissRequest = { showKindPicker = false },
+            title = { Text("What would you like to add?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf(
+                        "CONSULTATION" to "Consultation",
+                        "PROCEDURE" to "Procedure",
+                        "OTHER" to "Other record",
+                    ).forEach { (kind, label) ->
+                        TextButton(onClick = { addKind = kind; showKindPicker = false }, modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.fillMaxWidth()) { Text(label) }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton({ showKindPicker = false }) { Text("Cancel") } },
+        )
+    }
+    addKind?.let { kind ->
+        val heading = when (kind) {
+            "CONSULTATION" -> "Log a consultation"
+            "PROCEDURE" -> "Log a procedure"
+            else -> "Add health event"
+        }
+        CaptureDialog(kind, heading, { addKind = null }, vm::addEvent)
+    }
     pendingDelete?.let { event ->
         AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete event?") }, text = { Text("This removes the selected user-entered event from the timeline.") }, confirmButton = { Button({ vm.delete(event); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
     }
