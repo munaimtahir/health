@@ -928,8 +928,8 @@ private fun ReminderEditDialog(vm: PassportViewModel, reminder: ReminderEntity, 
         OutlinedTextField(type, { type = it }, label = { Text("Type") })
         DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
         Text("Repeats", style = MaterialTheme.typography.labelLarge)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly").forEach { (value, label) ->
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly", "MONTHLY" to "Monthly").forEach { (value, label) ->
                 FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
             }
         }
@@ -952,8 +952,8 @@ private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit, onSched
         OutlinedTextField(type, { type = it }, label = { Text("Type") })
         DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
         Text("Repeats", style = MaterialTheme.typography.labelLarge)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly").forEach { (value, label) ->
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly", "MONTHLY" to "Monthly").forEach { (value, label) ->
                 FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
             }
         }

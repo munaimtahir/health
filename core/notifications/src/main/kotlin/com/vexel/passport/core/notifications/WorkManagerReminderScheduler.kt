@@ -20,6 +20,8 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.Data
+import java.time.Instant
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 import com.vexel.passport.core.database.DatabaseProvider
 import com.vexel.passport.core.database.HealthDatabase
@@ -77,7 +79,28 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             .build()
         val permitted = Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         if (permitted && NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) NotificationManagerCompat.from(applicationContext).notify(id.hashCode(), notification)
-        if (reminder.recurrence == "ONCE") database.reminderDao().setStatus(id, "MISSED", System.currentTimeMillis())
+        when (reminder.recurrence) {
+            "ONCE" -> database.reminderDao().setStatus(id, "MISSED", System.currentTimeMillis())
+            "MONTHLY" -> {
+                // Calendar months are not a fixed duration, so unlike DAILY/WEEKLY this cannot
+                // use WorkManager's PeriodicWorkRequest without drift. Instead, self-reschedule:
+                // compute the next calendar-correct due instant (java.time clamps a day like the
+                // 31st to the shorter next month automatically) and enqueue a fresh one-time work
+                // request for it, keeping the reminder SCHEDULED in the meantime.
+                val nextDueAt = Instant.ofEpochMilli(reminder.dueAtEpochMillis)
+                    .atZone(ZoneId.systemDefault())
+                    .plusMonths(1)
+                    .toInstant()
+                    .toEpochMilli()
+                database.reminderDao().reschedule(id, nextDueAt, System.currentTimeMillis())
+                val delay = (nextDueAt - System.currentTimeMillis()).coerceAtLeast(0L)
+                val request = OneTimeWorkRequestBuilder<ReminderWorker>()
+                    .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                    .setInputData(androidx.work.Data.Builder().putString(REMINDER_ID, id).build())
+                    .build()
+                WorkManager.getInstance(applicationContext).enqueueUniqueWork(id, ExistingWorkPolicy.REPLACE, request)
+            }
+        }
         database.close()
         return Result.success()
     }

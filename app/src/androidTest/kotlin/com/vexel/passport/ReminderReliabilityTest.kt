@@ -83,6 +83,54 @@ class ReminderReliabilityTest {
     }
 
     @Test
+    fun monthly_reminder_self_reschedules_to_a_calendar_correct_next_month() = runBlocking {
+        // Fires almost immediately so the test doesn't need to wait a full month; verifies the
+        // self-rescheduling path in ReminderWorker.doWork() advances dueAtEpochMillis by
+        // exactly one calendar month (not a fixed 30-day duration) and keeps the reminder
+        // SCHEDULED with a fresh one-time work request enqueued for the new date.
+        val database = Room.inMemoryDatabaseBuilder(context, HealthDatabase::class.java).build()
+        val reminderId = UUID.randomUUID().toString()
+        try {
+            val originalDueAt = System.currentTimeMillis() + 2_000
+            val originalZoned = java.time.Instant.ofEpochMilli(originalDueAt).atZone(java.time.ZoneId.systemDefault())
+            val now = System.currentTimeMillis()
+            database.reminderDao().insert(
+                com.vexel.passport.core.database.ReminderEntity(
+                    id = reminderId,
+                    title = "Monthly reminder",
+                    type = "CUSTOM",
+                    notes = "Synthetic",
+                    dueAtEpochMillis = originalDueAt,
+                    recurrence = "MONTHLY",
+                    status = "SCHEDULED",
+                    createdAtEpochMillis = now,
+                    updatedAtEpochMillis = now,
+                )
+            )
+            scheduledIds += reminderId
+            WorkManagerReminderScheduler(context, database).schedule(reminderId, originalDueAt, "MONTHLY")
+
+            val updated = withTimeout(30_000) {
+                var current = database.reminderDao().find(reminderId)
+                while (current?.dueAtEpochMillis == originalDueAt) {
+                    kotlinx.coroutines.delay(500)
+                    current = database.reminderDao().find(reminderId)
+                }
+                current
+            }
+            assertTrue("reminder must remain SCHEDULED after a monthly firing", updated?.status == "SCHEDULED")
+            val newZoned = java.time.Instant.ofEpochMilli(updated!!.dueAtEpochMillis).atZone(java.time.ZoneId.systemDefault())
+            assertEquals("next due date must be exactly one calendar month later", originalZoned.plusMonths(1), newZoned)
+
+            val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(reminderId).get()
+            assertTrue("a fresh one-time work request must be enqueued for the next month", workInfos.isNotEmpty())
+        } finally {
+            database.reminderDao().delete(reminderId)
+            database.close()
+        }
+    }
+
+    @Test
     fun reconcile_after_simulated_restart_re_enqueues_scheduled_reminders() = runBlocking {
         val database = DatabaseProvider.create(context)
         val reminderId = UUID.randomUUID().toString()
