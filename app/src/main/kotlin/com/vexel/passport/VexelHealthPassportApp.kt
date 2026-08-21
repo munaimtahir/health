@@ -107,6 +107,7 @@ import com.vexel.passport.core.ui.DateTimeField
 import com.vexel.passport.core.ui.CaptureDialog
 import com.vexel.passport.core.ui.MedicationDialog
 import com.vexel.passport.core.ui.MedicationChangeDialog
+import com.vexel.passport.feature.dashboard.HomeScreen
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -652,7 +653,18 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 } } },
                 ) { padding ->
                 NavHost(navController = navController, startDestination = Routes.HOME) {
-                    composable(Routes.HOME) { HomeScreen(viewModel, profile, viewModel.medications.collectAsState().value, viewModel.events.collectAsState().value, Modifier.padding(padding)) }
+                    composable(Routes.HOME) {
+                        HomeScreen(
+                            profile = profile,
+                            medications = viewModel.medications.collectAsState().value,
+                            events = viewModel.events.collectAsState().value,
+                            modifier = Modifier.padding(padding),
+                            onAddEvent = viewModel::addEvent,
+                            onAddSymptom = viewModel::addSymptom,
+                            onAddMedication = viewModel::addMedication,
+                            onRecordMedicationChange = viewModel::recordMedicationChange,
+                        )
+                    }
                     composable(Routes.RECORDS) { TimelineScreen(viewModel, Modifier.padding(padding)) }
                     composable(Routes.PLAN) { RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding)) }
                     composable(Routes.VAULT) { DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding)) }
@@ -705,63 +717,6 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
     }
     val promptInfo = remember { BiometricPrompt.PromptInfo.Builder().setTitle("Unlock Vexel Health Passport").setSubtitle("Authenticate to view your private health information").setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL).build() }
     AlertDialog(onDismissRequest = {}, title = { Text("Unlock Vexel Health Passport") }, text = { OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12); error = false }, label = { Text("PIN") }, isError = error, supportingText = { if (error) Text("Incorrect PIN") }) }, confirmButton = { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (canUseBiometric) TextButton({ biometricPrompt?.authenticate(promptInfo) }) { Text("Use device authentication") }; Button({ if (vm.verifyPin(pin, prefs)) onUnlocked() else error = true }) { Text("Unlock") } } })
-}
-
-@Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, medications: List<MedicationEntity>, events: List<HealthEventEntity>, modifier: Modifier) {
-    var showSymptom by rememberSaveable { mutableStateOf(false) }
-    var showMedication by rememberSaveable { mutableStateOf(false) }
-    var changeMedication by remember { mutableStateOf<MedicationEntity?>(null) }
-    LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
-        item {
-            Text(if (profile?.name.isNullOrBlank()) "Welcome" else "Welcome, ${profile?.name}", style = MaterialTheme.typography.headlineSmall)
-            Text("Your health history, organized.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item {
-            Card(modifier = Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Record how you feel", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text("Keep a clear, user-entered record for yourself and your care conversations.", color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Button(onClick = { showSymptom = true }) { Text("Log symptom") }
-                }
-            }
-        }
-        item { InformationCard("Privacy", "Stored on this device. No account required.") }
-        val trends = summarizeSymptoms(events.map { TrendEvent(it.title, it.kind, it.severity) })
-        if (trends.totalEntries > 0) {
-            item {
-                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionHeader("Recorded symptom summary")
-                    Text("${trends.totalEntries} symptom entr${if (trends.totalEntries == 1) "y" else "ies"}")
-                    trends.mostFrequentSymptom?.let { Text("Most frequent: $it") }
-                    trends.averageRecordedSeverity?.let { Text("Average recorded severity: ${"%.1f".format(it)}/10") }
-                    Text("A neutral summary of your entries, not a diagnosis.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } }
-            }
-        }
-        if (medications.isNotEmpty()) {
-            item {
-                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionHeader("Current medications")
-                    medications.filter { it.status == "CURRENT" }.take(3).forEach { medication ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("${medication.name}${medication.strength.takeIf { it.isNotBlank() }?.let { " · $it" } ?: ""}")
-                            TextButton({ changeMedication = medication }) { Text("Record change") }
-                        }
-                    }
-                } }
-            }
-        }
-        item {
-            OutlinedButton(onClick = { showMedication = true }, modifier = Modifier.fillMaxWidth()) { Text("Add medication record") }
-        }
-    }
-    if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent) { draft, imageUri -> vm.addSymptom(draft, imageUri) }
-    if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
-    changeMedication?.let { medication ->
-        MedicationChangeDialog(medication.id, medication.strength, medication.dose, medication.unit, medication.frequency, medication.status, { changeMedication = null }) { strength, dose, unit, frequency, status, notes ->
-            vm.recordMedicationChange(medication, strength, dose, unit, frequency, status, notes); changeMedication = null
-        }
-    }
 }
 
 @Composable private fun TimelineScreen(vm: PassportViewModel, modifier: Modifier) {
