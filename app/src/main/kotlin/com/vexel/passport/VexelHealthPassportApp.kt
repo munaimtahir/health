@@ -894,12 +894,16 @@ private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntit
         if (reminders.isEmpty()) item { EmptyState("No reminders yet", "Create a follow-up, review or custom reminder when you want one.", "Create reminder", onAction = { showAdd = true }) }
         else if (visibleReminders.isEmpty()) item { EmptyState(if (selectedView == "HISTORY") "No reminder history" else "No upcoming reminders", if (selectedView == "HISTORY") "Completed or missed reminders will appear here." else "Your scheduled reminders will appear here.") }
         else items(visibleReminders, key = { it.id }) { reminder ->
+            val isOverdue = reminder.status == "SCHEDULED" && reminder.dueAtEpochMillis < System.currentTimeMillis()
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(reminder.title, style = MaterialTheme.typography.titleMedium)
-                    StatusPill(reminder.status.lowercase().replaceFirstChar { it.uppercase() })
+                    StatusPill(if (isOverdue) "Overdue" else reminder.status.lowercase().replaceFirstChar { it.uppercase() })
                 }
-                Text("${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))}",
+                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (reminder.notes.isNotBlank()) Text(reminder.notes)
                 Row { if (reminder.status == "SCHEDULED") { TextButton({ vm.snoozeReminder(reminder) }) { Text("Snooze 1h") }; TextButton({ vm.completeReminder(reminder) }) { Text("Complete") } }; TextButton({ pendingEdit = reminder }) { Text("Edit") }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
             } }
