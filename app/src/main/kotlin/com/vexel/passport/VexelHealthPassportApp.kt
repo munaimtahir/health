@@ -1106,8 +1106,8 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
 }
 
 @Composable private fun ProfileScreen(vm: PassportViewModel, profile: ProfileEntity?, modifier: Modifier) {
-    var name by remember(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by remember(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by remember(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }
-    var dateOfBirth by remember(profile?.dateOfBirth) { mutableStateOf(profile?.dateOfBirth.orEmpty()) }; var bloodGroup by remember(profile?.bloodGroup) { mutableStateOf(profile?.bloodGroup.orEmpty()) }; var emergencyContact by remember(profile?.emergencyContact) { mutableStateOf(profile?.emergencyContact.orEmpty()) }
+    var name by rememberSaveable(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by rememberSaveable(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by rememberSaveable(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }
+    var dateOfBirth by rememberSaveable(profile?.dateOfBirth) { mutableStateOf(profile?.dateOfBirth.orEmpty()) }; var bloodGroup by rememberSaveable(profile?.bloodGroup) { mutableStateOf(profile?.bloodGroup.orEmpty()) }; var emergencyContact by rememberSaveable(profile?.emergencyContact) { mutableStateOf(profile?.emergencyContact.orEmpty()) }
     val profileDateParser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
     val dateOfBirthValid = dateOfBirth.isBlank() || runCatching { profileDateParser.parse(dateOfBirth) }.getOrNull() != null
     val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
