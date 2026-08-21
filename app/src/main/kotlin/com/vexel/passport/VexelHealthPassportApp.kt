@@ -13,6 +13,7 @@ import android.graphics.pdf.PdfDocument
 import android.graphics.Color
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -262,6 +263,9 @@ class PassportViewModel @Inject constructor(
     private val _statusEvents = kotlinx.coroutines.flow.MutableSharedFlow<String>(extraBufferCapacity = 1)
     /** One-time, generic success confirmations (never health data) for a Snackbar to show. */
     val statusEvents: kotlinx.coroutines.flow.SharedFlow<String> = _statusEvents
+    private val _archivedEvents = kotlinx.coroutines.flow.MutableSharedFlow<HealthEventEntity>(extraBufferCapacity = 1)
+    /** Emits an archived (fully reversible) event so the UI can offer an Undo action. */
+    val archivedEvents: kotlinx.coroutines.flow.SharedFlow<HealthEventEntity> = _archivedEvents
 
     fun completeOnboarding() = viewModelScope.launch { preferences.setOnboardingComplete(true) }
     fun setDarkTheme(value: Boolean) = viewModelScope.launch { preferences.setDarkTheme(value) }
@@ -288,7 +292,11 @@ class PassportViewModel @Inject constructor(
         }
         database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), draft.notes.trim(), "SYMPTOM", start, now, now, "ACTIVE", draft.severity, false, draft.durationMinutes, start, end, draft.ongoing, draft.bodyLocation.trim(), draft.associatedSymptoms.trim(), draft.possibleTrigger.trim(), draft.relatedMedication.trim(), imageId, draft.episodeId.trim().ifBlank { null }))
     }
-    fun archive(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().archive(event.id, System.currentTimeMillis()) }
+    fun archive(event: HealthEventEntity) = viewModelScope.launch {
+        database.healthEventDao().archive(event.id, System.currentTimeMillis())
+        _archivedEvents.tryEmit(event)
+    }
+    fun unarchive(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().unarchive(event.id, System.currentTimeMillis()) }
     fun delete(event: HealthEventEntity) = viewModelScope.launch { event.imageAttachmentId?.let { secureFileStore.delete(it); database.documentDao().delete(it) }; database.healthEventDao().delete(event.id) }
     fun addMedication(draft: MedicationDraft) = viewModelScope.launch {
         val now = System.currentTimeMillis()
@@ -781,7 +789,15 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
             (selectedKind == null || event.kind == selectedKind)
     }
     val episodeSummaries = summarizeSymptomEpisodes(events.filter { it.kind == "SYMPTOM" }.map { EpisodeEvent(it.title, it.episodeId, it.effectiveAtEpochMillis ?: it.createdAtEpochMillis, it.ongoing) })
-    LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
+    val archiveSnackbarState = remember { SnackbarHostState() }
+    LaunchedEffect(vm) {
+        vm.archivedEvents.collect { event ->
+            val result = archiveSnackbarState.showSnackbar("Archived", actionLabel = "Undo", withDismissAction = true)
+            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) vm.unarchive(event)
+        }
+    }
+    Box(modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Health timeline", style = MaterialTheme.typography.headlineSmall); TextButton({ showKindPicker = true }) { Text("Add") } } }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Search timeline") }, singleLine = true) }
         if (availableKinds.size > 1) item {
@@ -798,6 +814,8 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
         else items(visibleEvents, key = { it.id }) { event ->
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; if (event.durationMinutes != null) Text("Duration: ${event.durationMinutes} minutes"); if (event.ongoing) Text("Ongoing"); if (event.bodyLocation.isNotBlank()) Text("Location: ${event.bodyLocation}"); if (event.associatedSymptoms.isNotBlank()) Text("Associated symptoms: ${event.associatedSymptoms}"); if (event.possibleTrigger.isNotBlank()) Text("Observed possible trigger: ${event.possibleTrigger}"); if (event.relatedMedication.isNotBlank()) Text("Related medication: ${event.relatedMedication}"); event.episodeId?.let { Text("Episode or flare ID: $it") }; Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ vm.archive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
         }
+    }
+    SnackbarHost(archiveSnackbarState, modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
     }
     if (showKindPicker) {
         AlertDialog(
