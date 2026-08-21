@@ -138,6 +138,7 @@ import com.vexel.passport.core.designsystem.EmptyState
 import com.vexel.passport.core.designsystem.SectionHeader
 import com.vexel.passport.core.designsystem.StatusPill
 import com.vexel.passport.core.designsystem.VexelHealthPassportTheme
+import com.vexel.passport.feature.onboarding.OnboardingScreen
 import com.vexel.passport.core.model.SymptomDraft
 import com.vexel.passport.core.model.parseSymptomDateTime
 import com.vexel.passport.core.model.MedicationDraft
@@ -701,26 +702,6 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
     }
     val promptInfo = remember { BiometricPrompt.PromptInfo.Builder().setTitle("Unlock Vexel Health Passport").setSubtitle("Authenticate to view your private health information").setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL).build() }
     AlertDialog(onDismissRequest = {}, title = { Text("Unlock Vexel Health Passport") }, text = { OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12); error = false }, label = { Text("PIN") }, isError = error, supportingText = { if (error) Text("Incorrect PIN") }) }, confirmButton = { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (canUseBiometric) TextButton({ biometricPrompt?.authenticate(promptInfo) }) { Text("Use device authentication") }; Button({ if (vm.verifyPin(pin, prefs)) onUnlocked() else error = true }) { Text("Unlock") } } })
-}
-
-@Composable private fun OnboardingScreen(onComplete: () -> Unit) {
-    var acknowledged by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        Text("Step 1 of 1", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        Text("Welcome to Vexel", style = MaterialTheme.typography.headlineLarge)
-        Text("Your health history, organized.", style = MaterialTheme.typography.titleLarge)
-        Card(Modifier.fillMaxWidth(), colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("A calm, offline-first place to organize your personal health information.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                Text("Your entries are user-recorded. This app does not diagnose or replace advice from a qualified healthcare professional.", color = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-        }
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            Checkbox(checked = acknowledged, onCheckedChange = { acknowledged = it })
-            Text("I understand and want to continue", Modifier.clickable { acknowledged = !acknowledged })
-        }
-        Button(onClick = onComplete, enabled = acknowledged, modifier = Modifier.fillMaxWidth()) { Text("Continue") }
-    }
 }
 
 @Composable private fun HomeScreen(vm: PassportViewModel, profile: ProfileEntity?, medications: List<MedicationEntity>, events: List<HealthEventEntity>, modifier: Modifier) {
