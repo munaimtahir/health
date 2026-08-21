@@ -1120,7 +1120,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     var backupPassword by rememberSaveable { mutableStateOf("") }
     var includeProfile by rememberSaveable { mutableStateOf(true) }; var includeEvents by rememberSaveable { mutableStateOf(true) }; var includeMedications by rememberSaveable { mutableStateOf(true) }; var includeDocuments by rememberSaveable { mutableStateOf(true) }; var includeReminders by rememberSaveable { mutableStateOf(true) }
     var reportFrom by rememberSaveable { mutableStateOf("") }; var reportTo by rememberSaveable { mutableStateOf("") }
-    var generatedReportUri by remember { mutableStateOf<Uri?>(null) }
+    var generatedReportUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val dateScope = validateDateScope(reportFrom, reportTo)
     val context = LocalContext.current
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.JSON).mimeType)) { uri ->
@@ -1259,7 +1259,7 @@ private fun BackupPasswordDialog(
 
 @Composable
 private fun ReportOptionsDialog(onDismiss: () -> Unit, onGenerate: () -> Unit, setProfile: (Boolean) -> Unit, setEvents: (Boolean) -> Unit, setMedications: (Boolean) -> Unit, setDocuments: (Boolean) -> Unit, setReminders: (Boolean) -> Unit, from: String, setFrom: (String) -> Unit, to: String, setTo: (String) -> Unit) {
-    var profileChecked by remember { mutableStateOf(true) }; var eventsChecked by remember { mutableStateOf(true) }; var medicationsChecked by remember { mutableStateOf(true) }; var documentsChecked by remember { mutableStateOf(true) }; var remindersChecked by remember { mutableStateOf(true) }
+    var profileChecked by rememberSaveable { mutableStateOf(true) }; var eventsChecked by rememberSaveable { mutableStateOf(true) }; var medicationsChecked by rememberSaveable { mutableStateOf(true) }; var documentsChecked by rememberSaveable { mutableStateOf(true) }; var remindersChecked by rememberSaveable { mutableStateOf(true) }
     val dateScope = validateDateScope(from, to)
     val validFrom = dateScope.fromValid
     val validTo = dateScope.toValid
@@ -1286,7 +1286,7 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
 }
 
 @Composable private fun CaptureDialog(kind: String, heading: String, onDismiss: () -> Unit, onSave: (String, String, String, Int?) -> Unit, onSaveSymptom: ((SymptomDraft, Uri?) -> Unit)? = null) {
-    var title by remember { mutableStateOf("") }; var details by remember { mutableStateOf("") }; var severityText by remember { mutableStateOf("") }
+    var title by rememberSaveable { mutableStateOf("") }; var details by rememberSaveable { mutableStateOf("") }; var severityText by rememberSaveable { mutableStateOf("") }
     var startAtText by rememberSaveable { mutableStateOf("") }; var endAtText by rememberSaveable { mutableStateOf("") }; var durationText by rememberSaveable { mutableStateOf("") }; var ongoing by rememberSaveable { mutableStateOf(false) }; var bodyLocation by rememberSaveable { mutableStateOf("") }; var associatedSymptoms by rememberSaveable { mutableStateOf("") }; var possibleTrigger by rememberSaveable { mutableStateOf("") }; var relatedMedication by rememberSaveable { mutableStateOf("") }; var episodeId by rememberSaveable { mutableStateOf("") }
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var hasAttemptedSave by rememberSaveable { mutableStateOf(false) }
