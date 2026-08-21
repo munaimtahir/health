@@ -104,6 +104,9 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.vexel.passport.core.ui.DateTimeField
+import com.vexel.passport.core.ui.CaptureDialog
+import com.vexel.passport.core.ui.MedicationDialog
+import com.vexel.passport.core.ui.MedicationChangeDialog
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -754,7 +757,11 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
     }
     if (showSymptom) CaptureDialog("SYMPTOM", "Log a symptom", { showSymptom = false }, vm::addEvent) { draft, imageUri -> vm.addSymptom(draft, imageUri) }
     if (showMedication) MedicationDialog({ showMedication = false }, vm::addMedication)
-    changeMedication?.let { medication -> MedicationChangeDialog(medication, { changeMedication = null }) { strength, dose, unit, frequency, status, notes -> vm.recordMedicationChange(medication, strength, dose, unit, frequency, status, notes); changeMedication = null } }
+    changeMedication?.let { medication ->
+        MedicationChangeDialog(medication.id, medication.strength, medication.dose, medication.unit, medication.frequency, medication.status, { changeMedication = null }) { strength, dose, unit, frequency, status, notes ->
+            vm.recordMedicationChange(medication, strength, dose, unit, frequency, status, notes); changeMedication = null
+        }
+    }
 }
 
 @Composable private fun TimelineScreen(vm: PassportViewModel, modifier: Modifier) {
@@ -1264,102 +1271,4 @@ private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
         OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12) }, label = { Text("PIN") }, isError = error.isNotBlank())
         OutlinedTextField(confirmation, { confirmation = it.filter(Char::isDigit).take(12) }, label = { Text("Confirm PIN") }, isError = error.isNotBlank(), supportingText = { if (error.isNotBlank()) Text(error) })
     } }, confirmButton = { Button({ if (pin != confirmation) error = "PINs do not match" else if (pin.length !in 4..12) error = "Use 4–12 digits" else if (vm.savePin(pin, confirmation)) onDismiss() }) { Text("Enable") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable private fun CaptureDialog(kind: String, heading: String, onDismiss: () -> Unit, onSave: (String, String, String, Int?) -> Unit, onSaveSymptom: ((SymptomDraft, Uri?) -> Unit)? = null) {
-    var title by rememberSaveable { mutableStateOf("") }; var details by rememberSaveable { mutableStateOf("") }; var severityText by rememberSaveable { mutableStateOf("") }
-    var startAtText by rememberSaveable { mutableStateOf("") }; var endAtText by rememberSaveable { mutableStateOf("") }; var durationText by rememberSaveable { mutableStateOf("") }; var ongoing by rememberSaveable { mutableStateOf(false) }; var bodyLocation by rememberSaveable { mutableStateOf("") }; var associatedSymptoms by rememberSaveable { mutableStateOf("") }; var possibleTrigger by rememberSaveable { mutableStateOf("") }; var relatedMedication by rememberSaveable { mutableStateOf("") }; var episodeId by rememberSaveable { mutableStateOf("") }
-    var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    var hasAttemptedSave by rememberSaveable { mutableStateOf(false) }
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { imageUri = it }
-    val severity = severityText.toIntOrNull()
-    val draft = SymptomDraft(title, if (kind == "SYMPTOM") severity else null, details, startAtText, endAtText, durationText.toIntOrNull(), ongoing, bodyLocation, associatedSymptoms, possibleTrigger, relatedMedication, episodeId)
-    val errors = draft.validationErrors()
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(heading) }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text(if (kind == "SYMPTOM") "Symptom" else "Title") }, isError = hasAttemptedSave && errors.containsKey("name"))
-        if (kind == "SYMPTOM") OutlinedTextField(severityText, { severityText = it.filter(Char::isDigit) }, label = { Text("Severity (0–10, optional)") }, isError = errors.containsKey("severity"), supportingText = { errors["severity"]?.let { Text(it) } })
-        OutlinedTextField(details, { details = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"), supportingText = { errors["notes"]?.let { Text(it) } })
-        if (kind == "SYMPTOM") {
-            SectionHeader("Timing and details")
-            DateTimeField("Start (optional)", startAtText, { startAtText = it }, isError = errors.containsKey("startAt"), supportingText = errors["startAt"]?.let { message -> { Text(message) } })
-            DateTimeField("End (optional)", endAtText, { endAtText = it }, enabled = !ongoing, isError = errors.containsKey("endAt"), supportingText = errors["endAt"]?.let { message -> { Text(message) } })
-            OutlinedTextField(durationText, { durationText = it.filter(Char::isDigit) }, label = { Text("Duration in minutes (optional)") }, isError = errors.containsKey("duration"))
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) { Checkbox(ongoing, { ongoing = it }); Text("Ongoing") }
-            OutlinedTextField(bodyLocation, { bodyLocation = it }, label = { Text("Body location (optional)") })
-            OutlinedTextField(associatedSymptoms, { associatedSymptoms = it }, label = { Text("Associated symptoms (optional)") })
-            OutlinedTextField(possibleTrigger, { possibleTrigger = it }, label = { Text("Possible trigger, as you observed (optional)") })
-            OutlinedTextField(relatedMedication, { relatedMedication = it }, label = { Text("Related medication (optional)") })
-            OutlinedTextField(episodeId, { episodeId = it }, label = { Text("Episode or flare ID (optional)") })
-            OutlinedButton({ imagePicker.launch(arrayOf("image/jpeg", "image/png")) }) { Text(if (imageUri == null) "Attach symptom image (optional)" else "Image attached") }
-        }
-    } }, confirmButton = { Button(onClick = {
-        hasAttemptedSave = true
-        if (errors.isEmpty()) {
-            if (kind == "SYMPTOM" && onSaveSymptom != null) onSaveSymptom(draft, imageUri) else onSave(kind, title.trim(), details.trim(), if (kind == "SYMPTOM") severity else null)
-            onDismiss()
-        }
-    }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable
-private fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) -> Unit) {
-    var name by rememberSaveable { mutableStateOf("") }
-    var genericName by rememberSaveable { mutableStateOf("") }
-    var strength by rememberSaveable { mutableStateOf("") }
-    var dose by rememberSaveable { mutableStateOf("") }
-    var unit by rememberSaveable { mutableStateOf("") }
-    var route by rememberSaveable { mutableStateOf("") }
-    var frequency by rememberSaveable { mutableStateOf("") }
-    var startDate by rememberSaveable { mutableStateOf("") }
-    var stopDate by rememberSaveable { mutableStateOf("") }
-    var status by rememberSaveable { mutableStateOf("CURRENT") }
-    var indication by rememberSaveable { mutableStateOf("") }
-    var physician by rememberSaveable { mutableStateOf("") }
-    var notes by rememberSaveable { mutableStateOf("") }
-    val draft = MedicationDraft(name, genericName, strength, dose, unit, route, frequency, startDate, stopDate, status, indication, physician, notes)
-    val errors = draft.validationErrors()
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add medication") },
-        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(name, { name = it }, label = { Text("Medication name") }, isError = errors.containsKey("name"))
-            OutlinedTextField(genericName, { genericName = it }, label = { Text("Generic or brand name (optional)") })
-            OutlinedTextField(strength, { strength = it }, label = { Text("Strength") })
-            OutlinedTextField(dose, { dose = it }, label = { Text("Dose") })
-            OutlinedTextField(unit, { unit = it }, label = { Text("Unit (optional)") })
-            OutlinedTextField(route, { route = it }, label = { Text("Route (optional)") })
-            OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency (optional)") })
-            OutlinedTextField(startDate, { startDate = it }, label = { Text("Start date, as yyyy-MM-dd (optional)") }, isError = errors.containsKey("startDate"), supportingText = { errors["startDate"]?.let { Text(it) } })
-            OutlinedTextField(stopDate, { stopDate = it }, label = { Text("Stop date, as yyyy-MM-dd (optional)") }, isError = errors.containsKey("stopDate"), supportingText = { errors["stopDate"]?.let { Text(it) } })
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = status == "CURRENT", onClick = { status = "CURRENT" }, label = { Text("Current") })
-                FilterChip(selected = status == "STOPPED", onClick = { status = "STOPPED" }, label = { Text("Stopped") })
-            }
-            OutlinedTextField(indication, { indication = it }, label = { Text("Indication (optional)") })
-            OutlinedTextField(physician, { physician = it }, label = { Text("Physician (optional)") })
-            OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"))
-            errors.values.firstOrNull()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        } },
-        confirmButton = { Button(enabled = errors.isEmpty(), onClick = { onSave(draft); onDismiss() }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
-}
-
-@Composable
-private fun MedicationChangeDialog(medication: MedicationEntity, onDismiss: () -> Unit, onSave: (String, String, String, String, String, String) -> Unit) {
-    var strength by rememberSaveable(medication.id) { mutableStateOf(medication.strength) }
-    var dose by rememberSaveable(medication.id) { mutableStateOf(medication.dose) }
-    var unit by rememberSaveable(medication.id) { mutableStateOf(medication.unit) }
-    var frequency by rememberSaveable(medication.id) { mutableStateOf(medication.frequency) }
-    var status by rememberSaveable(medication.id) { mutableStateOf(medication.status) }
-    var notes by rememberSaveable(medication.id) { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Record medication change") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("This records a new treatment period; it does not recommend a dose or treatment.")
-        OutlinedTextField(strength, { strength = it }, label = { Text("Strength") })
-        OutlinedTextField(dose, { dose = it }, label = { Text("Dose") })
-        OutlinedTextField(unit, { unit = it }, label = { Text("Unit") })
-        OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency") })
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { FilterChip(status == "CURRENT", { status = "CURRENT" }, label = { Text("Current/restarted") }); FilterChip(status == "STOPPED", { status = "STOPPED" }, label = { Text("Stopped") }) }
-        OutlinedTextField(notes, { notes = it }, label = { Text("Change notes (optional)") })
-    } }, confirmButton = { Button({ onSave(strength, dose, unit, frequency, status, notes) }) { Text("Save change") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
