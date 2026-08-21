@@ -949,6 +949,30 @@ private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit, onSched
 }
 
 @Composable
+private fun HelpDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Using this app") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Vexel Health Passport is a private, offline record of information you enter yourself. It does not diagnose, interpret results, or recommend treatment -- always confirm health decisions with a qualified professional.", style = MaterialTheme.typography.bodyMedium)
+                Text("Your data", style = MaterialTheme.typography.titleSmall)
+                Text("Everything you enter stays on this device. There is no account and no cloud sync -- if this device is lost, factory reset, or the app is uninstalled without a backup, your data is gone.", style = MaterialTheme.typography.bodySmall)
+                Text("Backups", style = MaterialTheme.typography.titleSmall)
+                Text("Create an encrypted backup from Profile before uninstalling the app, switching devices, or as routine safekeeping. You choose the password; it is not stored anywhere, so write it down somewhere safe -- a lost backup password cannot be recovered.", style = MaterialTheme.typography.bodySmall)
+                Text("App lock", style = MaterialTheme.typography.titleSmall)
+                Text("An optional PIN (with biometric unlock where available) can lock the app after a period of inactivity. This protects against casual access to this device, not against a determined attacker with full device access.", style = MaterialTheme.typography.bodySmall)
+                Text("Sharing documents", style = MaterialTheme.typography.titleSmall)
+                Text("Opening or sharing a document from the vault creates a temporary, permission-scoped copy for the app you send it to. The original stays private in this app's storage.", style = MaterialTheme.typography.bodySmall)
+                Text("Reminders", style = MaterialTheme.typography.titleSmall)
+                Text("Reminders rely on the device's notification system and battery/power settings. Aggressive battery optimization on some devices can delay or suppress a reminder notification -- reminders are a convenience, not a guaranteed medical alert.", style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = { TextButton(onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
 private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("OTHER") }
@@ -973,6 +997,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     val profileDateParser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
     val dateOfBirthValid = dateOfBirth.isBlank() || runCatching { profileDateParser.parse(dateOfBirth) }.getOrNull() != null
     val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
     var showDeleteAll by rememberSaveable { mutableStateOf(false) }
     var showReportOptions by rememberSaveable { mutableStateOf(false) }
     var showBackupPassword by rememberSaveable { mutableStateOf(false) }
@@ -1082,10 +1107,12 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
                     Text("Your health history, organized.")
                     Text("Vexel stores user-entered information locally and works offline. It does not diagnose conditions or replace professional care.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ActionRow("Using this app", leadingIcon = Icons.Outlined.Description, onClick = { showHelp = true })
                 }
             }
         }
     }
+    if (showHelp) HelpDialog { showHelp = false }
     if (showReportOptions) ReportOptionsDialog({ showReportOptions = false }, { showReportOptions = false; reportLauncher.launch("vexel-health-report.pdf") }, { includeProfile = it }, { includeEvents = it }, { includeMedications = it }, { includeDocuments = it }, { includeReminders = it }, reportFrom, { reportFrom = it }, reportTo, { reportTo = it })
     if (showBackupPassword) BackupPasswordDialog(backupAction == "CREATE", backupPassword, { backupPassword = it }, { password -> backupPassword = password; showBackupPassword = false; if (backupAction == "CREATE") backupLauncher.launch("vexel-health-backup.vexel") else restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) }, { showBackupPassword = false })
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
