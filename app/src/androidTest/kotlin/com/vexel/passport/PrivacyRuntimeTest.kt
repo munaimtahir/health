@@ -66,4 +66,22 @@ class PrivacyRuntimeTest {
             fresh.delete()
         }
     }
+
+    @Test
+    fun full_data_deletion_also_purges_temporary_share_cache_immediately() = kotlinx.coroutines.runBlocking {
+        // Full deletion must not depend on the next app-launch age-based sweep
+        // (clearStaleShareCache) to remove temporary document copies -- it has to be immediate.
+        val fileStore = com.vexel.passport.core.files.LocalSecureFileStore(context)
+        val documentBytes = "synthetic document ${UUID.randomUUID()}".toByteArray(Charsets.UTF_8)
+        val preserved = fileStore.preserveOriginal(java.io.ByteArrayInputStream(documentBytes), "application/pdf", "synthetic.pdf")
+        val sharedCopy = fileStore.copyToShareCache(context, preserved.id, "synthetic.pdf")
+        try {
+            assertTrue("share-cache copy must exist right after sharing", sharedCopy.exists())
+            fileStore.deleteAll()
+            assertFalse("share-cache copy must not survive a full data deletion", sharedCopy.exists())
+        } finally {
+            sharedCopy.delete()
+            fileStore.delete(preserved.id)
+        }
+    }
 }

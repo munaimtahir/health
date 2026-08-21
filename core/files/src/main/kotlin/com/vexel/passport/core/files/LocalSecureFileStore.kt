@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 
 class LocalSecureFileStore(context: Context) : SecureFileStore {
     private val root = File(context.filesDir, "documents").apply { mkdirs() }
+    private val shareCacheDir = File(context.cacheDir, "shared")
 
     override suspend fun preserveOriginal(input: InputStream, mimeType: String, displayName: String): PreservedDocument =
         withContext(Dispatchers.IO) {
@@ -83,13 +84,16 @@ class LocalSecureFileStore(context: Context) : SecureFileStore {
     override suspend fun deleteAll() {
         withContext(Dispatchers.IO) {
             root.listFiles()?.forEach { file -> if (file.isFile) file.delete() }
+            // Also purge temporary open/share copies created by copyToShareCache(), so a full
+            // data deletion doesn't leave document bytes behind in app-private cache.
+            shareCacheDir.listFiles()?.forEach { file -> if (file.isFile) file.delete() }
         }
     }
 
     override suspend fun copyToShareCache(context: Context, id: String, fileName: String): File = withContext(Dispatchers.IO) {
         require(ID_PATTERN.matches(id)) { "Invalid document identifier" }
         val safeName = fileName.substringAfterLast('/').substringAfterLast('\\').replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "document" }
-        val destination = File(context.cacheDir, "shared").apply { mkdirs() }.resolve("${UUID.randomUUID()}_$safeName")
+        val destination = shareCacheDir.apply { mkdirs() }.resolve("${UUID.randomUUID()}_$safeName")
         open(id).use { source -> destination.outputStream().use { target -> source.copyTo(target) } }
         destination
     }
