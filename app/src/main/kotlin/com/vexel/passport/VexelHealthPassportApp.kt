@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -76,6 +77,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -378,6 +383,7 @@ class PassportViewModel @Inject constructor(
         secureFileStore.delete(document.id)
         database.documentDao().delete(document.id)
     }
+    suspend fun documentThumbnail(document: DocumentEntity) = secureFileStore.thumbnailFor(appContext, document.id, document.mimeType)
     fun updateDocument(document: DocumentEntity, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
         database.documentDao().update(document.copy(title = title.trim().ifBlank { document.title }, category = category.trim().ifBlank { document.category }, documentDate = documentDate.trim(), notes = notes.trim()))
     }
@@ -833,6 +839,26 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
 
 private enum class DocumentSort(val label: String) { DATE("Date"), CATEGORY("Category"), TYPE("Type") }
 
+/** A bounded 48dp preview: a decoded JPEG/PNG thumbnail when available, a generic PDF icon otherwise. */
+@Composable
+private fun DocumentThumbnail(vm: PassportViewModel, document: DocumentEntity) {
+    var thumbnailBitmap by remember(document.id) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    LaunchedEffect(document.id, document.mimeType) {
+        thumbnailBitmap = null
+        val file = vm.documentThumbnail(document)
+        if (file != null) {
+            val decoded = android.graphics.BitmapFactory.decodeFile(file.path)
+            thumbnailBitmap = decoded?.asImageBitmap()
+        }
+    }
+    val bitmap = thumbnailBitmap
+    if (bitmap != null) {
+        Image(bitmap, contentDescription = null, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)))
+    } else {
+        Icon(Icons.Outlined.PictureAsPdf, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 private fun sortedDocuments(documents: List<DocumentEntity>, sort: DocumentSort): List<DocumentEntity> = when (sort) {
     DocumentSort.DATE -> documents.sortedByDescending { it.createdAtEpochMillis }
     DocumentSort.CATEGORY -> documents.sortedBy { it.category }
@@ -870,7 +896,9 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
         }
         if (documents.isEmpty()) item { EmptyState("Your vault is empty", "Import a PDF or image to keep a private copy on this device.", "Import a document", onAction = { showImport = true }) }
         else items(sortedList, key = { it.id }) { document ->
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                DocumentThumbnail(vm, document)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(document.title, style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatusPill(document.category)
@@ -879,6 +907,7 @@ private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntit
                 if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
                 if (document.notes.isNotBlank()) Text(document.notes)
                 Row { TextButton({ vm.openDocument(document) }) { Text("Open") }; TextButton({ vm.shareDocument(document) }) { Text("Share") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingReplace = document; replaceLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Replace") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
+                }
             } }
         }
     }

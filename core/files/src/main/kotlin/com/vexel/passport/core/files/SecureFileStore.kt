@@ -19,4 +19,11 @@ interface SecureFileStore {
     fun delete(id: String): Boolean
     suspend fun deleteAll()
     suspend fun copyToShareCache(context: Context, id: String, fileName: String): File
+
+    /**
+     * Returns a bounded (~120px) private, disposable JPEG thumbnail for a JPEG/PNG document,
+     * generating and caching it on first use. Returns null for non-image documents (e.g. PDF,
+     * which should show a generic icon instead) or if decoding fails.
+     */
+    suspend fun thumbnailFor(context: Context, id: String, mimeType: String): File?
 }
