@@ -973,6 +973,30 @@ private fun HelpDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
+private fun PrivacyInfoDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Privacy and safety") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("This screen describes how the app actually behaves; it is not a substitute for the full legal privacy policy.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("No network access", style = MaterialTheme.typography.titleSmall)
+                Text("This app does not request Internet permission and cannot send data anywhere. All information you enter stays in this app's private storage on this device.", style = MaterialTheme.typography.bodySmall)
+                Text("No account, no analytics, no ads", style = MaterialTheme.typography.titleSmall)
+                Text("There is no sign-in, no usage tracking, and no advertising in this app.", style = MaterialTheme.typography.bodySmall)
+                Text("Encryption", style = MaterialTheme.typography.titleSmall)
+                Text("An optional PIN is protected using the device's hardware Keystore. Backups you create are encrypted with a password you choose, using standard AES-GCM encryption.", style = MaterialTheme.typography.bodySmall)
+                Text("Deleting your data", style = MaterialTheme.typography.titleSmall)
+                Text("Profile > Delete all app data permanently removes your profile, records, medications, documents, reminders, and security settings from this device. This cannot be undone.", style = MaterialTheme.typography.bodySmall)
+                Text("Medical disclaimer", style = MaterialTheme.typography.titleSmall)
+                Text("Vexel Health Passport organizes information you enter yourself. It does not diagnose conditions, interpret lab or clinical results, or recommend treatment. Always consult a qualified healthcare professional for medical decisions.", style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = { TextButton(onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
 private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("OTHER") }
@@ -998,6 +1022,7 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
     val dateOfBirthValid = dateOfBirth.isBlank() || runCatching { profileDateParser.parse(dateOfBirth) }.getOrNull() != null
     val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
     var showHelp by rememberSaveable { mutableStateOf(false) }
+    var showPrivacyInfo by rememberSaveable { mutableStateOf(false) }
     var showDeleteAll by rememberSaveable { mutableStateOf(false) }
     var showReportOptions by rememberSaveable { mutableStateOf(false) }
     var showBackupPassword by rememberSaveable { mutableStateOf(false) }
@@ -1108,11 +1133,13 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
                     Text("Vexel stores user-entered information locally and works offline. It does not diagnose conditions or replace professional care.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ActionRow("Using this app", leadingIcon = Icons.Outlined.Description, onClick = { showHelp = true })
+                    ActionRow("Privacy and safety", leadingIcon = Icons.Outlined.Lock, onClick = { showPrivacyInfo = true })
                 }
             }
         }
     }
     if (showHelp) HelpDialog { showHelp = false }
+    if (showPrivacyInfo) PrivacyInfoDialog { showPrivacyInfo = false }
     if (showReportOptions) ReportOptionsDialog({ showReportOptions = false }, { showReportOptions = false; reportLauncher.launch("vexel-health-report.pdf") }, { includeProfile = it }, { includeEvents = it }, { includeMedications = it }, { includeDocuments = it }, { includeReminders = it }, reportFrom, { reportFrom = it }, reportTo, { reportTo = it })
     if (showBackupPassword) BackupPasswordDialog(backupAction == "CREATE", backupPassword, { backupPassword = it }, { password -> backupPassword = password; showBackupPassword = false; if (backupAction == "CREATE") backupLauncher.launch("vexel-health-backup.vexel") else restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) }, { showBackupPassword = false })
     if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
