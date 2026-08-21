@@ -6,6 +6,7 @@ import android.content.Intent
 import android.Manifest
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.OpenableColumns
 import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
@@ -179,6 +180,54 @@ internal fun readOnlyShareIntent(context: Context, uri: Uri, mimeType: String): 
 
 private fun shareContentUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String) {
     context.startActivity(Intent.createChooser(readOnlyShareIntent(context, uri, mimeType), chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/**
+ * Streams an already-generated multipage PDF to the system print service. Unlike
+ * androidx.print's PrintHelper (bitmap-only, one-page-at-a-time), a PrintDocumentAdapter
+ * can hand the OS the real PDF bytes directly, preserving all pages, text, and layout.
+ */
+private class PdfPrintDocumentAdapter(
+    private val context: Context,
+    private val sourceUri: Uri,
+    private val jobLabel: String,
+) : android.print.PrintDocumentAdapter() {
+    override fun onLayout(
+        oldAttributes: android.print.PrintAttributes?,
+        newAttributes: android.print.PrintAttributes,
+        cancellationSignal: android.os.CancellationSignal?,
+        callback: LayoutResultCallback,
+        extras: Bundle?,
+    ) {
+        if (cancellationSignal?.isCanceled == true) {
+            callback.onLayoutCancelled()
+            return
+        }
+        callback.onLayoutFinished(
+            android.print.PrintDocumentInfo.Builder(jobLabel)
+                .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                .build(),
+            oldAttributes != newAttributes,
+        )
+    }
+
+    override fun onWrite(
+        pages: Array<out android.print.PageRange>?,
+        destination: android.os.ParcelFileDescriptor,
+        cancellationSignal: android.os.CancellationSignal?,
+        callback: WriteResultCallback,
+    ) {
+        try {
+            context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                android.os.ParcelFileDescriptor.AutoCloseOutputStream(destination).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
+        } catch (failure: Exception) {
+            callback.onWriteFailed(null)
+        }
+    }
 }
 
 @HiltViewModel
@@ -991,7 +1040,13 @@ private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
                 ActionRow("Create encrypted backup", leadingIcon = Icons.Outlined.Lock, onClick = { backupAction = "CREATE"; showBackupPassword = true })
                 ActionRow("Restore backup", leadingIcon = Icons.Outlined.LockOpen, onClick = { backupAction = "RESTORE"; showBackupPassword = true })
                 ActionRow("Create PDF report", leadingIcon = Icons.Outlined.PictureAsPdf, onClick = { showReportOptions = true })
-                generatedReportUri?.let { uri -> ActionRow("Share last PDF report", leadingIcon = Icons.Outlined.Share, onClick = { shareContentUri(context, uri, exportShareDescriptor(ExportFormat.PDF).mimeType, "Share health report") }) }
+                generatedReportUri?.let { uri ->
+                    ActionRow("Share last PDF report", leadingIcon = Icons.Outlined.Share, onClick = { shareContentUri(context, uri, exportShareDescriptor(ExportFormat.PDF).mimeType, "Share health report") })
+                    ActionRow("Print last PDF report", leadingIcon = Icons.Outlined.PictureAsPdf, onClick = {
+                        val printManager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
+                        printManager.print("Vexel Health Passport report", PdfPrintDocumentAdapter(context, uri, "Vexel Health Passport report"), null)
+                    })
+                }
             } }
         }
         item {
