@@ -17,7 +17,7 @@
 
 ## Repair programme (this session, 2026-08-17 to 2026-08-21)
 
-23 verified commits landed on `main`, each preceded by a green `assembleDebug`/`test`/`lint`/`check`/boundary-verification gate. Full list: `git log bbc88ac..HEAD --oneline`. Highlights:
+33 verified commits landed on `main`, each preceded by a green `assembleDebug`/`test`/`lint`/`check`/boundary-verification gate. Full list: `git log bbc88ac..HEAD --oneline`. Highlights:
 
 - Fixed a non-buildable repo (missing Gradle wrapper).
 - Real `NavHost` navigation; removed a duplicate Room database instance in reminder reconciliation.
@@ -25,6 +25,7 @@
 - Strict date validation for symptom and medication dates (previously silently accepted malformed input).
 - Timeline record-type filters, vault sort, overdue-reminder indicator, real PDF printing (`PrintDocumentAdapter`, not bitmap-only `PrintHelper`), WEEKLY/MONTHLY recurring reminders, offline in-app Help and Privacy & Safety viewers, optional `FLAG_SECURE` screenshot protection.
 - Enabled Room `exportSchema` and added migration-test tooling for future migrations (see `docs/delivery/review-findings-status.md` for why the v1→v8 chain itself isn't retroactively covered).
+- First-class Consultation/Procedure record kinds (no schema change — see decision D-010); bounded vault document thumbnails with disposable-cache cleanup on delete/replace/full-deletion; Undo for archiving a timeline record; immediate purge of temporary share-cache files on full data deletion; fixed several form fields (Profile edits, symptom/event capture, report options) that silently discarded in-progress user input on rotation because they used `remember` instead of `rememberSaveable`.
 
 See `docs/delivery/review-findings-status.md` for the full per-finding breakdown and `docs/delivery/deferred-owner-decisions.md` for parked items.
 
