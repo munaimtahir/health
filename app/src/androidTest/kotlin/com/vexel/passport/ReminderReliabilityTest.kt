@@ -64,6 +64,25 @@ class ReminderReliabilityTest {
     }
 
     @Test
+    fun weekly_recurring_reminder_is_enqueued_as_periodic_work() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(context, HealthDatabase::class.java).build()
+        try {
+            val vm = newViewModel(database)
+            val dueAt = System.currentTimeMillis() + 3_600_000
+            vm.addReminder("Weekly check-in", "CUSTOM", "Synthetic reminder", dueAt, "WEEKLY").join()
+            val reminder = withTimeout(10_000) { vm.reminders.first { it.isNotEmpty() } }.first { it.title == "Weekly check-in" }
+            scheduledIds += reminder.id
+
+            val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(reminder.id).get()
+            assertTrue("expected an enqueued WorkManager entry for the weekly reminder", workInfos.isNotEmpty())
+            assertEquals(WorkInfo.State.ENQUEUED, workInfos.first().state)
+            assertTrue("weekly reminders must be periodic work so they keep repeating", workInfos.first().periodicityInfo != null)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
     fun reconcile_after_simulated_restart_re_enqueues_scheduled_reminders() = runBlocking {
         val database = DatabaseProvider.create(context)
         val reminderId = UUID.randomUUID().toString()

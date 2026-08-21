@@ -34,8 +34,9 @@ class WorkManagerReminderScheduler(
         ensureChannel()
         val delay = (dueAtEpochMillis - System.currentTimeMillis()).coerceAtLeast(0L)
         val input = Data.Builder().putString(ReminderWorker.REMINDER_ID, id).build()
-        if (recurrence == "DAILY") {
-            val request = PeriodicWorkRequestBuilder<ReminderWorker>(24, TimeUnit.HOURS)
+        if (recurrence == "DAILY" || recurrence == "WEEKLY") {
+            val periodHours = if (recurrence == "WEEKLY") 24L * 7 else 24L
+            val request = PeriodicWorkRequestBuilder<ReminderWorker>(periodHours, TimeUnit.HOURS)
                 .setInitialDelay(delay, TimeUnit.MILLISECONDS).setInputData(input).setConstraints(Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.NOT_REQUIRED).build()).build()
             workManager.enqueueUniquePeriodicWork(id, ExistingPeriodicWorkPolicy.UPDATE, request)
         } else {

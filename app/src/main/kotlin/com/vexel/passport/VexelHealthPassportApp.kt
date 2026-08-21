@@ -927,10 +927,15 @@ private fun ReminderEditDialog(vm: PassportViewModel, reminder: ReminderEntity, 
         OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
         OutlinedTextField(type, { type = it }, label = { Text("Type") })
         DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
-        OutlinedTextField(recurrence, { recurrence = it.uppercase(Locale.getDefault()).take(12) }, label = { Text("Recurrence: ONCE or DAILY") })
+        Text("Repeats", style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly").forEach { (value, label) ->
+                FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
+            }
+        }
         OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
         if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
-    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.updateReminder(reminder, title, type, notes, dueAt!!, if (recurrence == "DAILY") "DAILY" else "ONCE"); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.updateReminder(reminder, title, type, notes, dueAt!!, recurrence); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable
@@ -946,10 +951,15 @@ private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit, onSched
         OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
         OutlinedTextField(type, { type = it }, label = { Text("Type") })
         DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
-        OutlinedTextField(recurrence, { recurrence = it.uppercase(Locale.getDefault()).take(12) }, label = { Text("Recurrence: ONCE or DAILY") })
+        Text("Repeats", style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly").forEach { (value, label) ->
+                FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
+            }
+        }
         OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
         if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
-    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.addReminder(title, type, notes, dueAt!!, if (recurrence == "DAILY") "DAILY" else "ONCE"); onScheduled(); onDismiss() }) { Text("Schedule") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.addReminder(title, type, notes, dueAt!!, recurrence); onScheduled(); onDismiss() }) { Text("Schedule") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
 
 @Composable
