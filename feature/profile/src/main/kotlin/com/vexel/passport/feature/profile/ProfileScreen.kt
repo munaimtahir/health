@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -118,9 +119,21 @@ private class PdfPrintDocumentAdapter(
         callback: WriteResultCallback,
     ) {
         try {
+            if (cancellationSignal?.isCanceled == true) {
+                callback.onWriteCancelled()
+                return
+            }
             context.contentResolver.openInputStream(sourceUri)?.use { input ->
                 android.os.ParcelFileDescriptor.AutoCloseOutputStream(destination).use { output ->
-                    input.copyTo(output)
+                    val buffer = ByteArray(8192)
+                    var bytesRead: Int
+                    while (input.read(buffer).also { bytesRead = it } >= 0) {
+                        if (cancellationSignal?.isCanceled == true) {
+                            callback.onWriteCancelled()
+                            return
+                        }
+                        output.write(buffer, 0, bytesRead)
+                    }
                 }
             }
             callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
@@ -195,9 +208,10 @@ private fun ProfileScreen(
 
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("profileScroll"), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(top = 16.dp, bottom = 24.dp)) {
         item { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); Text("Keep your personal details and app controls in one place.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        
+        // 1. Personal details
         item {
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeader("Personal details")
+            CollapsibleSection("Personal details", initialExpanded = true) {
                 OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") })
                 OutlinedTextField(dateOfBirth, { dateOfBirth = it }, Modifier.fillMaxWidth(), label = { Text("Date of birth") }, placeholder = { Text("yyyy-MM-dd") }, isError = !dateOfBirthValid, supportingText = { if (!dateOfBirthValid) Text("Use yyyy-MM-dd or leave blank") })
                 OutlinedTextField(bloodGroup, { bloodGroup = it }, Modifier.fillMaxWidth(), label = { Text("Blood group") })
@@ -205,23 +219,22 @@ private fun ProfileScreen(
                 OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Conditions") })
                 OutlinedTextField(emergencyContact, { emergencyContact = it }, Modifier.fillMaxWidth(), label = { Text("Emergency contact") })
                 Button({ vm.saveProfile(ProfileEntity(name = name, dateOfBirth = dateOfBirth, bloodGroup = bloodGroup, allergies = allergies, conditions = conditions, emergencyContact = emergencyContact, updatedAtEpochMillis = System.currentTimeMillis())) }, enabled = dateOfBirthValid, modifier = Modifier.fillMaxWidth()) { Text("Save profile") }
-            } }
+            }
         }
+        
+        // 2. Reports and exports
         item {
-            SectionHeader("Reports and data tools")
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
-                Text("Optional date range for exports and reports (yyyy-MM-dd). Leave blank for all dates.", Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            CollapsibleSection("Reports and exports") {
+                Text("Optional date range for exports and reports (yyyy-MM-dd). Leave blank for all dates.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(reportFrom, { reportFrom = it }, Modifier.weight(1f), label = { Text("From") }, singleLine = true)
                     OutlinedTextField(reportTo, { reportTo = it }, Modifier.weight(1f), label = { Text("To") }, singleLine = true)
                 }
                 if (!dateScope.isValid && (reportFrom.isNotBlank() || reportTo.isNotBlank())) {
-                    Text("Enter valid dates in yyyy-MM-dd order before exporting.", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
+                    Text("Enter valid dates in yyyy-MM-dd order before exporting.", color = MaterialTheme.colorScheme.error)
                 }
                 ActionRow("Export my data (JSON)", enabled = dateScope.isValid, leadingIcon = Icons.Outlined.Download, onClick = { exportLauncher.launch("vexel-health-export.json") })
                 ActionRow("Export readable summary", enabled = dateScope.isValid, leadingIcon = Icons.Outlined.Description, onClick = { readableExportLauncher.launch("vexel-health-export.txt") })
-                ActionRow("Create encrypted backup", leadingIcon = Icons.Outlined.Lock, onClick = { backupAction = "CREATE"; showBackupPassword = true })
-                ActionRow("Restore backup", leadingIcon = Icons.Outlined.LockOpen, onClick = { backupAction = "RESTORE"; showBackupPassword = true })
                 ActionRow("Create PDF report", leadingIcon = Icons.Outlined.PictureAsPdf, onClick = { showReportOptions = true })
                 generatedReportUri?.let { uri ->
                     ActionRow("Share last PDF report", leadingIcon = Icons.Outlined.Share, onClick = {
@@ -238,16 +251,24 @@ private fun ProfileScreen(
                         printManager.print("Vexel Health Passport report", PdfPrintDocumentAdapter(context, uri, "Vexel Health Passport report"), null)
                     })
                 }
-            } }
+            }
         }
+        
+        // 3. Backup and restore
         item {
-            SectionHeader("Appearance and security")
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
-                ActionRow(if (prefs.darkTheme) "Use light theme" else "Use dark theme", leadingIcon = if (prefs.darkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, onClick = { vm.setDarkTheme(!prefs.darkTheme) })
+            CollapsibleSection("Backup and restore") {
+                ActionRow("Create encrypted backup", leadingIcon = Icons.Outlined.Lock, onClick = { backupAction = "CREATE"; showBackupPassword = true })
+                ActionRow("Restore backup", leadingIcon = Icons.Outlined.LockOpen, onClick = { backupAction = "RESTORE"; showBackupPassword = true })
+            }
+        }
+
+        // 4. Privacy and app lock
+        item {
+            CollapsibleSection("Privacy and app lock") {
                 ActionRow(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock", leadingIcon = Icons.Outlined.Password, onClick = { if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true })
                 if (prefs.lockEnabled) {
-                    Text("Lock after inactivity", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelLarge)
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Lock after inactivity", style = MaterialTheme.typography.labelLarge)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(0 to "When leaving", 5 to "5 minutes", 15 to "15 minutes", 30 to "30 minutes").forEach { (minutes, label) ->
                             FilterChip(selected = prefs.lockTimeoutMinutes == minutes, onClick = { vm.setLockTimeoutMinutes(minutes) }, label = { Text(label) })
                         }
@@ -258,24 +279,23 @@ private fun ProfileScreen(
                     leadingIcon = if (prefs.hideRecentAppsPreview) Icons.Outlined.LockOpen else Icons.Outlined.Lock,
                     onClick = { vm.setHideRecentAppsPreview(!prefs.hideRecentAppsPreview) },
                 )
-            } }
+            }
         }
+
+        // 5. Appearance and accessibility
         item {
-            SectionHeader("Privacy and data")
-            Text("Health information is stored locally on this device. Exported files and backups may contain sensitive information.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedButton({ showDeleteAll = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete all app data", color = MaterialTheme.colorScheme.error) }
+            CollapsibleSection("Appearance and accessibility") {
+                ActionRow(if (prefs.darkTheme) "Use light theme" else "Use dark theme", leadingIcon = if (prefs.darkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, onClick = { vm.setDarkTheme(!prefs.darkTheme) })
+            }
         }
+
+        // 6. Data deletion and legal information
         item {
-            SectionHeader("Help and about")
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Vexel Health Passport", style = MaterialTheme.typography.titleMedium)
-                    Text("Your health history, organized.")
-                    Text("Vexel stores user-entered information locally and works offline. It does not diagnose conditions or replace professional care.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    ActionRow("Using this app", leadingIcon = Icons.Outlined.Description, onClick = { showHelp = true })
-                    ActionRow("Privacy and safety", leadingIcon = Icons.Outlined.Lock, onClick = { showPrivacyInfo = true })
-                }
+            CollapsibleSection("Data deletion and legal info") {
+                Text("Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                ActionRow("Using this app", leadingIcon = Icons.Outlined.Description, onClick = { showHelp = true })
+                ActionRow("Privacy and safety", leadingIcon = Icons.Outlined.Lock, onClick = { showPrivacyInfo = true })
+                OutlinedButton({ showDeleteAll = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete all app data", color = MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -387,3 +407,42 @@ private fun PinSetupDialog(vm: ProfileViewModel, onDismiss: () -> Unit) {
         OutlinedTextField(confirmation, { confirmation = it.filter(Char::isDigit).take(12) }, label = { Text("Confirm PIN") }, isError = error.isNotBlank(), supportingText = { if (error.isNotBlank()) Text(error) })
     } }, confirmButton = { Button({ if (pin != confirmation) error = "PINs do not match" else if (pin.length !in 4..12) error = "Use 4–12 digits" else if (vm.savePin(pin, confirmation)) onDismiss() }) { Text("Enable") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }
+
+@Composable
+private fun CollapsibleSection(
+    title: String,
+    initialExpanded: Boolean = false,
+    content: @Composable () -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(initialExpanded) }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = if (expanded) "Collapse" else "Expand",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            if (expanded) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    content()
+                }
+            }
+        }
+    }
+}
+

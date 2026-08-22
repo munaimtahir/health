@@ -223,36 +223,59 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun restoreBackup(uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val tempDir = java.io.File(appContext.cacheDir, "backup_restore_${UUID.randomUUID()}")
+        tempDir.mkdirs()
+        val restoredDocumentIds = mutableMapOf<String, String>()
+        val restoredDocuments = mutableListOf<DocumentEntity>()
+        var dataJsonString: String? = null
+        var manifestJsonString: String? = null
         try {
             val sourceBytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Unable to read backup")
             val backupBytes = if (BackupCrypto.isEncrypted(sourceBytes)) BackupCrypto.decrypt(sourceBytes, password.toCharArray()) else sourceBytes
-            val entries = linkedMapOf<String, ByteArray>()
             ZipInputStream(ByteArrayInputStream(backupBytes)).use { zip ->
                 var entry = zip.nextEntry
                 while (entry != null) {
                     require(!entry.isDirectory && (entry.name == "data.json" || entry.name == "manifest.json" || entry.name.startsWith("documents/"))) { "Unsupported backup entry" }
-                    entries[entry.name] = zip.readBytes()
+                    if (entry.name == "data.json") {
+                        dataJsonString = String(zip.readBytes(), Charsets.UTF_8)
+                    } else if (entry.name == "manifest.json") {
+                        manifestJsonString = String(zip.readBytes(), Charsets.UTF_8)
+                    } else if (entry.name.startsWith("documents/")) {
+                        val docId = entry.name.substringAfter("documents/")
+                        val tempFile = java.io.File(tempDir, docId)
+                        tempFile.outputStream().use { out -> zip.copyTo(out) }
+                    }
                     entry = zip.nextEntry
                 }
             }
-            val dataBytes = entries["data.json"] ?: error("Missing backup data")
-            entries["manifest.json"]?.let { manifestBytes ->
-                val manifest = JSONObject(String(manifestBytes, Charsets.UTF_8))
+            val data = JSONObject(dataJsonString ?: error("Missing backup data"))
+            require(data.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
+            manifestJsonString?.let {
+                val manifest = JSONObject(manifestJsonString)
                 require(manifest.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
+                val dataBytes = dataJsonString!!.toByteArray(Charsets.UTF_8)
                 require(manifest.optString("dataSha256").equals(sha256Hex(dataBytes), ignoreCase = true)) { "Backup integrity check failed" }
             }
-            val data = JSONObject(String(dataBytes, Charsets.UTF_8))
-            require(data.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
-            val restoredDocuments = mutableListOf<DocumentEntity>()
-            val restoredDocumentIds = mutableMapOf<String, String>()
             val documentData = data.optJSONArray("documents") ?: JSONArray()
             for (index in 0 until documentData.length()) {
                 val source = documentData.getJSONObject(index)
-                val bytes = entries["documents/${source.getString("id")}"] ?: error("Missing document binary")
-                val digest = sha256Hex(bytes)
+                val sourceId = source.getString("id")
+                val tempFile = java.io.File(tempDir, sourceId)
+                require(tempFile.exists()) { "Missing document binary in backup" }
+                val digest = tempFile.inputStream().use { input ->
+                    val md = java.security.MessageDigest.getInstance("SHA-256")
+                    val buffer = ByteArray(8192)
+                    var read: Int
+                    while (input.read(buffer).also { read = it } >= 0) {
+                        md.update(buffer, 0, read)
+                    }
+                    md.digest().joinToString("") { "%02x".format(it) }
+                }
                 require(digest.equals(source.getString("sha256"), ignoreCase = true)) { "Document integrity check failed" }
-                val preserved = secureFileStore.preserveOriginal(ByteArrayInputStream(bytes), source.getString("mimeType"), source.optString("originalFileName", "document"))
-                restoredDocumentIds[source.getString("id")] = preserved.id
+                val preserved = tempFile.inputStream().use { input ->
+                    secureFileStore.preserveOriginal(input, source.getString("mimeType"), source.optString("originalFileName", "document"))
+                }
+                restoredDocumentIds[sourceId] = preserved.id
                 restoredDocuments += DocumentEntity(preserved.id, source.optString("title"), source.optString("category", "OTHER"), source.optString("documentDate"), source.optString("notes"), source.optString("originalFileName", "document"), preserved.mimeType, preserved.byteCount, preserved.sha256, System.currentTimeMillis())
             }
             val scheduledReminders = mutableListOf<ReminderEntity>()
@@ -316,6 +339,8 @@ class ProfileViewModel @Inject constructor(
             _operationError.value = "Incorrect password, or the backup file is corrupted."
         } catch (failure: Exception) {
             _operationError.value = "Restore failed. The backup file may be corrupted or in an unsupported format."
+        } finally {
+            tempDir.deleteRecursively()
         }
     }
 

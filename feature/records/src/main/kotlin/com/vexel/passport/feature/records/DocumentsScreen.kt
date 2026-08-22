@@ -1,6 +1,7 @@
 package com.vexel.passport.feature.records
 
 import android.net.Uri
+import com.vexel.passport.core.ui.FullScreenDialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -200,12 +201,41 @@ private fun DocumentEditDialog(vm: RecordsViewModel, document: DocumentEntity, o
     var category by rememberSaveable(document.id) { mutableStateOf(document.category) }
     var date by rememberSaveable(document.id) { mutableStateOf(document.documentDate) }
     var notes by rememberSaveable(document.id) { mutableStateOf(document.notes) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit document details") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Title") })
-        OutlinedTextField(category, { category = it }, label = { Text("Category") })
-        OutlinedTextField(date, { date = it }, label = { Text("Document date") })
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes") })
-    } }, confirmButton = { Button({ vm.updateDocument(document, title, category, date, notes); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+
+    FullScreenDialog(
+        title = "Edit document details",
+        onDismiss = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { vm.updateDocument(document, title, category, date, notes); onDismiss() }) {
+                Text("Save")
+            }
+        }
+    ) {
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Title") }
+        )
+        OutlinedTextField(
+            value = category,
+            onValueChange = { category = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Category") }
+        )
+        OutlinedTextField(
+            value = date,
+            onValueChange = { date = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Document date") }
+        )
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Notes") }
+        )
+    }
 }
 
 @Composable
@@ -218,11 +248,40 @@ private fun DocumentImportDialog(vm: RecordsViewModel, onDismiss: () -> Unit) {
         if (uri != null) vm.importDocument(uri, title, category, documentDate, notes)
         if (uri != null) onDismiss()
     }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Import private document") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+    FullScreenDialog(
+        title = "Import private document",
+        onDismiss = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { launcher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) {
+                Text("Choose file")
+            }
+        }
+    ) {
         Text("Choose a PDF or image. The original is preserved privately; unsupported types are rejected.")
-        OutlinedTextField(title, { title = it }, label = { Text("Title") })
-        OutlinedTextField(category, { category = it }, label = { Text("Category") })
-        OutlinedTextField(documentDate, { documentDate = it }, label = { Text("Document date (optional)") })
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
-    } }, confirmButton = { Button({ launcher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Choose file") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Title") }
+        )
+        OutlinedTextField(
+            value = category,
+            onValueChange = { category = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Category") }
+        )
+        OutlinedTextField(
+            value = documentDate,
+            onValueChange = { documentDate = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Document date (optional)") }
+        )
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Notes (optional)") }
+        )
+    }
 }

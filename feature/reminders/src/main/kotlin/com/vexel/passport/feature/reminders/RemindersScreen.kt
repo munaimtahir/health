@@ -38,6 +38,7 @@ import com.vexel.passport.core.database.ReminderEntity
 import com.vexel.passport.core.designsystem.EmptyState
 import com.vexel.passport.core.designsystem.StatusPill
 import com.vexel.passport.core.ui.DateTimeField
+import com.vexel.passport.core.ui.FullScreenDialog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -120,9 +121,29 @@ private fun ReminderEditDialog(reminder: ReminderEntity, onSave: (ReminderEntity
     var recurrence by rememberSaveable(reminder.id) { mutableStateOf(reminder.recurrence) }
     val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
     val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit reminder") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
-        OutlinedTextField(type, { type = it }, label = { Text("Type") })
+
+    FullScreenDialog(
+        title = "Edit reminder",
+        onDismiss = onDismiss,
+        confirmButton = {
+            TextButton(enabled = error.isBlank(), onClick = { onSave(reminder, title, type, notes, dueAt!!, recurrence); onDismiss() }) {
+                Text("Save")
+            }
+        }
+    ) {
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Title") },
+            isError = error.isNotBlank()
+        )
+        OutlinedTextField(
+            value = type,
+            onValueChange = { type = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Type") }
+        )
         DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
         Text("Repeats", style = MaterialTheme.typography.labelLarge)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -130,9 +151,16 @@ private fun ReminderEditDialog(reminder: ReminderEntity, onSave: (ReminderEntity
                 FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
             }
         }
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
-        if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
-    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { onSave(reminder, title, type, notes, dueAt!!, recurrence); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Notes (optional)") }
+        )
+        if (error.isNotBlank()) {
+            Text(error, color = MaterialTheme.colorScheme.error)
+        }
+    }
 }
 
 @Composable
@@ -144,9 +172,29 @@ private fun ReminderDialog(onSave: (String, String, String, Long, String) -> Uni
     var recurrence by rememberSaveable { mutableStateOf("ONCE") }
     val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
     val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Add reminder") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
-        OutlinedTextField(type, { type = it }, label = { Text("Type") })
+
+    FullScreenDialog(
+        title = "Add reminder",
+        onDismiss = onDismiss,
+        confirmButton = {
+            TextButton(enabled = error.isBlank(), onClick = { onSave(title, type, notes, dueAt!!, recurrence); onScheduled(); onDismiss() }) {
+                Text("Schedule")
+            }
+        }
+    ) {
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Title") },
+            isError = error.isNotBlank()
+        )
+        OutlinedTextField(
+            value = type,
+            onValueChange = { type = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Type") }
+        )
         DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
         Text("Repeats", style = MaterialTheme.typography.labelLarge)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -154,7 +202,14 @@ private fun ReminderDialog(onSave: (String, String, String, Long, String) -> Uni
                 FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
             }
         }
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
-        if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
-    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { onSave(title, type, notes, dueAt!!, recurrence); onScheduled(); onDismiss() }) { Text("Schedule") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Notes (optional)") }
+        )
+        if (error.isNotBlank()) {
+            Text(error, color = MaterialTheme.colorScheme.error)
+        }
+    }
 }

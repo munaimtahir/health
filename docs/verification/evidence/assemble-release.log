@@ -190,8 +190,8 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:data:compileReleaseKotlin
 > Task :core:data:javaPreCompileRelease
 > Task :core:data:compileReleaseJavaWithJavac NO-SOURCE
-> Task :core:data:mergeReleaseGeneratedProguardFiles
-> Task :core:data:exportReleaseConsumerProguardFiles
+> Task :core:data:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :core:data:exportReleaseConsumerProguardFiles UP-TO-DATE
 > Task :core:database:bundleLibRuntimeToJarRelease
 > Task :core:datastore:bundleLibRuntimeToJarRelease
 > Task :core:designsystem:checkKotlinGradlePluginConfigurationErrors SKIPPED
@@ -380,7 +380,7 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:designsystem:mergeReleaseGeneratedProguardFiles UP-TO-DATE
 > Task :core:designsystem:exportReleaseConsumerProguardFiles UP-TO-DATE
 > Task :app:checkReleaseDuplicateClasses
-> Task :core:data:prepareReleaseArtProfile
+> Task :core:data:prepareReleaseArtProfile UP-TO-DATE
 > Task :core:database:prepareReleaseArtProfile UP-TO-DATE
 > Task :core:datastore:prepareReleaseArtProfile UP-TO-DATE
 > Task :core:designsystem:prepareReleaseArtProfile UP-TO-DATE
@@ -531,6 +531,16 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :app:mergeReleaseJavaResource
 > Task :app:mergeReleaseStartupProfile UP-TO-DATE
 > Task :app:minifyReleaseWithR8
+
+The Daemon will expire after the build after running out of JVM Metaspace.
+The project memory settings are likely not configured or are configured to an insufficient value.
+The daemon will restart for the next build, which may increase subsequent build times.
+These settings can be adjusted by setting 'org.gradle.jvmargs' in 'gradle.properties'.
+The currently configured max heap space is '1.5 GiB' and the configured max metaspace is '384 MiB'.
+For more information on how to set these values, please refer to https://docs.gradle.org/8.13/userguide/build_environment.html#sec:configuring_jvm_memory in the Gradle documentation.
+To disable this warning, set 'org.gradle.daemon.performance.disable-logging=true'.
+Daemon will be stopped at the end of the build after running out of JVM Metaspace
+
 > Task :app:compileReleaseArtProfile
 > Task :app:mergeReleaseShaders
 > Task :app:compileReleaseShaders NO-SOURCE
@@ -694,9 +704,9 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:data:checkReleaseAarMetadata
 > Task :core:data:stripReleaseDebugSymbols NO-SOURCE
 > Task :core:data:copyReleaseJniLibsProjectAndLocalJars
-> Task :core:data:extractDeepLinksForAarRelease
+> Task :core:data:extractDeepLinksForAarRelease UP-TO-DATE
 > Task :core:data:extractReleaseAnnotations
-> Task :core:data:mergeReleaseConsumerProguardFiles
+> Task :core:data:mergeReleaseConsumerProguardFiles UP-TO-DATE
 > Task :core:data:mergeReleaseJavaResource
 > Task :core:data:syncReleaseLibJars
 > Task :core:data:bundleReleaseLocalLintAar
@@ -870,14 +880,6 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :core:data:lintVitalAnalyzeRelease
 > Task :core:data:writeReleaseLintModelMetadata
 > Task :core:database:lintVitalAnalyzeRelease
-The Daemon will expire after the build after running out of JVM Metaspace.
-The project memory settings are likely not configured or are configured to an insufficient value.
-The daemon will restart for the next build, which may increase subsequent build times.
-These settings can be adjusted by setting 'org.gradle.jvmargs' in 'gradle.properties'.
-The currently configured max heap space is '1.5 GiB' and the configured max metaspace is '384 MiB'.
-For more information on how to set these values, please refer to https://docs.gradle.org/8.13/userguide/build_environment.html#sec:configuring_jvm_memory in the Gradle documentation.
-To disable this warning, set 'org.gradle.daemon.performance.disable-logging=true'.
-Daemon will be stopped at the end of the build after running out of JVM Metaspace
 > Task :core:datastore:lintVitalAnalyzeRelease
 > Task :core:designsystem:lintVitalAnalyzeRelease
 > Task :core:designsystem:writeReleaseLintModelMetadata
@@ -1042,5 +1044,5 @@ Daemon will be stopped at the end of the build after running out of JVM Metaspac
 > Task :feature:timeline:verifyReleaseResources
 > Task :feature:timeline:assembleRelease
 
-BUILD SUCCESSFUL in 8m 3s
-846 actionable tasks: 729 executed, 117 up-to-date
+BUILD SUCCESSFUL in 7m 52s
+846 actionable tasks: 724 executed, 122 up-to-date

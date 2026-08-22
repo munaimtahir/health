@@ -138,8 +138,25 @@ fun TimelineScreen(
         if (episodeSummaries.isNotEmpty()) item { Text("Recorded episodes: ${episodeSummaries.size} · ${episodeSummaries.sumOf { it.entryCount }} linked entries", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (events.isEmpty() && allEvents.isEmpty()) item { EmptyState("No records yet", "Symptoms, medications and other user-entered events will appear here.", "Log a record", onAction = { showKindPicker = true }) }
         else if (events.isEmpty()) item { EmptyState("No matches", "Try a different search term, or clear the search and type filters.") }
-        else items(events, key = { it.id }) { event ->
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; if (event.durationMinutes != null) Text("Duration: ${event.durationMinutes} minutes"); if (event.ongoing) Text("Ongoing"); if (event.bodyLocation.isNotBlank()) Text("Location: ${event.bodyLocation}"); if (event.associatedSymptoms.isNotBlank()) Text("Associated symptoms: ${event.associatedSymptoms}"); if (event.possibleTrigger.isNotBlank()) Text("Observed possible trigger: ${event.possibleTrigger}"); if (event.relatedMedication.isNotBlank()) Text("Related medication: ${event.relatedMedication}"); event.episodeId?.let { Text("Episode or flare ID: $it") }; Text(DateFormat.getDateInstance().format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))); Row { TextButton({ onArchive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
+        else {
+            var lastDateText = ""
+            events.forEach { event ->
+                val dateText = DateFormat.getDateInstance(DateFormat.LONG).format(Date(event.effectiveAtEpochMillis ?: event.createdAtEpochMillis))
+                if (dateText != lastDateText) {
+                    item(key = "header_$dateText") {
+                        Text(
+                            text = dateText,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                        )
+                    }
+                    lastDateText = dateText
+                }
+                item(key = event.id) {
+                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) { Text(event.title, style = MaterialTheme.typography.titleMedium); Text(event.kind.lowercase().replaceFirstChar { it.uppercase() }); if (event.details.isNotBlank()) Text(event.details); event.severity?.let { Text("Recorded severity: $it/10") }; if (event.durationMinutes != null) Text("Duration: ${event.durationMinutes} minutes"); if (event.ongoing) Text("Ongoing"); if (event.bodyLocation.isNotBlank()) Text("Location: ${event.bodyLocation}"); if (event.associatedSymptoms.isNotBlank()) Text("Associated symptoms: ${event.associatedSymptoms}"); if (event.possibleTrigger.isNotBlank()) Text("Observed possible trigger: ${event.possibleTrigger}"); if (event.relatedMedication.isNotBlank()) Text("Related medication: ${event.relatedMedication}"); event.episodeId?.let { Text("Episode or flare ID: $it") }; Row { TextButton({ onArchive(event) }) { Text("Archive") }; TextButton({ pendingDelete = event }) { Text("Delete") } } } }
+                }
+            }
         }
     }
     SnackbarHost(archiveSnackbarState, modifier = Modifier.align(Alignment.BottomCenter))

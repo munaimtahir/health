@@ -1994,7 +1994,7 @@ OpenJDK 64-Bit Server VM Temurin-17.0.18+8 (build 17.0.18+8, mixed mode, sharing
 > Task :feature:timeline:testReleaseUnitTest NO-SOURCE
 > Task :feature:timeline:test UP-TO-DATE
 
-BUILD SUCCESSFUL in 14s
+BUILD SUCCESSFUL in 13s
 786 actionable tasks: 786 up-to-date
 openjdk version "17.0.18" 2026-01-20
 OpenJDK Runtime Environment Temurin-17.0.18+8 (build 17.0.18+8)
@@ -3076,6 +3076,6 @@ OpenJDK 64-Bit Server VM Temurin-17.0.18+8 (build 17.0.18+8, mixed mode, sharing
 > Task :feature:timeline:lintDebug
 > Task :feature:timeline:lint
 
-BUILD SUCCESSFUL in 12s
+BUILD SUCCESSFUL in 13s
 856 actionable tasks: 20 executed, 836 up-to-date
 Privacy, offline, sharing-provider, and medical-safety boundary checks passed.

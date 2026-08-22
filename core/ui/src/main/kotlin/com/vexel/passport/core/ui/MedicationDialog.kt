@@ -1,12 +1,8 @@
 package com.vexel.passport.core.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -22,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import com.vexel.passport.core.model.MedicationDraft
 import com.vexel.passport.core.model.validationErrors
 
-/** New-medication capture dialog. Shared between any screen that can add a medication record. */
 @Composable
 fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
@@ -40,34 +35,104 @@ fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) -> Unit) {
     var notes by rememberSaveable { mutableStateOf("") }
     val draft = MedicationDraft(name, genericName, strength, dose, unit, route, frequency, startDate, stopDate, status, indication, physician, notes)
     val errors = draft.validationErrors()
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add medication") },
-        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(name, { name = it }, label = { Text("Medication name") }, isError = errors.containsKey("name"))
-            OutlinedTextField(genericName, { genericName = it }, label = { Text("Generic or brand name (optional)") })
-            OutlinedTextField(strength, { strength = it }, label = { Text("Strength") })
-            OutlinedTextField(dose, { dose = it }, label = { Text("Dose") })
-            OutlinedTextField(unit, { unit = it }, label = { Text("Unit (optional)") })
-            OutlinedTextField(route, { route = it }, label = { Text("Route (optional)") })
-            OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency (optional)") })
-            OutlinedTextField(startDate, { startDate = it }, label = { Text("Start date, as yyyy-MM-dd (optional)") }, isError = errors.containsKey("startDate"), supportingText = { errors["startDate"]?.let { Text(it) } })
-            OutlinedTextField(stopDate, { stopDate = it }, label = { Text("Stop date, as yyyy-MM-dd (optional)") }, isError = errors.containsKey("stopDate"), supportingText = { errors["stopDate"]?.let { Text(it) } })
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = status == "CURRENT", onClick = { status = "CURRENT" }, label = { Text("Current") })
-                FilterChip(selected = status == "STOPPED", onClick = { status = "STOPPED" }, label = { Text("Stopped") })
+
+    FullScreenDialog(
+        title = "Add medication",
+        onDismiss = onDismiss,
+        confirmButton = {
+            TextButton(enabled = errors.isEmpty(), onClick = { onSave(draft); onDismiss() }) {
+                Text("Save")
             }
-            OutlinedTextField(indication, { indication = it }, label = { Text("Indication (optional)") })
-            OutlinedTextField(physician, { physician = it }, label = { Text("Physician (optional)") })
-            OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") }, isError = errors.containsKey("notes"))
-            errors.values.firstOrNull()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        } },
-        confirmButton = { Button(enabled = errors.isEmpty(), onClick = { onSave(draft); onDismiss() }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+        }
+    ) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Medication name") },
+            isError = errors.containsKey("name"),
+            supportingText = { errors["name"]?.let { Text(it) } }
+        )
+        OutlinedTextField(
+            value = genericName,
+            onValueChange = { genericName = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Generic or brand name (optional)") }
+        )
+        OutlinedTextField(
+            value = strength,
+            onValueChange = { strength = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Strength") }
+        )
+        OutlinedTextField(
+            value = dose,
+            onValueChange = { dose = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Dose") }
+        )
+        OutlinedTextField(
+            value = unit,
+            onValueChange = { unit = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Unit (optional)") }
+        )
+        OutlinedTextField(
+            value = route,
+            onValueChange = { route = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Route (optional)") }
+        )
+        OutlinedTextField(
+            value = frequency,
+            onValueChange = { frequency = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Frequency (optional)") }
+        )
+        OutlinedTextField(
+            value = startDate,
+            onValueChange = { startDate = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Start date, as yyyy-MM-dd (optional)") },
+            isError = errors.containsKey("startDate"),
+            supportingText = { errors["startDate"]?.let { Text(it) } }
+        )
+        OutlinedTextField(
+            value = stopDate,
+            onValueChange = { stopDate = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Stop date, as yyyy-MM-dd (optional)") },
+            isError = errors.containsKey("stopDate"),
+            supportingText = { errors["stopDate"]?.let { Text(it) } }
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = status == "CURRENT", onClick = { status = "CURRENT" }, label = { Text("Current") })
+            FilterChip(selected = status == "STOPPED", onClick = { status = "STOPPED" }, label = { Text("Stopped") })
+        }
+        OutlinedTextField(
+            value = indication,
+            onValueChange = { indication = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Indication (optional)") }
+        )
+        OutlinedTextField(
+            value = physician,
+            onValueChange = { physician = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Physician (optional)") }
+        )
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Notes (optional)") },
+            isError = errors.containsKey("notes"),
+            supportingText = { errors["notes"]?.let { Text(it) } }
+        )
+        errors.values.firstOrNull()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    }
 }
 
-/** Records a dose/status change for an existing medication, starting a new treatment period. */
 @Composable
 fun MedicationChangeDialog(
     medicationId: String,
@@ -85,13 +150,50 @@ fun MedicationChangeDialog(
     var frequency by rememberSaveable(medicationId) { mutableStateOf(initialFrequency) }
     var status by rememberSaveable(medicationId) { mutableStateOf(initialStatus) }
     var notes by rememberSaveable(medicationId) { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Record medication change") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+    FullScreenDialog(
+        title = "Record medication change",
+        onDismiss = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onSave(strength, dose, unit, frequency, status, notes); onDismiss() }) {
+                Text("Save change")
+            }
+        }
+    ) {
         Text("This records a new treatment period; it does not recommend a dose or treatment.")
-        OutlinedTextField(strength, { strength = it }, label = { Text("Strength") })
-        OutlinedTextField(dose, { dose = it }, label = { Text("Dose") })
-        OutlinedTextField(unit, { unit = it }, label = { Text("Unit") })
-        OutlinedTextField(frequency, { frequency = it }, label = { Text("Frequency") })
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { FilterChip(status == "CURRENT", { status = "CURRENT" }, label = { Text("Current/restarted") }); FilterChip(status == "STOPPED", { status = "STOPPED" }, label = { Text("Stopped") }) }
-        OutlinedTextField(notes, { notes = it }, label = { Text("Change notes (optional)") })
-    } }, confirmButton = { Button({ onSave(strength, dose, unit, frequency, status, notes) }) { Text("Save change") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
+        OutlinedTextField(
+            value = strength,
+            onValueChange = { strength = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Strength") }
+        )
+        OutlinedTextField(
+            value = dose,
+            onValueChange = { dose = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Dose") }
+        )
+        OutlinedTextField(
+            value = unit,
+            onValueChange = { unit = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Unit") }
+        )
+        OutlinedTextField(
+            value = frequency,
+            onValueChange = { frequency = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Frequency") }
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = status == "CURRENT", onClick = { status = "CURRENT" }, label = { Text("Current/restarted") })
+            FilterChip(selected = status == "STOPPED", onClick = { status = "STOPPED" }, label = { Text("Stopped") })
+        }
+        OutlinedTextField(
+            value = notes,
+            onValueChange = { notes = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Change notes (optional)") }
+        )
+    }
 }

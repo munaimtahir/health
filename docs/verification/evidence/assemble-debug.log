@@ -845,5 +845,5 @@ Unable to strip the following libraries, packaging them as they are: libandroidx
 > Task :feature:timeline:bundleDebugAar
 > Task :feature:timeline:assembleDebug
 
-BUILD SUCCESSFUL in 2m 23s
+BUILD SUCCESSFUL in 2m 41s
 657 actionable tasks: 562 executed, 95 up-to-date
