@@ -37,6 +37,29 @@ import com.vexel.passport.core.ui.CaptureDialog
 import com.vexel.passport.core.ui.MedicationChangeDialog
 import com.vexel.passport.core.ui.MedicationDialog
 
+import androidx.compose.runtime.collectAsState
+import androidx.hilt.navigation.compose.hiltViewModel
+
+@Composable
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: DashboardViewModel = hiltViewModel()
+) {
+    val profile by viewModel.profile.collectAsState()
+    val medications by viewModel.medications.collectAsState()
+    val events by viewModel.events.collectAsState()
+    HomeScreen(
+        profile = profile,
+        medications = medications,
+        events = events,
+        modifier = modifier,
+        onAddEvent = viewModel::addEvent,
+        onAddSymptom = viewModel::addSymptom,
+        onAddMedication = viewModel::addMedication,
+        onRecordMedicationChange = viewModel::recordMedicationChange
+    )
+}
+
 /** Home tab: a quick "how are you feeling" entry point, a neutral trend summary, and current medications. */
 @Composable
 fun HomeScreen(

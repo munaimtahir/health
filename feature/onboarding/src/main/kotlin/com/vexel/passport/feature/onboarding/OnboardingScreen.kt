@@ -22,6 +22,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+import androidx.hilt.navigation.compose.hiltViewModel
+
+@Composable
+fun OnboardingScreen(
+    onboardingViewModel: OnboardingViewModel = hiltViewModel()
+) {
+    OnboardingScreen(onComplete = onboardingViewModel::completeOnboarding)
+}
+
 /** First-launch acknowledgement of the app's offline, non-diagnostic scope; gates entry into the main shell. */
 @Composable
 fun OnboardingScreen(onComplete: () -> Unit) {

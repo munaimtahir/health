@@ -43,4 +43,9 @@ object AppModule {
     @Singleton
     fun provideReminderScheduler(@ApplicationContext context: Context, database: HealthDatabase): ReminderScheduler =
         WorkManagerReminderScheduler(context, database)
+
+    @Provides
+    @Singleton
+    fun provideHealthRepository(database: HealthDatabase): com.vexel.passport.core.domain.HealthRepository =
+        com.vexel.passport.core.data.HealthRepositoryImpl(database)
 }

@@ -11,6 +11,16 @@ interface HealthEventDao {
     @Query("SELECT * FROM health_events WHERE archived = 0 ORDER BY COALESCE(effectiveAtEpochMillis, createdAtEpochMillis) DESC")
     fun observeAll(): Flow<List<HealthEventEntity>>
 
+    @Query("""
+        SELECT * FROM health_events 
+        WHERE archived = 0 
+        AND (:query = '' OR title LIKE '%' || :query || '%' OR details LIKE '%' || :query || '%') 
+        AND (:kind IS NULL OR :kind = '' OR kind = :kind) 
+        ORDER BY COALESCE(effectiveAtEpochMillis, createdAtEpochMillis) DESC 
+        LIMIT :limit
+    """)
+    fun observeFiltered(query: String, kind: String?, limit: Int): Flow<List<HealthEventEntity>>
+
     @Insert
     suspend fun insert(event: HealthEventEntity)
 

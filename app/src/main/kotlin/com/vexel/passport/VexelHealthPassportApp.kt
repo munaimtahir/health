@@ -1,29 +1,14 @@
 package com.vexel.passport
 
 import android.content.Context
-import android.content.ClipData
-import android.content.Intent
-import android.Manifest
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.OpenableColumns
-import android.graphics.Paint
-import android.graphics.pdf.PdfDocument
-import android.graphics.Color
-
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Event
@@ -31,29 +16,17 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
-import androidx.compose.material.icons.outlined.PictureAsPdf
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Password
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -62,36 +35,25 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.room.withTransaction
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -103,69 +65,30 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import com.vexel.passport.core.ui.DateTimeField
-import com.vexel.passport.core.ui.CaptureDialog
-import com.vexel.passport.core.ui.MedicationDialog
-import com.vexel.passport.core.ui.MedicationChangeDialog
-import com.vexel.passport.feature.dashboard.HomeScreen
-import com.vexel.passport.feature.timeline.TimelineScreen
-import java.text.DateFormat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.security.MessageDigest
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
-import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import com.vexel.passport.core.database.HealthDatabase
-import com.vexel.passport.core.database.HealthEventEntity
-import com.vexel.passport.core.database.MedicationEntity
-import com.vexel.passport.core.database.MedicationChangeEntity
-import com.vexel.passport.core.database.DocumentEntity
-import com.vexel.passport.core.database.ReminderEntity
-import com.vexel.passport.core.database.ProfileEntity
 import com.vexel.passport.core.datastore.PreferencesStore
-import com.vexel.passport.core.files.SecureFileStore
-import com.vexel.passport.core.notifications.ReminderScheduler
-import com.vexel.passport.core.designsystem.ActionRow
-import com.vexel.passport.core.designsystem.InformationCard
-import com.vexel.passport.core.designsystem.EmptyState
-import com.vexel.passport.core.designsystem.SectionHeader
-import com.vexel.passport.core.designsystem.StatusPill
-import com.vexel.passport.core.designsystem.VexelHealthPassportTheme
-import com.vexel.passport.feature.onboarding.OnboardingScreen
-import com.vexel.passport.core.model.SymptomDraft
-import com.vexel.passport.core.model.parseSymptomDateTime
-import com.vexel.passport.core.model.MedicationDraft
-import com.vexel.passport.core.model.validationErrors
-import com.vexel.passport.core.model.TrendEvent
-import com.vexel.passport.core.model.summarizeSymptoms
-import com.vexel.passport.core.model.EpisodeEvent
-import com.vexel.passport.core.model.summarizeSymptomEpisodes
-import com.vexel.passport.core.model.remapRestoredSymptomReferences
-import com.vexel.passport.core.model.ExportFormat
-import com.vexel.passport.core.model.exportShareDescriptor
-import com.vexel.passport.core.model.hasSelectedReportSection
-import com.vexel.passport.core.model.isWithinDateScope
-import com.vexel.passport.core.model.validateDateScope
+import com.vexel.passport.core.datastore.UserPreferences
 import com.vexel.passport.core.security.PinVerifier
 import com.vexel.passport.core.security.PinMaterialCipher
-import com.vexel.passport.core.security.BackupCrypto
+import com.vexel.passport.core.notifications.ReminderScheduler
+import com.vexel.passport.core.designsystem.VexelHealthPassportTheme
+import com.vexel.passport.feature.onboarding.OnboardingScreen
+import com.vexel.passport.feature.dashboard.HomeScreen
+import com.vexel.passport.feature.timeline.TimelineScreen
+import com.vexel.passport.feature.reminders.RemindersScreen
+import com.vexel.passport.feature.records.DocumentsScreen
+import com.vexel.passport.feature.profile.ProfileScreen
 
 private data class Destination(val route: String, val label: String, val icon: ImageVector)
 private val destinations = listOf(
-    Destination(Routes.HOME, "Home", Icons.Outlined.Home), Destination(Routes.RECORDS, "Records", Icons.Outlined.Event),
-    Destination(Routes.PLAN, "Plan", Icons.Outlined.Schedule), Destination(Routes.VAULT, "Vault", Icons.Outlined.Folder),
+    Destination(Routes.HOME, "Home", Icons.Outlined.Home),
+    Destination(Routes.RECORDS, "Records", Icons.Outlined.Event),
+    Destination(Routes.PLAN, "Plan", Icons.Outlined.Schedule),
+    Destination(Routes.VAULT, "Vault", Icons.Outlined.Folder),
     Destination(Routes.PROFILE, "Profile", Icons.Outlined.Person),
 )
 internal val primaryDestinationLabels: List<String> = destinations.map { it.label }
@@ -179,424 +102,27 @@ internal object Routes {
     const val PROFILE = "profile"
 }
 
-private fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
-    .digest(bytes).joinToString("") { "%02x".format(it) }
-
-internal fun readOnlyShareIntent(context: Context, uri: Uri, mimeType: String): Intent =
-    Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
-        clipData = ClipData.newUri(context.contentResolver, "Vexel shared content", uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-
-private fun shareContentUri(context: Context, uri: Uri, mimeType: String, chooserTitle: String) {
-    context.startActivity(Intent.createChooser(readOnlyShareIntent(context, uri, mimeType), chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-}
-
-/**
- * Streams an already-generated multipage PDF to the system print service. Unlike
- * androidx.print's PrintHelper (bitmap-only, one-page-at-a-time), a PrintDocumentAdapter
- * can hand the OS the real PDF bytes directly, preserving all pages, text, and layout.
- */
-private class PdfPrintDocumentAdapter(
-    private val context: Context,
-    private val sourceUri: Uri,
-    private val jobLabel: String,
-) : android.print.PrintDocumentAdapter() {
-    override fun onLayout(
-        oldAttributes: android.print.PrintAttributes?,
-        newAttributes: android.print.PrintAttributes,
-        cancellationSignal: android.os.CancellationSignal?,
-        callback: LayoutResultCallback,
-        extras: Bundle?,
-    ) {
-        if (cancellationSignal?.isCanceled == true) {
-            callback.onLayoutCancelled()
-            return
-        }
-        callback.onLayoutFinished(
-            android.print.PrintDocumentInfo.Builder(jobLabel)
-                .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                .build(),
-            oldAttributes != newAttributes,
-        )
-    }
-
-    override fun onWrite(
-        pages: Array<out android.print.PageRange>?,
-        destination: android.os.ParcelFileDescriptor,
-        cancellationSignal: android.os.CancellationSignal?,
-        callback: WriteResultCallback,
-    ) {
-        try {
-            context.contentResolver.openInputStream(sourceUri)?.use { input ->
-                android.os.ParcelFileDescriptor.AutoCloseOutputStream(destination).use { output ->
-                    input.copyTo(output)
-                }
-            }
-            callback.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
-        } catch (failure: Exception) {
-            callback.onWriteFailed(null)
-        }
-    }
-}
-
 @HiltViewModel
 class PassportViewModel @Inject constructor(
-    @param:ApplicationContext private val appContext: Context,
-    private val database: HealthDatabase,
     private val preferences: PreferencesStore,
     private val pinMaterialCipher: PinMaterialCipher,
-    private val secureFileStore: SecureFileStore,
     private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
     init {
         viewModelScope.launch { reminderScheduler.reconcile() }
     }
     private val pinVerifier = PinVerifier()
-    val events = database.healthEventDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val profile = database.profileDao().observe().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-    val medications = database.medicationDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val medicationChanges = database.medicationChangeDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val documents = database.documentDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val reminders = database.reminderDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.vexel.passport.core.datastore.UserPreferences())
+    val settings = preferences.preferences.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserPreferences())
+    
     private val _operationError = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
-    /** A safe, user-facing message for the most recent failed backup/restore/report operation, or null. */
     val operationError: kotlinx.coroutines.flow.StateFlow<String?> = _operationError
+    
     fun dismissOperationError() { _operationError.value = null }
-    private val _statusEvents = kotlinx.coroutines.flow.MutableSharedFlow<String>(extraBufferCapacity = 1)
-    /** One-time, generic success confirmations (never health data) for a Snackbar to show. */
-    val statusEvents: kotlinx.coroutines.flow.SharedFlow<String> = _statusEvents
-    private val _archivedEvents = kotlinx.coroutines.flow.MutableSharedFlow<HealthEventEntity>(extraBufferCapacity = 1)
-    /** Emits an archived (fully reversible) event so the UI can offer an Undo action. */
-    val archivedEvents: kotlinx.coroutines.flow.SharedFlow<HealthEventEntity> = _archivedEvents
-
     fun completeOnboarding() = viewModelScope.launch { preferences.setOnboardingComplete(true) }
-    fun setDarkTheme(value: Boolean) = viewModelScope.launch { preferences.setDarkTheme(value) }
-    fun saveProfile(p: ProfileEntity) = viewModelScope.launch { database.profileDao().upsert(p) }
-    fun addEvent(kind: String, title: String, details: String, severity: Int? = null) = viewModelScope.launch {
-        val now = System.currentTimeMillis()
-        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), title, details, kind, now, now, now, "ACTIVE", severity))
-    }
-    fun addSymptom(draft: SymptomDraft, imageUri: Uri? = null) = viewModelScope.launch {
-        val now = System.currentTimeMillis()
-        fun epochMillisOf(text: String): Long? = parseSymptomDateTime(text)
-            ?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
-        // draft is expected to have already passed validationErrors(), which rejects
-        // unparsable non-blank text; a blank start intentionally defaults to "now".
-        val start = epochMillisOf(draft.startAtText) ?: now
-        val end = epochMillisOf(draft.endAtText)
-        val imageId = imageUri?.let { uri ->
-            val mime = appContext.contentResolver.getType(uri) ?: return@let null
-            if (mime !in setOf("image/jpeg", "image/png")) null else appContext.contentResolver.openInputStream(uri)?.use { input ->
-                val preserved = secureFileStore.preserveOriginal(input, mime, "symptom-image")
-                database.documentDao().insert(DocumentEntity(preserved.id, "Symptom image", "SYMPTOM_IMAGE", "", "Attached to symptom", "symptom-image", preserved.mimeType, preserved.byteCount, preserved.sha256, now))
-                preserved.id
-            }
-        }
-        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), draft.notes.trim(), "SYMPTOM", start, now, now, "ACTIVE", draft.severity, false, draft.durationMinutes, start, end, draft.ongoing, draft.bodyLocation.trim(), draft.associatedSymptoms.trim(), draft.possibleTrigger.trim(), draft.relatedMedication.trim(), imageId, draft.episodeId.trim().ifBlank { null }))
-    }
-    fun archive(event: HealthEventEntity) = viewModelScope.launch {
-        database.healthEventDao().archive(event.id, System.currentTimeMillis())
-        _archivedEvents.tryEmit(event)
-    }
-    fun unarchive(event: HealthEventEntity) = viewModelScope.launch { database.healthEventDao().unarchive(event.id, System.currentTimeMillis()) }
-    fun delete(event: HealthEventEntity) = viewModelScope.launch { event.imageAttachmentId?.let { secureFileStore.delete(it); database.documentDao().delete(it) }; database.healthEventDao().delete(event.id) }
-    fun addMedication(draft: MedicationDraft) = viewModelScope.launch {
-        val now = System.currentTimeMillis()
-        val medicationId = UUID.randomUUID().toString()
-        database.medicationDao().insert(MedicationEntity(medicationId, draft.name.trim(), genericName = draft.genericName.trim(), strength = draft.strength.trim(), dose = draft.dose.trim(), unit = draft.unit.trim(), route = draft.route.trim(), frequency = draft.frequency.trim(), startDate = draft.startDate.trim(), stopDate = draft.stopDate.trim(), status = draft.status, indication = draft.indication.trim(), physician = draft.physician.trim(), notes = draft.notes.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
-        database.medicationChangeDao().insert(MedicationChangeEntity(UUID.randomUUID().toString(), medicationId, now, "STARTED", draft.strength.trim(), draft.dose.trim(), draft.unit.trim(), draft.frequency.trim(), draft.status, draft.notes.trim()))
-        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), draft.name.trim(), listOf(draft.strength, draft.dose, draft.unit, draft.frequency, draft.status.lowercase()).filter { it.isNotBlank() }.joinToString(" · "), "MEDICATION", now, now, now, "ACTIVE"))
-    }
-    fun recordMedicationChange(medication: MedicationEntity, strength: String, dose: String, unit: String, frequency: String, status: String, notes: String) = viewModelScope.launch {
-        val now = System.currentTimeMillis()
-        database.medicationDao().update(medication.copy(strength = strength.trim(), dose = dose.trim(), unit = unit.trim(), frequency = frequency.trim(), status = status, notes = notes.trim(), updatedAtEpochMillis = now, stopDate = if (status == "STOPPED") SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now)) else medication.stopDate))
-        database.medicationChangeDao().insert(MedicationChangeEntity(UUID.randomUUID().toString(), medication.id, now, if (status == "STOPPED") "STOPPED" else if (medication.status == "STOPPED" && status == "CURRENT") "RESTARTED" else "DOSE_CHANGED", strength.trim(), dose.trim(), unit.trim(), frequency.trim(), status, notes.trim()))
-    }
-    fun savePin(pin: String, confirmation: String): Boolean {
-        if (pin != confirmation || pin.length !in 4..12 || pin.any { !it.isDigit() }) return false
-        val record = pinVerifier.create(pin.toCharArray())
-        viewModelScope.launch {
-            try {
-                preferences.setPinMaterial(pinMaterialCipher.encrypt(record))
-            } catch (cancellation: kotlinx.coroutines.CancellationException) {
-                throw cancellation
-            } catch (failure: Exception) {
-                _operationError.value = "Could not enable the PIN lock on this device. Try again."
-            }
-        }
-        return true
-    }
-    fun verifyPin(pin: String, prefs: com.vexel.passport.core.datastore.UserPreferences): Boolean {
+
+    fun verifyPin(pin: String, prefs: UserPreferences): Boolean {
         if (!prefs.lockEnabled) return true
         return runCatching { pinVerifier.matches(pin.toCharArray(), pinMaterialCipher.decrypt(prefs.pinMaterial)) }.getOrDefault(false)
-    }
-    fun disablePin() = viewModelScope.launch { preferences.clearPinMaterial() }
-    fun setLockTimeoutMinutes(minutes: Int) = viewModelScope.launch { preferences.setLockTimeoutMinutes(minutes) }
-    fun setHideRecentAppsPreview(enabled: Boolean) = viewModelScope.launch { preferences.setHideRecentAppsPreview(enabled) }
-    fun deleteAllData() = viewModelScope.launch {
-        database.healthEventDao().deleteAll()
-        database.medicationDao().deleteAll()
-        database.medicationChangeDao().deleteAll()
-        database.profileDao().deleteAll()
-        database.documentDao().deleteAll()
-        reminders.value.forEach { reminderScheduler.cancel(it.id) }
-        database.reminderDao().deleteAll()
-        secureFileStore.deleteAll()
-        preferences.clearAll()
-    }
-    fun addReminder(title: String, type: String, notes: String, dueAtEpochMillis: Long, recurrence: String) = viewModelScope.launch {
-        val now = System.currentTimeMillis()
-        val reminder = ReminderEntity(UUID.randomUUID().toString(), title.trim(), type.trim().ifBlank { "CUSTOM" }, notes.trim(), dueAtEpochMillis, recurrence, createdAtEpochMillis = now, updatedAtEpochMillis = now)
-        database.reminderDao().insert(reminder)
-        reminderScheduler.schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence)
-    }
-    fun completeReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().setStatus(reminder.id, "COMPLETED", System.currentTimeMillis()) }
-    fun deleteReminder(reminder: ReminderEntity) = viewModelScope.launch { reminderScheduler.cancel(reminder.id); database.reminderDao().delete(reminder.id) }
-    fun updateReminder(reminder: ReminderEntity, title: String, type: String, notes: String, dueAtEpochMillis: Long, recurrence: String) = viewModelScope.launch {
-        reminderScheduler.cancel(reminder.id)
-        val updated = reminder.copy(title = title.trim(), type = type.trim().ifBlank { "CUSTOM" }, notes = notes.trim(), dueAtEpochMillis = dueAtEpochMillis, recurrence = recurrence, status = "SCHEDULED", snoozeUntilEpochMillis = null, updatedAtEpochMillis = System.currentTimeMillis())
-        database.reminderDao().update(updated)
-        reminderScheduler.schedule(updated.id, updated.dueAtEpochMillis, updated.recurrence)
-    }
-    fun snoozeReminder(reminder: ReminderEntity) = viewModelScope.launch {
-        val dueAt = System.currentTimeMillis() + 60 * 60 * 1000L
-        database.reminderDao().reschedule(reminder.id, dueAt, System.currentTimeMillis())
-        reminderScheduler.schedule(reminder.id, dueAt, reminder.recurrence)
-    }
-    fun importDocument(uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
-      try {
-        val mimeType = appContext.contentResolver.getType(uri)
-        if (mimeType == null) {
-            _operationError.value = "Could not read the selected file's type. Try choosing it again."
-            return@launch
-        }
-        val displayName = appContext.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) cursor.getString(0) else "document"
-        } ?: "document"
-        val preserved = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.preserveOriginal(input, mimeType, displayName) }
-        if (preserved == null) {
-            _operationError.value = "Could not open the selected file. It may have been moved or access was revoked."
-            return@launch
-        }
-        val now = System.currentTimeMillis()
-        database.documentDao().insert(DocumentEntity(preserved.id, title.trim().ifBlank { displayName }, category.trim().ifBlank { "OTHER" }, documentDate.trim(), notes.trim(), displayName, preserved.mimeType, preserved.byteCount, preserved.sha256, now))
-        _statusEvents.tryEmit("Document imported")
-      } catch (cancellation: kotlinx.coroutines.CancellationException) {
-        throw cancellation
-      } catch (failure: IllegalArgumentException) {
-        _operationError.value = "That file type isn't supported, or it's larger than the 50 MB limit."
-      } catch (failure: Exception) {
-        _operationError.value = "Import failed. Try again."
-      }
-    }
-    fun deleteDocument(document: DocumentEntity) = viewModelScope.launch {
-        secureFileStore.delete(document.id)
-        database.documentDao().delete(document.id)
-    }
-    suspend fun documentThumbnail(document: DocumentEntity) = secureFileStore.thumbnailFor(appContext, document.id, document.mimeType)
-    fun updateDocument(document: DocumentEntity, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
-        database.documentDao().update(document.copy(title = title.trim().ifBlank { document.title }, category = category.trim().ifBlank { document.category }, documentDate = documentDate.trim(), notes = notes.trim()))
-    }
-    fun replaceDocument(document: DocumentEntity, uri: Uri) = viewModelScope.launch {
-      try {
-        val mimeType = appContext.contentResolver.getType(uri)
-        if (mimeType == null) {
-            _operationError.value = "Could not read the selected file's type. Try choosing it again."
-            return@launch
-        }
-        val displayName = appContext.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) cursor.getString(0) else document.originalFileName
-        } ?: document.originalFileName
-        val replaced = appContext.contentResolver.openInputStream(uri)?.use { input -> secureFileStore.replaceOriginal(document.id, input, mimeType, displayName) }
-        if (replaced == null) {
-            _operationError.value = "Could not open the selected file. It may have been moved or access was revoked."
-            return@launch
-        }
-        database.documentDao().update(document.copy(originalFileName = displayName, mimeType = replaced.mimeType, byteCount = replaced.byteCount, sha256 = replaced.sha256))
-        _statusEvents.tryEmit("Document replaced")
-      } catch (cancellation: kotlinx.coroutines.CancellationException) {
-        throw cancellation
-      } catch (failure: IllegalArgumentException) {
-        _operationError.value = "That file type isn't supported, or it's larger than the 50 MB limit."
-      } catch (failure: Exception) {
-        _operationError.value = "Replace failed. Try again."
-      }
-    }
-    fun openDocument(document: DocumentEntity) = viewModelScope.launch {
-        val file = secureFileStore.copyToShareCache(appContext, document.id, document.originalFileName)
-        val uri = FileProvider.getUriForFile(appContext, "${appContext.packageName}.files", file)
-        appContext.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW).apply { setDataAndType(uri, document.mimeType); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }, "Open document").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
-    fun shareDocument(document: DocumentEntity) = viewModelScope.launch {
-        val file = secureFileStore.copyToShareCache(appContext, document.id, document.originalFileName)
-        val uri = FileProvider.getUriForFile(appContext, "${appContext.packageName}.files", file)
-        shareContentUri(appContext, uri, document.mimeType, "Share document")
-    }
-    fun exportJson(fromEpochMillis: Long? = null, toEpochMillis: Long? = null): String {
-        fun inRange(epoch: Long?): Boolean = isWithinDateScope(epoch, fromEpochMillis, toEpochMillis)
-        val root = JSONObject().put("formatVersion", 1).put("generatedAtEpochMillis", System.currentTimeMillis())
-        profile.value?.let { p -> root.put("profile", JSONObject().put("name", p.name).put("dateOfBirth", p.dateOfBirth).put("bloodGroup", p.bloodGroup).put("allergies", p.allergies).put("conditions", p.conditions).put("emergencyContact", p.emergencyContact)) }
-        root.put("events", JSONArray(events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity).put("durationMinutes", e.durationMinutes).put("startAtEpochMillis", e.startAtEpochMillis).put("endAtEpochMillis", e.endAtEpochMillis).put("ongoing", e.ongoing).put("bodyLocation", e.bodyLocation).put("associatedSymptoms", e.associatedSymptoms).put("possibleTrigger", e.possibleTrigger).put("relatedMedication", e.relatedMedication).put("imageAttachmentId", e.imageAttachmentId).put("episodeId", e.episodeId) }))
-        root.put("medications", JSONArray(medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { m -> JSONObject().put("id", m.id).put("name", m.name).put("genericName", m.genericName).put("strength", m.strength).put("dose", m.dose).put("unit", m.unit).put("route", m.route).put("frequency", m.frequency).put("startDate", m.startDate).put("stopDate", m.stopDate).put("status", m.status).put("indication", m.indication).put("physician", m.physician).put("notes", m.notes) }))
-        root.put("medicationChanges", JSONArray(medicationChanges.value.filter { inRange(it.changedAtEpochMillis) }.map { c -> JSONObject().put("id", c.id).put("medicationId", c.medicationId).put("changedAtEpochMillis", c.changedAtEpochMillis).put("changeType", c.changeType).put("strength", c.strength).put("dose", c.dose).put("unit", c.unit).put("frequency", c.frequency).put("status", c.status).put("notes", c.notes) }))
-        root.put("documents", JSONArray(documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256) }))
-        root.put("reminders", JSONArray(reminders.value.filter { inRange(it.dueAtEpochMillis) }.map { r -> JSONObject().put("id", r.id).put("title", r.title).put("type", r.type).put("notes", r.notes).put("dueAtEpochMillis", r.dueAtEpochMillis).put("recurrence", r.recurrence).put("status", r.status) }))
-        return root.toString(2)
-    }
-    fun exportHumanReadable(fromEpochMillis: Long? = null, toEpochMillis: Long? = null): String = buildString {
-        fun inRange(epoch: Long?): Boolean = isWithinDateScope(epoch, fromEpochMillis, toEpochMillis)
-        appendLine("Vexel Health Passport")
-        appendLine("User-recorded information · generated ${DateFormat.getDateTimeInstance().format(Date())}")
-        appendLine("This export is not a diagnosis or medical advice.")
-        appendLine()
-        profile.value?.let {
-            appendLine("PROFILE")
-            appendLine("Name: ${it.name}")
-            appendLine("Allergies: ${it.allergies}")
-            appendLine("Conditions: ${it.conditions}")
-            appendLine()
-        }
-        appendLine("HEALTH EVENTS")
-        events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.kind} · ${it.title} · ${it.details}") }
-        appendLine()
-        appendLine("MEDICATIONS")
-        medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.name} · ${it.genericName} · ${it.strength} · ${it.dose} ${it.unit} · ${it.frequency} · ${it.status} · ${it.startDate}–${it.stopDate}") }
-        appendLine("MEDICATION CHANGES")
-        medicationChanges.value.filter { inRange(it.changedAtEpochMillis) }.forEach { appendLine("${it.changeType} · ${DateFormat.getDateTimeInstance().format(Date(it.changedAtEpochMillis))} · ${it.strength} · ${it.dose} ${it.unit} · ${it.frequency} · ${it.status} · ${it.notes}") }
-        appendLine()
-        appendLine("DOCUMENTS")
-        documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.category} · ${it.originalFileName} · SHA-256 ${it.sha256}") }
-        appendLine()
-        appendLine("REMINDERS")
-        reminders.value.filter { inRange(it.dueAtEpochMillis) }.forEach { appendLine("${it.title} · ${it.status} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))}") }
-    }
-    fun createBackup(uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-      try {
-        val zipBytes = ByteArrayOutputStream().use { output ->
-            ZipOutputStream(output).use { zip ->
-                val data = exportJson().toByteArray(Charsets.UTF_8)
-                zip.putNextEntry(ZipEntry("data.json")); zip.write(data); zip.closeEntry()
-                val manifest = JSONObject()
-                    .put("formatVersion", 1)
-                    .put("createdAtEpochMillis", System.currentTimeMillis())
-                    .put("dataSha256", sha256Hex(data))
-                    .put("documentCount", documents.value.size)
-                    .toString()
-                    .toByteArray(Charsets.UTF_8)
-                zip.putNextEntry(ZipEntry("manifest.json")); zip.write(manifest); zip.closeEntry()
-                documents.value.forEach { document ->
-                    zip.putNextEntry(ZipEntry("documents/${document.id}")); secureFileStore.open(document.id).use { it.copyTo(zip) }; zip.closeEntry()
-                }
-            }
-            output.toByteArray()
-        }
-        appContext.contentResolver.openOutputStream(uri)?.use { it.write(BackupCrypto.encrypt(zipBytes, password.toCharArray())) }
-        _statusEvents.tryEmit("Backup created")
-      } catch (cancellation: kotlinx.coroutines.CancellationException) {
-        throw cancellation
-      } catch (failure: Exception) {
-        _operationError.value = "Backup could not be created. Check available storage and try again."
-      }
-    }
-    fun restoreBackup(uri: Uri, password: String) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-      try {
-        val sourceBytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Unable to read backup")
-        val backupBytes = if (BackupCrypto.isEncrypted(sourceBytes)) BackupCrypto.decrypt(sourceBytes, password.toCharArray()) else sourceBytes
-        val entries = linkedMapOf<String, ByteArray>()
-        ZipInputStream(ByteArrayInputStream(backupBytes)).use { zip ->
-            var entry = zip.nextEntry
-            while (entry != null) {
-                require(!entry.isDirectory && (entry.name == "data.json" || entry.name == "manifest.json" || entry.name.startsWith("documents/"))) { "Unsupported backup entry" }
-                entries[entry.name] = zip.readBytes()
-                entry = zip.nextEntry
-            }
-        }
-        val dataBytes = entries["data.json"] ?: error("Missing backup data")
-        entries["manifest.json"]?.let { manifestBytes ->
-            val manifest = JSONObject(String(manifestBytes, Charsets.UTF_8))
-            require(manifest.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
-            require(manifest.optString("dataSha256").equals(sha256Hex(dataBytes), ignoreCase = true)) { "Backup integrity check failed" }
-        }
-        val data = JSONObject(String(dataBytes, Charsets.UTF_8))
-        require(data.optInt("formatVersion", -1) == 1) { "Unsupported backup version" }
-        val restoredDocuments = mutableListOf<DocumentEntity>()
-        val restoredDocumentIds = mutableMapOf<String, String>()
-        val documentData = data.optJSONArray("documents") ?: JSONArray()
-        for (index in 0 until documentData.length()) {
-            val source = documentData.getJSONObject(index); val bytes = entries["documents/${source.getString("id")}"] ?: error("Missing document binary")
-            val digest = sha256Hex(bytes)
-            require(digest.equals(source.getString("sha256"), ignoreCase = true)) { "Document integrity check failed" }
-            val preserved = secureFileStore.preserveOriginal(ByteArrayInputStream(bytes), source.getString("mimeType"), source.optString("originalFileName", "document"))
-            restoredDocumentIds[source.getString("id")] = preserved.id
-            restoredDocuments += DocumentEntity(preserved.id, source.optString("title"), source.optString("category", "OTHER"), source.optString("documentDate"), source.optString("notes"), source.optString("originalFileName", "document"), preserved.mimeType, preserved.byteCount, preserved.sha256, System.currentTimeMillis())
-        }
-        val scheduledReminders = mutableListOf<ReminderEntity>()
-        try {
-            database.withTransaction {
-                database.healthEventDao().deleteAll(); database.medicationDao().deleteAll(); database.medicationChangeDao().deleteAll(); database.profileDao().deleteAll(); database.documentDao().deleteAll(); database.reminderDao().deleteAll()
-                data.optJSONObject("profile")?.let { p -> database.profileDao().upsert(ProfileEntity(name = p.optString("name"), dateOfBirth = p.optString("dateOfBirth"), bloodGroup = p.optString("bloodGroup"), allergies = p.optString("allergies"), conditions = p.optString("conditions"), emergencyContact = p.optString("emergencyContact"), updatedAtEpochMillis = System.currentTimeMillis())) }
-                (data.optJSONArray("events") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val e = array.getJSONObject(i); val references = remapRestoredSymptomReferences(e.optString("imageAttachmentId"), e.optString("episodeId"), restoredDocumentIds); database.healthEventDao().insert(HealthEventEntity(e.getString("id"), e.optString("title"), e.optString("details"), e.optString("kind", "OTHER"), if (e.isNull("effectiveAtEpochMillis")) null else e.optLong("effectiveAtEpochMillis"), e.optLong("createdAtEpochMillis"), status = e.optString("status", "ACTIVE"), severity = if (e.isNull("severity")) null else e.optInt("severity"), durationMinutes = if (e.isNull("durationMinutes")) null else e.optInt("durationMinutes"), startAtEpochMillis = if (e.isNull("startAtEpochMillis")) null else e.optLong("startAtEpochMillis"), endAtEpochMillis = if (e.isNull("endAtEpochMillis")) null else e.optLong("endAtEpochMillis"), ongoing = e.optBoolean("ongoing"), bodyLocation = e.optString("bodyLocation"), associatedSymptoms = e.optString("associatedSymptoms"), possibleTrigger = e.optString("possibleTrigger"), relatedMedication = e.optString("relatedMedication"), imageAttachmentId = references.imageAttachmentId, episodeId = references.episodeId)) } }
-                (data.optJSONArray("medications") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val m = array.getJSONObject(i); database.medicationDao().insert(MedicationEntity(m.getString("id"), m.optString("name"), m.optString("genericName"), m.optString("strength"), m.optString("dose"), m.optString("unit"), m.optString("route"), m.optString("frequency"), m.optString("startDate"), m.optString("stopDate"), m.optString("status", "CURRENT"), m.optString("indication"), m.optString("physician"), m.optString("notes"), System.currentTimeMillis(), System.currentTimeMillis())) } }
-                (data.optJSONArray("medicationChanges") ?: JSONArray()).let { array -> for (i in 0 until array.length()) { val c = array.getJSONObject(i); database.medicationChangeDao().insert(MedicationChangeEntity(c.getString("id"), c.getString("medicationId"), c.optLong("changedAtEpochMillis"), c.optString("changeType", "DOSE_CHANGED"), c.optString("strength"), c.optString("dose"), c.optString("unit"), c.optString("frequency"), c.optString("status", "CURRENT"), c.optString("notes"))) } }
-                restoredDocuments.forEach { database.documentDao().insert(it) }
-                val reminderData = data.optJSONArray("reminders") ?: JSONArray()
-                for (i in 0 until reminderData.length()) {
-                    val r = reminderData.getJSONObject(i)
-                    val reminder = ReminderEntity(
-                        id = r.getString("id"),
-                        title = r.optString("title"),
-                        type = r.optString("type", "CUSTOM"),
-                        notes = r.optString("notes"),
-                        dueAtEpochMillis = r.optLong("dueAtEpochMillis"),
-                        recurrence = r.optString("recurrence", "ONCE"),
-                        status = r.optString("status", "SCHEDULED"),
-                        createdAtEpochMillis = System.currentTimeMillis(),
-                        updatedAtEpochMillis = System.currentTimeMillis(),
-                    )
-                    database.reminderDao().insert(reminder)
-                    if (reminder.status == "SCHEDULED") scheduledReminders += reminder
-                }
-            }
-            reminders.value.forEach { reminderScheduler.cancel(it.id) }
-            scheduledReminders.forEach { reminderScheduler.schedule(it.id, it.dueAtEpochMillis, it.recurrence) }
-            _statusEvents.tryEmit("Restore completed")
-        } catch (error: Throwable) {
-            restoredDocuments.forEach { secureFileStore.delete(it.id) }
-            throw error
-        }
-      } catch (cancellation: kotlinx.coroutines.CancellationException) {
-        throw cancellation
-      } catch (failure: javax.crypto.AEADBadTagException) {
-        _operationError.value = "Incorrect password, or the backup file is corrupted."
-      } catch (failure: Exception) {
-        _operationError.value = "Restore failed. The backup file may be corrupted or in an unsupported format."
-      }
-    }
-    fun createPdfReport(uri: Uri, includeProfile: Boolean = true, includeEvents: Boolean = true, includeMedications: Boolean = true, includeDocuments: Boolean = true, includeReminders: Boolean = true, fromEpochMillis: Long? = null, toEpochMillis: Long? = null) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-      try {
-        fun inRange(epoch: Long?): Boolean = epoch == null || ((fromEpochMillis == null || epoch >= fromEpochMillis) && (toEpochMillis == null || epoch <= toEpochMillis))
-        val dateParser = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
-        fun dateTextInRange(value: String, fallback: Long): Boolean = value.isBlank() || inRange(runCatching { dateParser.parse(value)?.time }.getOrNull() ?: fallback)
-        val rangeLabel = if (fromEpochMillis == null && toEpochMillis == null) "All dates" else "${fromEpochMillis?.let { DateFormat.getDateInstance().format(Date(it)) } ?: "Start"} – ${toEpochMillis?.let { DateFormat.getDateInstance().format(Date(it)) } ?: "End"}"
-        val lines = mutableListOf("Vexel Health Passport", "Appointment report · generated ${DateFormat.getDateTimeInstance().format(Date())}", "Selected range: $rangeLabel", "User-recorded data; not a diagnosis or medical advice.", "")
-        if (includeProfile) profile.value?.let { lines += listOf("PROFILE", "Name: ${it.name}", "Allergies: ${it.allergies}", "Conditions: ${it.conditions}", "") }
-        if (includeEvents) { lines += "HEALTH EVENTS"; events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.forEach { lines += "${it.kind} · ${it.title} · ${it.details}" } }
-        if (includeMedications) { lines += "MEDICATIONS"; medications.value.filter { dateTextInRange(it.startDate, it.createdAtEpochMillis) }.forEach { lines += "${it.name} ${it.strength} · ${it.dose} · ${it.frequency}" } }
-        if (includeDocuments) { lines += "DOCUMENTS"; documents.value.filter { dateTextInRange(it.documentDate, it.createdAtEpochMillis) }.forEach { lines += "${it.title} · ${it.category} · ${it.originalFileName}" } }
-        if (includeReminders) { lines += "REMINDERS"; reminders.value.filter { inRange(it.dueAtEpochMillis) }.forEach { lines += "${it.title} · ${DateFormat.getDateTimeInstance().format(Date(it.dueAtEpochMillis))} · ${it.status}" } }
-        val pdf = PdfDocument(); val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 11f }; var pageNo = 0; var page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); var y = 48f
-        fun finishPage() { paint.textSize = 9f; page.canvas.drawText("Vexel Health Passport · Page $pageNo", 48f, 824f, paint); pdf.finishPage(page) }
-        lines.forEach { raw -> raw.chunked(88).ifEmpty { listOf("") }.forEach { text -> if (y > 790f) { finishPage(); page = pdf.startPage(PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create()); y = 48f }; paint.textSize = if (pageNo == 1 && y < 70f) 20f else 11f; page.canvas.drawText(text, 48f, y, paint); y += 18f } }
-        finishPage(); appContext.contentResolver.openOutputStream(uri)?.use { pdf.writeTo(it) }; pdf.close()
-      } catch (cancellation: kotlinx.coroutines.CancellationException) {
-        throw cancellation
-      } catch (failure: Exception) {
-        _operationError.value = "Report generation failed. Try again."
-      }
     }
 }
 
@@ -604,7 +130,6 @@ class PassportViewModel @Inject constructor(
 @Composable
 fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
     val prefs by viewModel.settings.collectAsState()
-    val profile by viewModel.profile.collectAsState()
     val currentWindow = (androidx.compose.ui.platform.LocalView.current.context as? android.app.Activity)?.window
     LaunchedEffect(currentWindow, prefs.hideRecentAppsPreview) {
         if (prefs.hideRecentAppsPreview) {
@@ -629,73 +154,71 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 val currentRoute = backStackEntry?.destination?.route ?: Routes.HOME
                 val currentLabel = destinations.firstOrNull { it.route == currentRoute }?.label ?: destinations.first().label
                 val snackbarHostState = remember { SnackbarHostState() }
-                LaunchedEffect(viewModel) {
-                    viewModel.statusEvents.collect { message -> snackbarHostState.showSnackbar(message) }
-                }
                 Scaffold(
-                topBar = { TopAppBar(title = { Text(currentLabel) }) },
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                bottomBar = { NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 0.dp,
-                ) { destinations.forEach { destination ->
-                    NavigationBarItem(
-                        selected = destination.route == currentRoute,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(destination.icon, contentDescription = destination.label) },
-                        label = { Text(destination.label, maxLines = 1, style = navigationLabelStyle) },
-                    )
-                } } },
+                    topBar = { TopAppBar(title = { Text(currentLabel) }) },
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
+                    bottomBar = { NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 0.dp,
+                    ) { destinations.forEach { destination ->
+                        NavigationBarItem(
+                            selected = destination.route == currentRoute,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(destination.icon, contentDescription = destination.label) },
+                            label = { Text(destination.label, maxLines = 1, style = navigationLabelStyle) },
+                        )
+                    } } },
                 ) { padding ->
-                NavHost(navController = navController, startDestination = Routes.HOME) {
-                    composable(Routes.HOME) {
-                        HomeScreen(
-                            profile = profile,
-                            medications = viewModel.medications.collectAsState().value,
-                            events = viewModel.events.collectAsState().value,
-                            modifier = Modifier.padding(padding),
-                            onAddEvent = viewModel::addEvent,
-                            onAddSymptom = viewModel::addSymptom,
-                            onAddMedication = viewModel::addMedication,
-                            onRecordMedicationChange = viewModel::recordMedicationChange,
-                        )
+                    NavHost(navController = navController, startDestination = Routes.HOME) {
+                        composable(Routes.HOME) {
+                            HomeScreen(modifier = Modifier.padding(padding))
+                        }
+                        composable(Routes.RECORDS) {
+                            TimelineScreen(modifier = Modifier.padding(padding))
+                        }
+                        composable(Routes.PLAN) {
+                            RemindersScreen(modifier = Modifier.padding(padding))
+                        }
+                        composable(Routes.VAULT) {
+                            DocumentsScreen(modifier = Modifier.padding(padding))
+                        }
+                        composable(Routes.PROFILE) {
+                            ProfileScreen(modifier = Modifier.padding(padding))
+                        }
                     }
-                    composable(Routes.RECORDS) {
-                        TimelineScreen(
-                            events = viewModel.events.collectAsState().value,
-                            archivedEvents = viewModel.archivedEvents,
-                            modifier = Modifier.padding(padding),
-                            onAddEvent = viewModel::addEvent,
-                            onArchive = viewModel::archive,
-                            onUnarchive = viewModel::unarchive,
-                            onDelete = viewModel::delete,
-                        )
-                    }
-                    composable(Routes.PLAN) { RemindersScreen(viewModel, viewModel.reminders.collectAsState().value, Modifier.padding(padding)) }
-                    composable(Routes.VAULT) { DocumentsScreen(viewModel, viewModel.documents.collectAsState().value, Modifier.padding(padding)) }
-                    composable(Routes.PROFILE) { ProfileScreen(viewModel, profile, Modifier.padding(padding)) }
-                }
                 }
                 val operationError by viewModel.operationError.collectAsState()
-                operationError?.let { message -> AlertDialog(onDismissRequest = viewModel::dismissOperationError, title = { Text("Something went wrong") }, text = { Text(message) }, confirmButton = { TextButton(viewModel::dismissOperationError) { Text("OK") } }) }
+                operationError?.let { message ->
+                    AlertDialog(
+                        onDismissRequest = viewModel::dismissOperationError,
+                        title = { Text("Something went wrong") },
+                        text = { Text(message) },
+                        confirmButton = { TextButton(viewModel::dismissOperationError) { Text("OK") } }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LockGate(prefs: com.vexel.passport.core.datastore.UserPreferences, vm: PassportViewModel, content: @Composable () -> Unit) {
+private fun LockGate(prefs: UserPreferences, vm: PassportViewModel, content: @Composable () -> Unit) {
     var unlocked by rememberSaveable(prefs.lockEnabled) { mutableStateOf(!prefs.lockEnabled) }
     var unlockedAt by rememberSaveable(prefs.lockEnabled) { mutableStateOf<Long?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, prefs.lockEnabled) {
-        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP && prefs.lockEnabled) { unlocked = false; unlockedAt = null } }
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP && prefs.lockEnabled) {
+                unlocked = false
+                unlockedAt = null
+            }
+        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -709,15 +232,20 @@ private fun LockGate(prefs: com.vexel.passport.core.datastore.UserPreferences, v
             }
         }
     }
-    if (unlocked || !prefs.lockEnabled) content() else PinUnlockDialog(prefs, vm) { unlocked = true; unlockedAt = System.currentTimeMillis() }
+    if (unlocked || !prefs.lockEnabled) content() else PinUnlockDialog(prefs, vm) {
+        unlocked = true
+        unlockedAt = System.currentTimeMillis()
+    }
 }
 
 @Composable
-private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPreferences, vm: PassportViewModel, onUnlocked: () -> Unit) {
+private fun PinUnlockDialog(prefs: UserPreferences, vm: PassportViewModel, onUnlocked: () -> Unit) {
     var pin by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf(false) }
     val activity = LocalContext.current as? FragmentActivity
-    val canUseBiometric = activity != null && BiometricManager.from(activity).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
+    val canUseBiometric = activity != null && BiometricManager.from(activity).canAuthenticate(
+        BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+    ) == BiometricManager.BIOMETRIC_SUCCESS
     val biometricPrompt = remember(activity) {
         activity?.let { host ->
             BiometricPrompt(host, ContextCompat.getMainExecutor(host), object : BiometricPrompt.AuthenticationCallback() {
@@ -726,436 +254,38 @@ private fun PinUnlockDialog(prefs: com.vexel.passport.core.datastore.UserPrefere
             })
         }
     }
-    val promptInfo = remember { BiometricPrompt.PromptInfo.Builder().setTitle("Unlock Vexel Health Passport").setSubtitle("Authenticate to view your private health information").setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL).build() }
-    AlertDialog(onDismissRequest = {}, title = { Text("Unlock Vexel Health Passport") }, text = { OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12); error = false }, label = { Text("PIN") }, isError = error, supportingText = { if (error) Text("Incorrect PIN") }) }, confirmButton = { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { if (canUseBiometric) TextButton({ biometricPrompt?.authenticate(promptInfo) }) { Text("Use device authentication") }; Button({ if (vm.verifyPin(pin, prefs)) onUnlocked() else error = true }) { Text("Unlock") } } })
-}
-
-private enum class DocumentSort(val label: String) { DATE("Date"), CATEGORY("Category"), TYPE("Type") }
-
-/** A bounded 48dp preview: a decoded JPEG/PNG thumbnail when available, a generic PDF icon otherwise. */
-@Composable
-private fun DocumentThumbnail(vm: PassportViewModel, document: DocumentEntity) {
-    var thumbnailBitmap by remember(document.id) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
-    LaunchedEffect(document.id, document.mimeType) {
-        thumbnailBitmap = null
-        val file = vm.documentThumbnail(document)
-        if (file != null) {
-            val decoded = android.graphics.BitmapFactory.decodeFile(file.path)
-            thumbnailBitmap = decoded?.asImageBitmap()
-        }
+    val promptInfo = remember {
+        BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Unlock Vexel Health Passport")
+            .setSubtitle("Authenticate to view your private health information")
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+            .build()
     }
-    val bitmap = thumbnailBitmap
-    if (bitmap != null) {
-        Image(bitmap, contentDescription = null, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)))
-    } else {
-        Icon(Icons.Outlined.PictureAsPdf, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-private fun sortedDocuments(documents: List<DocumentEntity>, sort: DocumentSort): List<DocumentEntity> = when (sort) {
-    DocumentSort.DATE -> documents.sortedByDescending { it.createdAtEpochMillis }
-    DocumentSort.CATEGORY -> documents.sortedBy { it.category }
-    DocumentSort.TYPE -> documents.sortedBy { it.mimeType }
-}
-
-@Composable
-private fun DocumentsScreen(vm: PassportViewModel, documents: List<DocumentEntity>, modifier: Modifier) {
-    var showImport by rememberSaveable { mutableStateOf(false) }
-    var pendingDelete by remember { mutableStateOf<DocumentEntity?>(null) }
-    var pendingEdit by remember { mutableStateOf<DocumentEntity?>(null) }
-    var pendingReplace by remember { mutableStateOf<DocumentEntity?>(null) }
-    var sort by rememberSaveable { mutableStateOf(DocumentSort.DATE) }
-    val sortedList = remember(documents, sort) { sortedDocuments(documents, sort) }
-    val replaceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val document = pendingReplace
-        if (uri != null && document != null) vm.replaceDocument(document, uri)
-        pendingReplace = null
-    }
-    LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Private document vault", style = MaterialTheme.typography.headlineSmall)
-                TextButton({ showImport = true }) { Text("Import") }
-            }
-        }
-        item { Text("PDF, JPG, JPEG, and PNG files are copied into app-private storage.") }
-        if (documents.size > 1) item {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Sort by:", modifier = Modifier.align(androidx.compose.ui.Alignment.CenterVertically), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                DocumentSort.entries.forEach { option ->
-                    FilterChip(selected = sort == option, onClick = { sort = option }, label = { Text(option.label) })
-                }
-            }
-        }
-        if (documents.isEmpty()) item { EmptyState("Your vault is empty", "Import a PDF or image to keep a private copy on this device.", "Import a document", onAction = { showImport = true }) }
-        else items(sortedList, key = { it.id }) { document ->
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DocumentThumbnail(vm, document)
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(document.title, style = MaterialTheme.typography.titleMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatusPill(document.category)
-                    Text("${document.mimeType.substringAfterLast('/')}, ${document.byteCount / 1024} KB", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
-                if (document.notes.isNotBlank()) Text(document.notes)
-                Row { TextButton({ vm.openDocument(document) }) { Text("Open") }; TextButton({ vm.shareDocument(document) }) { Text("Share") }; TextButton({ pendingEdit = document }) { Text("Edit") }; TextButton({ pendingReplace = document; replaceLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Replace") }; TextButton({ pendingDelete = document }) { Text("Delete") } }
-                }
-            } }
-        }
-    }
-    if (showImport) DocumentImportDialog(vm) { showImport = false }
-    pendingDelete?.let { document ->
-        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
-    }
-    pendingEdit?.let { document -> DocumentEditDialog(vm, document) { pendingEdit = null } }
-}
-
-@Composable
-private fun DocumentEditDialog(vm: PassportViewModel, document: DocumentEntity, onDismiss: () -> Unit) {
-    var title by rememberSaveable(document.id) { mutableStateOf(document.title) }
-    var category by rememberSaveable(document.id) { mutableStateOf(document.category) }
-    var date by rememberSaveable(document.id) { mutableStateOf(document.documentDate) }
-    var notes by rememberSaveable(document.id) { mutableStateOf(document.notes) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit document details") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Title") })
-        OutlinedTextField(category, { category = it }, label = { Text("Category") })
-        OutlinedTextField(date, { date = it }, label = { Text("Document date") })
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes") })
-    } }, confirmButton = { Button({ vm.updateDocument(document, title, category, date, notes); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable
-private fun RemindersScreen(vm: PassportViewModel, reminders: List<ReminderEntity>, modifier: Modifier) {
-    var showAdd by rememberSaveable { mutableStateOf(false) }
-    var pendingDelete by remember { mutableStateOf<ReminderEntity?>(null) }
-    var pendingEdit by remember { mutableStateOf<ReminderEntity?>(null) }
-    var selectedView by rememberSaveable { mutableStateOf("UPCOMING") }
-    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    val visibleReminders = if (selectedView == "HISTORY") reminders.filter { it.status != "SCHEDULED" } else reminders.filter { it.status == "SCHEDULED" }
-    LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
-        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Reminders", style = MaterialTheme.typography.headlineSmall); TextButton({ showAdd = true }) { Text("Add") } } }
-        item { Text("Reminders are user-created and do not determine medical intervals.") }
-        item {
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text("Unlock Vexel Health Passport") },
+        text = {
+            OutlinedTextField(
+                value = pin,
+                onValueChange = { pin = it.filter(Char::isDigit).take(12); error = false },
+                label = { Text("PIN") },
+                isError = error,
+                supportingText = { if (error) Text("Incorrect PIN") }
+            )
+        },
+        confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = selectedView == "UPCOMING", onClick = { selectedView = "UPCOMING" }, label = { Text("Upcoming") })
-                FilterChip(selected = selectedView == "HISTORY", onClick = { selectedView = "HISTORY" }, label = { Text("History") })
-            }
-        }
-        if (reminders.isEmpty()) item { EmptyState("No reminders yet", "Create a follow-up, review or custom reminder when you want one.", "Create reminder", onAction = { showAdd = true }) }
-        else if (visibleReminders.isEmpty()) item { EmptyState(if (selectedView == "HISTORY") "No reminder history" else "No upcoming reminders", if (selectedView == "HISTORY") "Completed or missed reminders will appear here." else "Your scheduled reminders will appear here.") }
-        else items(visibleReminders, key = { it.id }) { reminder ->
-            val isOverdue = reminder.status == "SCHEDULED" && reminder.dueAtEpochMillis < System.currentTimeMillis()
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(reminder.title, style = MaterialTheme.typography.titleMedium)
-                    StatusPill(if (isOverdue) "Overdue" else reminder.status.lowercase().replaceFirstChar { it.uppercase() })
-                }
-                Text(
-                    "${reminder.type} · ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))}",
-                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (reminder.notes.isNotBlank()) Text(reminder.notes)
-                Row { if (reminder.status == "SCHEDULED") { TextButton({ vm.snoozeReminder(reminder) }) { Text("Snooze 1h") }; TextButton({ vm.completeReminder(reminder) }) { Text("Complete") } }; TextButton({ pendingEdit = reminder }) { Text("Edit") }; TextButton({ pendingDelete = reminder }) { Text("Delete") } }
-            } }
-        }
-    }
-    if (showAdd) ReminderDialog(vm, { showAdd = false }) { if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
-    pendingEdit?.let { reminder -> ReminderEditDialog(vm, reminder) { pendingEdit = null } }
-    pendingDelete?.let { reminder -> AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete reminder?") }, text = { Text("The scheduled notification will be cancelled.") }, confirmButton = { Button({ vm.deleteReminder(reminder); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } }) }
-}
-
-@Composable
-private fun ReminderEditDialog(vm: PassportViewModel, reminder: ReminderEntity, onDismiss: () -> Unit) {
-    var title by rememberSaveable(reminder.id) { mutableStateOf(reminder.title) }
-    var type by rememberSaveable(reminder.id) { mutableStateOf(reminder.type) }
-    var dueText by rememberSaveable(reminder.id) { mutableStateOf(SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(reminder.dueAtEpochMillis))) }
-    var notes by rememberSaveable(reminder.id) { mutableStateOf(reminder.notes) }
-    var recurrence by rememberSaveable(reminder.id) { mutableStateOf(reminder.recurrence) }
-    val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
-    val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit reminder") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
-        OutlinedTextField(type, { type = it }, label = { Text("Type") })
-        DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
-        Text("Repeats", style = MaterialTheme.typography.labelLarge)
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly", "MONTHLY" to "Monthly").forEach { (value, label) ->
-                FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
-            }
-        }
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
-        if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
-    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.updateReminder(reminder, title, type, notes, dueAt!!, recurrence); onDismiss() }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable
-private fun ReminderDialog(vm: PassportViewModel, onDismiss: () -> Unit, onScheduled: () -> Unit) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var type by rememberSaveable { mutableStateOf("CUSTOM") }
-    var dueText by rememberSaveable { mutableStateOf(SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(System.currentTimeMillis() + 3_600_000))) }
-    var notes by rememberSaveable { mutableStateOf("") }
-    var recurrence by rememberSaveable { mutableStateOf("ONCE") }
-    val dueAt = runCatching { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply { isLenient = false }.parse(dueText)?.time }.getOrNull()
-    val error = when { title.isBlank() -> "A title is required"; dueAt == null -> "Use yyyy-MM-dd HH:mm"; dueAt <= System.currentTimeMillis() -> "Choose a future time"; else -> "" }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Add reminder") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = error.isNotBlank())
-        OutlinedTextField(type, { type = it }, label = { Text("Type") })
-        DateTimeField("Date and time", dueText, { dueText = it }, isError = dueAt == null)
-        Text("Repeats", style = MaterialTheme.typography.labelLarge)
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("ONCE" to "Once", "DAILY" to "Daily", "WEEKLY" to "Weekly", "MONTHLY" to "Monthly").forEach { (value, label) ->
-                FilterChip(selected = recurrence == value, onClick = { recurrence = value }, label = { Text(label) })
-            }
-        }
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
-        if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
-    } }, confirmButton = { Button(enabled = error.isBlank(), onClick = { vm.addReminder(title, type, notes, dueAt!!, recurrence); onScheduled(); onDismiss() }) { Text("Schedule") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable
-private fun HelpDialog(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Using this app") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Vexel Health Passport is a private, offline record of information you enter yourself. It does not diagnose, interpret results, or recommend treatment -- always confirm health decisions with a qualified professional.", style = MaterialTheme.typography.bodyMedium)
-                Text("Your data", style = MaterialTheme.typography.titleSmall)
-                Text("Everything you enter stays on this device. There is no account and no cloud sync -- if this device is lost, factory reset, or the app is uninstalled without a backup, your data is gone.", style = MaterialTheme.typography.bodySmall)
-                Text("Backups", style = MaterialTheme.typography.titleSmall)
-                Text("Create an encrypted backup from Profile before uninstalling the app, switching devices, or as routine safekeeping. You choose the password; it is not stored anywhere, so write it down somewhere safe -- a lost backup password cannot be recovered.", style = MaterialTheme.typography.bodySmall)
-                Text("App lock", style = MaterialTheme.typography.titleSmall)
-                Text("An optional PIN (with biometric unlock where available) can lock the app after a period of inactivity. This protects against casual access to this device, not against a determined attacker with full device access.", style = MaterialTheme.typography.bodySmall)
-                Text("Sharing documents", style = MaterialTheme.typography.titleSmall)
-                Text("Opening or sharing a document from the vault creates a temporary, permission-scoped copy for the app you send it to. The original stays private in this app's storage.", style = MaterialTheme.typography.bodySmall)
-                Text("Reminders", style = MaterialTheme.typography.titleSmall)
-                Text("Reminders rely on the device's notification system and battery/power settings. Aggressive battery optimization on some devices can delay or suppress a reminder notification -- reminders are a convenience, not a guaranteed medical alert.", style = MaterialTheme.typography.bodySmall)
-            }
-        },
-        confirmButton = { TextButton(onDismiss) { Text("Close") } },
-    )
-}
-
-@Composable
-private fun PrivacyInfoDialog(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Privacy and safety") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("This screen describes how the app actually behaves; it is not a substitute for the full legal privacy policy.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("No network access", style = MaterialTheme.typography.titleSmall)
-                Text("This app does not request Internet permission and cannot send data anywhere. All information you enter stays in this app's private storage on this device.", style = MaterialTheme.typography.bodySmall)
-                Text("No account, no analytics, no ads", style = MaterialTheme.typography.titleSmall)
-                Text("There is no sign-in, no usage tracking, and no advertising in this app.", style = MaterialTheme.typography.bodySmall)
-                Text("Encryption", style = MaterialTheme.typography.titleSmall)
-                Text("An optional PIN is protected using the device's hardware Keystore. Backups you create are encrypted with a password you choose, using standard AES-GCM encryption.", style = MaterialTheme.typography.bodySmall)
-                Text("Deleting your data", style = MaterialTheme.typography.titleSmall)
-                Text("Profile > Delete all app data permanently removes your profile, records, medications, documents, reminders, and security settings from this device. This cannot be undone.", style = MaterialTheme.typography.bodySmall)
-                Text("Medical disclaimer", style = MaterialTheme.typography.titleSmall)
-                Text("Vexel Health Passport organizes information you enter yourself. It does not diagnose conditions, interpret lab or clinical results, or recommend treatment. Always consult a qualified healthcare professional for medical decisions.", style = MaterialTheme.typography.bodySmall)
-            }
-        },
-        confirmButton = { TextButton(onDismiss) { Text("Close") } },
-    )
-}
-
-@Composable
-private fun DocumentImportDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var category by rememberSaveable { mutableStateOf("OTHER") }
-    var documentDate by rememberSaveable { mutableStateOf("") }
-    var notes by rememberSaveable { mutableStateOf("") }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.importDocument(uri, title, category, documentDate, notes)
-        if (uri != null) onDismiss()
-    }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Import private document") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Choose a PDF or image. The original is preserved privately; unsupported types are rejected.")
-        OutlinedTextField(title, { title = it }, label = { Text("Title") })
-        OutlinedTextField(category, { category = it }, label = { Text("Category") })
-        OutlinedTextField(documentDate, { documentDate = it }, label = { Text("Document date (optional)") })
-        OutlinedTextField(notes, { notes = it }, label = { Text("Notes (optional)") })
-    } }, confirmButton = { Button({ launcher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Choose file") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable private fun ProfileScreen(vm: PassportViewModel, profile: ProfileEntity?, modifier: Modifier) {
-    var name by rememberSaveable(profile?.name) { mutableStateOf(profile?.name.orEmpty()) }; var allergies by rememberSaveable(profile?.allergies) { mutableStateOf(profile?.allergies.orEmpty()) }; var conditions by rememberSaveable(profile?.conditions) { mutableStateOf(profile?.conditions.orEmpty()) }
-    var dateOfBirth by rememberSaveable(profile?.dateOfBirth) { mutableStateOf(profile?.dateOfBirth.orEmpty()) }; var bloodGroup by rememberSaveable(profile?.bloodGroup) { mutableStateOf(profile?.bloodGroup.orEmpty()) }; var emergencyContact by rememberSaveable(profile?.emergencyContact) { mutableStateOf(profile?.emergencyContact.orEmpty()) }
-    val profileDateParser = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false } }
-    val dateOfBirthValid = dateOfBirth.isBlank() || runCatching { profileDateParser.parse(dateOfBirth) }.getOrNull() != null
-    val prefs by vm.settings.collectAsState(); var showPinSetup by rememberSaveable { mutableStateOf(false) }
-    var showHelp by rememberSaveable { mutableStateOf(false) }
-    var showPrivacyInfo by rememberSaveable { mutableStateOf(false) }
-    var showDeleteAll by rememberSaveable { mutableStateOf(false) }
-    var showReportOptions by rememberSaveable { mutableStateOf(false) }
-    var showBackupPassword by rememberSaveable { mutableStateOf(false) }
-    var backupAction by rememberSaveable { mutableStateOf("CREATE") }
-    var backupPassword by rememberSaveable { mutableStateOf("") }
-    var includeProfile by rememberSaveable { mutableStateOf(true) }; var includeEvents by rememberSaveable { mutableStateOf(true) }; var includeMedications by rememberSaveable { mutableStateOf(true) }; var includeDocuments by rememberSaveable { mutableStateOf(true) }; var includeReminders by rememberSaveable { mutableStateOf(true) }
-    var reportFrom by rememberSaveable { mutableStateOf("") }; var reportTo by rememberSaveable { mutableStateOf("") }
-    var generatedReportUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    val dateScope = validateDateScope(reportFrom, reportTo)
-    val context = LocalContext.current
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.JSON).mimeType)) { uri ->
-        if (uri != null) {
-            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
-            val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
-            val to = runCatching { parser.parse(reportTo)?.time?.plus(86_399_999L) }.getOrNull()
-            context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportJson(from, to).toByteArray(Charsets.UTF_8)) }
-        }
-    }
-    val readableExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.READABLE).mimeType)) { uri ->
-        if (uri != null) {
-            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
-            val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
-            val to = runCatching { parser.parse(reportTo)?.time?.plus(86_399_999L) }.getOrNull()
-            context.contentResolver.openOutputStream(uri)?.use { it.write(vm.exportHumanReadable(from, to).toByteArray(Charsets.UTF_8)) }
-        }
-    }
-    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri -> if (uri != null) vm.createBackup(uri, backupPassword) }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.restoreBackup(uri, backupPassword) }
-    val reportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(exportShareDescriptor(ExportFormat.PDF).mimeType)) { uri ->
-        if (uri != null) {
-            generatedReportUri = uri
-            val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { isLenient = false }
-            val from = runCatching { parser.parse(reportFrom)?.time }.getOrNull()
-            val to = runCatching { parser.parse(reportTo)?.time?.plus(86_399_999L) }.getOrNull()
-            vm.createPdfReport(uri, includeProfile, includeEvents, includeMedications, includeDocuments, includeReminders, from, to)
-        }
-    }
-    LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("profileScroll"), verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp, bottom = 24.dp)) {
-        item { Text("Personal profile", style = MaterialTheme.typography.headlineSmall); Text("Keep your personal details and app controls in one place.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        item {
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeader("Personal details")
-                OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Name") })
-                OutlinedTextField(dateOfBirth, { dateOfBirth = it }, Modifier.fillMaxWidth(), label = { Text("Date of birth") }, placeholder = { Text("yyyy-MM-dd") }, isError = !dateOfBirthValid, supportingText = { if (!dateOfBirthValid) Text("Use yyyy-MM-dd or leave blank") })
-                OutlinedTextField(bloodGroup, { bloodGroup = it }, Modifier.fillMaxWidth(), label = { Text("Blood group") })
-                OutlinedTextField(allergies, { allergies = it }, Modifier.fillMaxWidth(), label = { Text("Allergies") })
-                OutlinedTextField(conditions, { conditions = it }, Modifier.fillMaxWidth(), label = { Text("Conditions") })
-                OutlinedTextField(emergencyContact, { emergencyContact = it }, Modifier.fillMaxWidth(), label = { Text("Emergency contact") })
-                Button({ vm.saveProfile(ProfileEntity(name = name, dateOfBirth = dateOfBirth, bloodGroup = bloodGroup, allergies = allergies, conditions = conditions, emergencyContact = emergencyContact, updatedAtEpochMillis = System.currentTimeMillis())) }, enabled = dateOfBirthValid, modifier = Modifier.fillMaxWidth()) { Text("Save profile") }
-            } }
-        }
-        item {
-            SectionHeader("Reports and data tools")
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
-                Text("Optional date range for exports and reports (yyyy-MM-dd). Leave blank for all dates.", Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(reportFrom, { reportFrom = it }, Modifier.weight(1f), label = { Text("From") }, singleLine = true)
-                    OutlinedTextField(reportTo, { reportTo = it }, Modifier.weight(1f), label = { Text("To") }, singleLine = true)
-                }
-                if (!dateScope.isValid && (reportFrom.isNotBlank() || reportTo.isNotBlank())) {
-                    Text("Enter valid dates in yyyy-MM-dd order before exporting.", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
-                }
-                ActionRow("Export my data (JSON)", enabled = dateScope.isValid, leadingIcon = Icons.Outlined.Download, onClick = { exportLauncher.launch("vexel-health-export.json") })
-                ActionRow("Export readable summary", enabled = dateScope.isValid, leadingIcon = Icons.Outlined.Description, onClick = { readableExportLauncher.launch("vexel-health-export.txt") })
-                ActionRow("Create encrypted backup", leadingIcon = Icons.Outlined.Lock, onClick = { backupAction = "CREATE"; showBackupPassword = true })
-                ActionRow("Restore backup", leadingIcon = Icons.Outlined.LockOpen, onClick = { backupAction = "RESTORE"; showBackupPassword = true })
-                ActionRow("Create PDF report", leadingIcon = Icons.Outlined.PictureAsPdf, onClick = { showReportOptions = true })
-                generatedReportUri?.let { uri ->
-                    ActionRow("Share last PDF report", leadingIcon = Icons.Outlined.Share, onClick = { shareContentUri(context, uri, exportShareDescriptor(ExportFormat.PDF).mimeType, "Share health report") })
-                    ActionRow("Print last PDF report", leadingIcon = Icons.Outlined.PictureAsPdf, onClick = {
-                        val printManager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-                        printManager.print("Vexel Health Passport report", PdfPrintDocumentAdapter(context, uri, "Vexel Health Passport report"), null)
-                    })
-                }
-            } }
-        }
-        item {
-            SectionHeader("Appearance and security")
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(vertical = 4.dp)) {
-                ActionRow(if (prefs.darkTheme) "Use light theme" else "Use dark theme", leadingIcon = if (prefs.darkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode, onClick = { vm.setDarkTheme(!prefs.darkTheme) })
-                ActionRow(if (prefs.lockEnabled) "Disable PIN lock" else "Set up PIN lock", leadingIcon = Icons.Outlined.Password, onClick = { if (prefs.lockEnabled) vm.disablePin() else showPinSetup = true })
-                if (prefs.lockEnabled) {
-                    Text("Lock after inactivity", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelLarge)
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(0 to "When leaving", 5 to "5 minutes", 15 to "15 minutes", 30 to "30 minutes").forEach { (minutes, label) ->
-                            FilterChip(selected = prefs.lockTimeoutMinutes == minutes, onClick = { vm.setLockTimeoutMinutes(minutes) }, label = { Text(label) })
-                        }
+                if (canUseBiometric) {
+                    TextButton({ biometricPrompt?.authenticate(promptInfo) }) {
+                        Text("Use device authentication")
                     }
                 }
-                ActionRow(
-                    if (prefs.hideRecentAppsPreview) "Show app preview in recent apps" else "Hide app preview in recent apps and screenshots",
-                    leadingIcon = if (prefs.hideRecentAppsPreview) Icons.Outlined.LockOpen else Icons.Outlined.Lock,
-                    onClick = { vm.setHideRecentAppsPreview(!prefs.hideRecentAppsPreview) },
-                )
-            } }
-        }
-        item {
-            SectionHeader("Privacy and data")
-            Text("Health information is stored locally on this device. Exported files and backups may contain sensitive information.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedButton({ showDeleteAll = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete all app data", color = MaterialTheme.colorScheme.error) }
-        }
-        item {
-            SectionHeader("Help and about")
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Vexel Health Passport", style = MaterialTheme.typography.titleMedium)
-                    Text("Your health history, organized.")
-                    Text("Vexel stores user-entered information locally and works offline. It does not diagnose conditions or replace professional care.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Version ${context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    ActionRow("Using this app", leadingIcon = Icons.Outlined.Description, onClick = { showHelp = true })
-                    ActionRow("Privacy and safety", leadingIcon = Icons.Outlined.Lock, onClick = { showPrivacyInfo = true })
+                Button({
+                    if (vm.verifyPin(pin, prefs)) onUnlocked() else error = true
+                }) {
+                    Text("Unlock")
                 }
             }
         }
-    }
-    if (showHelp) HelpDialog { showHelp = false }
-    if (showPrivacyInfo) PrivacyInfoDialog { showPrivacyInfo = false }
-    if (showReportOptions) ReportOptionsDialog({ showReportOptions = false }, { showReportOptions = false; reportLauncher.launch("vexel-health-report.pdf") }, { includeProfile = it }, { includeEvents = it }, { includeMedications = it }, { includeDocuments = it }, { includeReminders = it }, reportFrom, { reportFrom = it }, reportTo, { reportTo = it })
-    if (showBackupPassword) BackupPasswordDialog(backupAction == "CREATE", backupPassword, { backupPassword = it }, { password -> backupPassword = password; showBackupPassword = false; if (backupAction == "CREATE") backupLauncher.launch("vexel-health-backup.vexel") else restoreLauncher.launch(arrayOf("application/octet-stream", "application/zip")) }, { showBackupPassword = false })
-    if (showPinSetup) PinSetupDialog(vm) { showPinSetup = false }
-    if (showDeleteAll) AlertDialog(onDismissRequest = { showDeleteAll = false }, title = { Text("Delete all data?") }, text = { Text("This permanently removes your profile, events, medications, private documents, and security settings from this device. This cannot be undone.") }, confirmButton = { Button({ vm.deleteAllData(); showDeleteAll = false }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete everything") } }, dismissButton = { TextButton({ showDeleteAll = false }) { Text("Cancel") } })
-}
-
-@Composable
-private fun BackupPasswordDialog(
-    creating: Boolean,
-    password: String,
-    onPasswordChange: (String) -> Unit,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val valid = password.length >= 8
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (creating) "Protect backup" else "Unlock backup") },
-        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (creating) "Use at least 8 characters. This password is not stored; you will need it to restore this backup." else "Enter the password used when this backup was created.")
-            OutlinedTextField(password, onPasswordChange, label = { Text("Backup password") }, isError = password.isNotEmpty() && !valid, supportingText = { if (password.isNotEmpty() && !valid) Text("Use at least 8 characters") })
-        } },
-        confirmButton = { Button(enabled = valid, onClick = { onConfirm(password) }) { Text(if (creating) "Choose destination" else "Choose backup") } },
-        dismissButton = { TextButton(onDismiss) { Text("Cancel") } },
     )
-}
-
-@Composable
-private fun ReportOptionsDialog(onDismiss: () -> Unit, onGenerate: () -> Unit, setProfile: (Boolean) -> Unit, setEvents: (Boolean) -> Unit, setMedications: (Boolean) -> Unit, setDocuments: (Boolean) -> Unit, setReminders: (Boolean) -> Unit, from: String, setFrom: (String) -> Unit, to: String, setTo: (String) -> Unit) {
-    var profileChecked by rememberSaveable { mutableStateOf(true) }; var eventsChecked by rememberSaveable { mutableStateOf(true) }; var medicationsChecked by rememberSaveable { mutableStateOf(true) }; var documentsChecked by rememberSaveable { mutableStateOf(true) }; var remindersChecked by rememberSaveable { mutableStateOf(true) }
-    val dateScope = validateDateScope(from, to)
-    val validFrom = dateScope.fromValid
-    val validTo = dateScope.toValid
-    val datesOrdered = dateScope.ordered
-    val hasSection = hasSelectedReportSection(profileChecked, eventsChecked, medicationsChecked, documentsChecked, remindersChecked)
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("PDF report options") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Select sections and optional date range. Use yyyy-MM-dd.")
-        listOf("Profile" to profileChecked, "Health events" to eventsChecked, "Medications" to medicationsChecked, "Documents" to documentsChecked, "Reminders" to remindersChecked).forEach { (label, checked) -> Row { Checkbox(checked, { value -> when (label) { "Profile" -> { profileChecked = value; setProfile(value) }; "Health events" -> { eventsChecked = value; setEvents(value) }; "Medications" -> { medicationsChecked = value; setMedications(value) }; "Documents" -> { documentsChecked = value; setDocuments(value) }; else -> { remindersChecked = value; setReminders(value) } } }); Text(label) } }
-        OutlinedTextField(from, setFrom, label = { Text("From (optional)") }, isError = !validFrom, supportingText = { if (!validFrom) Text("Use yyyy-MM-dd") })
-        OutlinedTextField(to, setTo, label = { Text("To (optional)") }, isError = !validTo || !datesOrdered, supportingText = { if (!validTo) Text("Use yyyy-MM-dd") else if (!datesOrdered) Text("To must be on or after From") })
-    } }, confirmButton = { Button(enabled = hasSection && validFrom && validTo && datesOrdered, onClick = onGenerate) { Text("Save PDF") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable
-private fun PinSetupDialog(vm: PassportViewModel, onDismiss: () -> Unit) {
-    var pin by rememberSaveable { mutableStateOf("") }
-    var confirmation by rememberSaveable { mutableStateOf("") }
-    var error by rememberSaveable { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Set up PIN lock") }, text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Use 4–12 digits. The PIN is never stored as plaintext.")
-        OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12) }, label = { Text("PIN") }, isError = error.isNotBlank())
-        OutlinedTextField(confirmation, { confirmation = it.filter(Char::isDigit).take(12) }, label = { Text("Confirm PIN") }, isError = error.isNotBlank(), supportingText = { if (error.isNotBlank()) Text(error) })
-    } }, confirmButton = { Button({ if (pin != confirmation) error = "PINs do not match" else if (pin.length !in 4..12) error = "Use 4–12 digits" else if (vm.savePin(pin, confirmation)) onDismiss() }) { Text("Enable") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }

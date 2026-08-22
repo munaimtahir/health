@@ -31,6 +31,7 @@ class WorkManagerReminderScheduler(
     private val database: HealthDatabase,
 ) : ReminderScheduler {
     private val workManager = WorkManager.getInstance(context)
+    private val reminderDao = database.reminderDao()
 
     override suspend fun schedule(id: String, dueAtEpochMillis: Long, recurrence: String) {
         ensureChannel()
@@ -50,7 +51,7 @@ class WorkManagerReminderScheduler(
     override suspend fun cancel(id: String) { workManager.cancelUniqueWork(id) }
 
     override suspend fun reconcile() {
-        database.reminderDao().findScheduled().forEach { reminder ->
+        reminderDao.findScheduled().forEach { reminder ->
             schedule(reminder.id, reminder.dueAtEpochMillis, reminder.recurrence)
         }
     }
