@@ -5,7 +5,7 @@
 - Repository: `health`
 - Application: Vexel Health Passport
 - Application ID: `com.vexel.passport`
-- Version: `1.0.4` / version code `4` (per `app/build.gradle.kts`; not changed this session — no version bump policy violation)
+- Version: `1.0.5` / version code `5` (per `app/build.gradle.kts`)
 - Minimum SDK: 26
 - Target/compile SDK: 36
 

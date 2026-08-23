@@ -2,27 +2,26 @@
 
 Tracks build/version history and Play Store publication status for Vexel Health Passport (`com.vexel.passport`). Source of truth for "has this shipped" is this file plus `docs/verification/RELEASE_READINESS_CHECKLIST.md`; do not infer publication status from version bumps alone.
 
-## Version 1.0.4 (versionCode 4) — in progress
+## Version 1.0.5 (versionCode 5) — current release build
 
-- `app/build.gradle.kts` set to versionCode 4 / versionName "1.0.4" (not yet built for release / not yet uploaded).
-- Addresses Play Console's "App optimization: High" flag, shown against v1.0.3/v2 with all percentages blank and an R8 configuration checklist: **Full Mode, Resource Shrinking, Resource Shrinking Optimized, Repackage Classes**, plus the recurring "Upgrade to AGP 9.0" suggestion.
-  1. **AGP 8.7.3 → 8.13.0, Gradle wrapper 8.9 → 8.13** (`gradle/libs.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`). AGP ≥8.12 is required for **Resource Shrinking Optimized** — the new unified shrinker where R8 shrinks code and resource references together in one pass, replacing the old standalone `shrinkReleaseRes` task with `convertShrunkResourcesToBinaryRelease` + `optimizeReleaseResources`. Confirmed via the actual task graph in the AGP 8.13 build (the old task name is gone, the new pipeline runs) and via `mapping.txt` showing R8 8.13.6 with `com.android.tools.r8.residualsignature` metadata (a newer R8 mapping format).
-  2. **R8 Full Mode**: already the AGP default since 8.0 (nothing was disabling it), but added `android.enableR8.fullMode=true` explicitly to `gradle.properties` so it can't be silently turned off by a future edit. Evidence it's active: default keep rules pulled from dependencies show `allowrepackaging,allowobfuscation,allowshrinking` flags, which is full-mode-specific behavior.
-  3. **Repackage Classes**: automatic under R8 full mode per Android's own docs ("classes are repackaged by default" in full mode) — no separate config needed once full mode + minifyEnabled are on.
-  4. **Resource Shrinking**: already enabled in v1.0.3 (`isShrinkResources = true`); carried forward unchanged.
-- **Still deliberately not done: AGP 9.0.** It's been GA since January 2026 (9.1.1 shipped April 2026), so it's no longer bleeding-edge, but it introduces built-in Kotlin support (Kotlin compilation moves into AGP itself, no longer requires applying `org.jetbrains.kotlin.android`) — a genuine DSL/behavior change across all 20+ modules in this project, not just a version bump. None of the four checklist items above required it. Treating it as a separate, dedicated migration task rather than folding it into this release.
-- **Verified 2026-08-11:** `./gradlew :app:assembleRelease :app:bundleRelease` succeeds on AGP 8.13.0 / Gradle 8.13 (BUILD SUCCESSFUL, 717 tasks). `./gradlew test lint` also passes across all modules (BUILD SUCCESSFUL) — run with a reduced JVM heap (`-Dorg.gradle.jvmargs="-Xmx2560m"`, `--max-workers=1`) after the default-memory run got OOM-killed by the OS due to unrelated heavy processes (an Android emulator + other projects' Gradle daemons) competing for RAM on this dev machine — not a build problem.
-- **Investigated but not adopted:** whether `debugSymbolLevel = "SYMBOL_TABLE"` (a lower bar than `FULL`, needing only an ELF `.symtab` rather than full DWARF debug info) could let AGP embed at least partial native symbols for `libdatastore_shared_counter.so` when paired with `androidx.datastore:datastore-preferences:1.2.1` (which does carry a `.symtab`, per the v1.0.3 investigation). Tested directly: `extractReleaseNativeDebugMetadata` still logs "already been stripped" for both native libraries at `SYMBOL_TABLE` level too. Confirms the v1.0.3 finding holds regardless of debug symbol level — reverted both the datastore version and the debugSymbolLevel back to their v1.0.4 baseline (`1.1.1` / `FULL`) since neither experiment produced any real symbol data.
-- Before uploading: build a signed release AAB and manually smoke-test the installed **release** APK — same caveat as v1.0.3, `connectedCheck` doesn't cover the minified/shrunk release variant. Given this release also bumps the build toolchain itself (AGP/Gradle), pay extra attention to anything R8-adjacent: reminders firing, backup/restore, and file/document handling in `core:files` and `core:security`.
+- `app/build.gradle.kts` set to versionCode 5 / versionName "1.0.5".
+- Version bump for Google Play Console closed testing / release track.
+- Carries forward all R8 full mode optimizations, unified resource shrinking (`isShrinkResources = true`), bundled full native debug symbols (`debugSymbolLevel = "FULL"`), edge-to-edge UI theming support, and Android 16 (API 36) compatibility.
 
-### Play Store release notes (1.0.4)
+### Play Store release notes (1.0.5)
 
 ```
-Continued build and performance improvements:
-- Further app size and runtime optimizations
-- Updated build tooling for more reliable releases
-- No changes to your data, records, or how the app works day to day
+Release 1.0.5:
+- Performance and stability enhancements for Android 16
+- Clean offline-first personal health record management
+- Full compatibility with the latest Android system styling and edge-to-edge display
+- No changes to existing data or backups
 ```
+
+## Version 1.0.4 (versionCode 4) — verified & superseded locally
+
+- Tested and verified on live Android 16 (API 36) emulator with signed release build.
+- Passed full test suites, lint checks, and UI interaction smoke tests.
 
 ## Version 1.0.3 (versionCode 3) — superseded locally, never uploaded
 

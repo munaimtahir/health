@@ -1,14 +1,13 @@
-# Initial release notes
+# Google Play Release Notes
 
-## Google Play release notes
+## Version 1.0.5 (versionCode 5)
 
-Initial release of Vexel Health Passport.
+- Offline-first personal health record organizer.
+- Record symptoms, medications, appointments and reminders with privacy-first storage.
+- Private document vault for PDF and image records.
+- Date-ranged PDF summaries and structured JSON exports.
+- Password-encrypted local backups with zero cloud transmission.
+- Hardware Keystore protected PIN lock and device authentication.
+- Optimized performance, resource shrinking, and full Android 16 compatibility.
 
-- Organize personal health information offline.
-- Record symptoms, medications, reminders and appointments.
-- Keep PDF and image records in a private document vault.
-- Generate date-ranged reports and user-directed exports.
-- Create password-encrypted local backups.
-- Protect access with an optional PIN or supported device authentication.
-
-Vexel Health Passport is not a medical device and does not provide medical advice, diagnosis or treatment recommendations.
+Vexel Health Passport is not a medical device and does not provide medical advice, diagnosis, or treatment recommendations.

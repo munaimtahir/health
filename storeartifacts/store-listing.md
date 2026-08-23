@@ -6,7 +6,7 @@
 - Application ID: `com.vexel.passport`
 - Default language: English (United States)
 - Recommended category: Medical
-- Version: `0.1.0` (`1`)
+- Version: `1.0.5` (`5`)
 
 ## Short description
 
