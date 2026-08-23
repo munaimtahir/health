@@ -2,5 +2,5 @@ package com.vexel.passport.core.database
 
 object DatabaseConstants {
     const val NAME = "vexel_health_passport.db"
-    const val VERSION = 8
+    const val VERSION = 9
 }

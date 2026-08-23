@@ -85,8 +85,8 @@ import com.vexel.passport.feature.profile.ProfileScreen
 
 private data class Destination(val route: String, val label: String, val icon: ImageVector)
 private val destinations = listOf(
-    Destination(Routes.HOME, "Home", Icons.Outlined.Home),
-    Destination(Routes.RECORDS, "Records", Icons.Outlined.Event),
+    Destination(Routes.HOME, "Health", Icons.Outlined.Home),
+    Destination(Routes.RECORDS, "Timeline", Icons.Outlined.Event),
     Destination(Routes.PLAN, "Plan", Icons.Outlined.Schedule),
     Destination(Routes.VAULT, "Vault", Icons.Outlined.Folder),
     Destination(Routes.PROFILE, "Profile", Icons.Outlined.Person),

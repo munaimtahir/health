@@ -10,6 +10,9 @@ import com.vexel.passport.core.database.MedicationEntity
 import com.vexel.passport.core.database.MedicationChangeEntity
 import com.vexel.passport.core.database.DocumentEntity
 import com.vexel.passport.core.database.ProfileEntity
+import com.vexel.passport.core.database.ConditionEntity
+import com.vexel.passport.core.database.AllergyEntity
+import com.vexel.passport.core.database.MeasurementEntity
 import com.vexel.passport.core.files.SecureFileStore
 import com.vexel.passport.core.model.SymptomDraft
 import com.vexel.passport.core.model.MedicationDraft
@@ -40,6 +43,29 @@ class DashboardViewModel @Inject constructor(
 
     val events = database.healthEventDao().observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val conditions = database.conditionDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val allergies = database.allergyDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val measurements = database.measurementDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun addCondition(name: String) = viewModelScope.launch {
+        val now = System.currentTimeMillis()
+        database.conditionDao().insert(ConditionEntity(UUID.randomUUID().toString(), name.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
+        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), name.trim(), kind = "CONDITION", effectiveAtEpochMillis = now, createdAtEpochMillis = now))
+    }
+
+    fun addAllergy(allergen: String, reaction: String) = viewModelScope.launch {
+        val now = System.currentTimeMillis()
+        database.allergyDao().insert(AllergyEntity(UUID.randomUUID().toString(), allergen.trim(), reaction = reaction.trim(), createdAtEpochMillis = now, updatedAtEpochMillis = now))
+        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), allergen.trim(), reaction.trim(), "ALLERGY", now, now))
+    }
+
+    fun addMeasurement(type: String, value: Double, secondary: Double?, unit: String, context: String = "") = viewModelScope.launch {
+        val now = System.currentTimeMillis()
+        database.measurementDao().insert(MeasurementEntity(UUID.randomUUID().toString(), type, value, secondary, unit, context, now))
+        val display = if (secondary == null) "$value $unit" else "$value/$secondary $unit"
+        database.healthEventDao().insert(HealthEventEntity(UUID.randomUUID().toString(), type.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }, display, "MEASUREMENT", now, now))
+    }
 
     fun addEvent(kind: String, title: String, details: String, severity: Int? = null) = viewModelScope.launch {
         val now = System.currentTimeMillis()

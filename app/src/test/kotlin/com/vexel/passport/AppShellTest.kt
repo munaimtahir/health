@@ -6,7 +6,7 @@ import org.junit.Test
 class AppShellTest {
     @Test
     fun primaryDestinationsMatchCanonicalOrderAndRoutes() {
-        assertEquals(listOf("Home", "Records", "Plan", "Vault", "Profile"), primaryDestinationLabels)
+        assertEquals(listOf("Health", "Timeline", "Plan", "Vault", "Profile"), primaryDestinationLabels)
     }
 
     @Test
@@ -16,4 +16,3 @@ class AppShellTest {
         assertEquals(listOf("home", "records", "plan", "vault", "profile"), routes)
     }
 }
-

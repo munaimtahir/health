@@ -21,7 +21,7 @@ class AccessibilityStructureTest {
     fun interactive_controls_on_all_primary_tabs_are_labeled_and_at_least_48dp() {
         reachHome()
         val minimumTouchTargetPx = 48f * composeRule.activity.resources.displayMetrics.density
-        val navigationLabels = listOf("Home", "Records", "Plan", "Vault", "Profile")
+        val navigationLabels = listOf("Health", "Timeline", "Plan", "Vault", "Profile")
         val navigationNodes = navigationLabels.map { label ->
             composeRule.onNode(hasText(label) and hasClickAction()).fetchSemanticsNode()
         }
@@ -82,13 +82,13 @@ class AccessibilityStructureTest {
     private fun reachHome() {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText("Welcome to Vexel")).fetchSemanticsNodes().isNotEmpty() ||
-                composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
+                composeRule.onAllNodes(hasText("Health")).fetchSemanticsNodes().isNotEmpty()
         }
         if (composeRule.onAllNodes(hasText("Welcome to Vexel")).fetchSemanticsNodes().isNotEmpty()) {
             composeRule.onNodeWithText("I understand and want to continue").performClick()
             composeRule.onNodeWithText("Continue").performClick()
             composeRule.waitUntil(timeoutMillis = 10_000) {
-                composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
+                composeRule.onAllNodes(hasText("Health")).fetchSemanticsNodes().isNotEmpty()
             }
         }
     }
