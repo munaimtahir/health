@@ -15,6 +15,7 @@ object DatabaseProvider {
             .addMigrations(MIGRATION_5_6)
             .addMigrations(MIGRATION_6_7)
             .addMigrations(MIGRATION_7_8)
+            .addMigrations(MIGRATION_8_9)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -123,6 +124,14 @@ object DatabaseProvider {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE health_events ADD COLUMN imageAttachmentId TEXT")
             db.execSQL("ALTER TABLE health_events ADD COLUMN episodeId TEXT")
+        }
+    }
+
+    private val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""CREATE TABLE IF NOT EXISTS conditions (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'ACTIVE', diagnosisDate TEXT NOT NULL DEFAULT '', resolvedDate TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', treatingDoctor TEXT NOT NULL DEFAULT '', tags TEXT NOT NULL DEFAULT '', createdAtEpochMillis INTEGER NOT NULL, updatedAtEpochMillis INTEGER NOT NULL)""")
+            db.execSQL("""CREATE TABLE IF NOT EXISTS allergies (id TEXT NOT NULL PRIMARY KEY, allergen TEXT NOT NULL, category TEXT NOT NULL DEFAULT 'OTHER', reaction TEXT NOT NULL DEFAULT '', severity TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'ACTIVE', createdAtEpochMillis INTEGER NOT NULL, updatedAtEpochMillis INTEGER NOT NULL)""")
+            db.execSQL("""CREATE TABLE IF NOT EXISTS measurements (id TEXT NOT NULL PRIMARY KEY, type TEXT NOT NULL, primaryValue REAL NOT NULL, secondaryValue REAL, unit TEXT NOT NULL, context TEXT NOT NULL DEFAULT '', recordedAtEpochMillis INTEGER NOT NULL, notes TEXT NOT NULL DEFAULT '')""")
         }
     }
 }

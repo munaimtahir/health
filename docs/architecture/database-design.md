@@ -2,4 +2,4 @@
 
 Status: Canonical. Purpose: define Room preparation.
 
-Room database version 2 is implemented with `profile` and `health_events` tables. Profile values and user-entered event records are local and archiveable; event kinds include symptoms, medications, records, reminders, and other health events. A non-destructive 1→2 migration preserves the original event rows. The broader conceptual model covers future document, consultation, report, and backup metadata; every future schema change requires a migration and migration test.
+Room database version 9 is implemented with legacy profile/events, medications, documents, reminders, and additive structured `conditions`, `allergies`, and `measurements` tables. A non-destructive 8→9 migration creates only the new tables and preserves all original event and attachment rows. Every future schema change requires a migration and migration test.

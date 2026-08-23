@@ -12,6 +12,9 @@ import com.vexel.passport.core.database.HealthEventEntity
 import com.vexel.passport.core.database.MedicationEntity
 import com.vexel.passport.core.database.MedicationChangeEntity
 import com.vexel.passport.core.database.ReminderEntity
+import com.vexel.passport.core.database.ConditionEntity
+import com.vexel.passport.core.database.AllergyEntity
+import com.vexel.passport.core.database.MeasurementEntity
 import com.vexel.passport.core.datastore.PreferencesStore
 import com.vexel.passport.core.datastore.UserPreferences
 import com.vexel.passport.core.files.SecureFileStore
@@ -85,6 +88,10 @@ class ProfileViewModel @Inject constructor(
     val reminders = database.reminderDao().observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val conditions = database.conditionDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val allergies = database.allergyDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val measurements = database.measurementDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     fun saveProfile(p: ProfileEntity) = viewModelScope.launch {
         database.profileDao().upsert(p)
     }
@@ -139,6 +146,9 @@ class ProfileViewModel @Inject constructor(
         database.documentDao().deleteAll()
         reminders.value.forEach { reminderScheduler.cancel(it.id) }
         database.reminderDao().deleteAll()
+        database.conditionDao().deleteAll()
+        database.allergyDao().deleteAll()
+        database.measurementDao().deleteAll()
         secureFileStore.deleteAll()
         preferences.clearAll()
         _statusEvents.tryEmit("All data deleted")
@@ -156,6 +166,9 @@ class ProfileViewModel @Inject constructor(
         root.put("medicationChanges", JSONArray(medicationChanges.value.filter { inRange(it.changedAtEpochMillis) }.map { c -> JSONObject().put("id", c.id).put("medicationId", c.medicationId).put("changedAtEpochMillis", c.changedAtEpochMillis).put("changeType", c.changeType).put("strength", c.strength).put("dose", c.dose).put("unit", c.unit).put("frequency", c.frequency).put("status", c.status).put("notes", c.notes) }))
         root.put("documents", JSONArray(documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256) }))
         root.put("reminders", JSONArray(reminders.value.filter { inRange(it.dueAtEpochMillis) }.map { r -> JSONObject().put("id", r.id).put("title", r.title).put("type", r.type).put("notes", r.notes).put("dueAtEpochMillis", r.dueAtEpochMillis).put("recurrence", r.recurrence).put("status", r.status) }))
+        root.put("conditions", JSONArray(conditions.value.filter { inRange(it.createdAtEpochMillis) }.map { c -> JSONObject().put("id", c.id).put("name", c.name).put("status", c.status).put("diagnosisDate", c.diagnosisDate).put("resolvedDate", c.resolvedDate).put("notes", c.notes).put("treatingDoctor", c.treatingDoctor).put("tags", c.tags).put("createdAtEpochMillis", c.createdAtEpochMillis).put("updatedAtEpochMillis", c.updatedAtEpochMillis) }))
+        root.put("allergyRecords", JSONArray(allergies.value.filter { inRange(it.createdAtEpochMillis) }.map { a -> JSONObject().put("id", a.id).put("allergen", a.allergen).put("category", a.category).put("reaction", a.reaction).put("severity", a.severity).put("notes", a.notes).put("status", a.status).put("createdAtEpochMillis", a.createdAtEpochMillis).put("updatedAtEpochMillis", a.updatedAtEpochMillis) }))
+        root.put("measurements", JSONArray(measurements.value.filter { inRange(it.recordedAtEpochMillis) }.map { m -> JSONObject().put("id", m.id).put("type", m.type).put("primaryValue", m.primaryValue).put("secondaryValue", m.secondaryValue).put("unit", m.unit).put("context", m.context).put("recordedAtEpochMillis", m.recordedAtEpochMillis).put("notes", m.notes) }))
         return root.toString(2)
     }
 
@@ -287,6 +300,9 @@ class ProfileViewModel @Inject constructor(
                     database.profileDao().deleteAll()
                     database.documentDao().deleteAll()
                     database.reminderDao().deleteAll()
+                    database.conditionDao().deleteAll()
+                    database.allergyDao().deleteAll()
+                    database.measurementDao().deleteAll()
                     data.optJSONObject("profile")?.let { p -> database.profileDao().upsert(ProfileEntity(name = p.optString("name"), dateOfBirth = p.optString("dateOfBirth"), bloodGroup = p.optString("bloodGroup"), allergies = p.optString("allergies"), conditions = p.optString("conditions"), emergencyContact = p.optString("emergencyContact"), updatedAtEpochMillis = System.currentTimeMillis())) }
                     (data.optJSONArray("events") ?: JSONArray()).let { array ->
                         for (i in 0 until array.length()) {
@@ -305,6 +321,24 @@ class ProfileViewModel @Inject constructor(
                         for (i in 0 until array.length()) {
                             val c = array.getJSONObject(i)
                             database.medicationChangeDao().insert(MedicationChangeEntity(c.getString("id"), c.getString("medicationId"), c.optLong("changedAtEpochMillis"), c.optString("changeType", "DOSE_CHANGED"), c.optString("strength"), c.optString("dose"), c.optString("unit"), c.optString("frequency"), c.optString("status", "CURRENT"), c.optString("notes")))
+                        }
+                    }
+                    (data.optJSONArray("conditions") ?: JSONArray()).let { array ->
+                        for (i in 0 until array.length()) {
+                            val c = array.getJSONObject(i)
+                            database.conditionDao().insert(ConditionEntity(c.getString("id"), c.optString("name"), c.optString("status", "ACTIVE"), c.optString("diagnosisDate"), c.optString("resolvedDate"), c.optString("notes"), c.optString("treatingDoctor"), c.optString("tags"), c.optLong("createdAtEpochMillis"), c.optLong("updatedAtEpochMillis")))
+                        }
+                    }
+                    (data.optJSONArray("allergyRecords") ?: JSONArray()).let { array ->
+                        for (i in 0 until array.length()) {
+                            val a = array.getJSONObject(i)
+                            database.allergyDao().insert(AllergyEntity(a.getString("id"), a.optString("allergen"), a.optString("category", "OTHER"), a.optString("reaction"), a.optString("severity"), a.optString("notes"), a.optString("status", "ACTIVE"), a.optLong("createdAtEpochMillis"), a.optLong("updatedAtEpochMillis")))
+                        }
+                    }
+                    (data.optJSONArray("measurements") ?: JSONArray()).let { array ->
+                        for (i in 0 until array.length()) {
+                            val m = array.getJSONObject(i)
+                            database.measurementDao().insert(MeasurementEntity(m.getString("id"), m.optString("type"), m.getDouble("primaryValue"), if (m.isNull("secondaryValue")) null else m.getDouble("secondaryValue"), m.optString("unit"), m.optString("context"), m.optLong("recordedAtEpochMillis"), m.optString("notes")))
                         }
                     }
                     restoredDocuments.forEach { database.documentDao().insert(it) }

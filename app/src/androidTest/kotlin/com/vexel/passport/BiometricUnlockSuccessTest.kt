@@ -44,7 +44,7 @@ class BiometricUnlockSuccessTest {
             }
             composeRule.onNodeWithText("Use device authentication").performClick()
             composeRule.waitUntil(timeoutMillis = 45_000) {
-                composeRule.onAllNodes(hasText("Home")).fetchSemanticsNodes().isNotEmpty()
+                composeRule.onAllNodes(hasText("Health")).fetchSemanticsNodes().isNotEmpty()
             }
         } finally {
             scenario.close()
