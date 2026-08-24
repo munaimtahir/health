@@ -17,6 +17,7 @@ object DatabaseProvider {
             .addMigrations(MIGRATION_7_8)
             .addMigrations(MIGRATION_8_9)
             .addMigrations(MIGRATION_9_10)
+            .addMigrations(MIGRATION_10_11)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -199,6 +200,25 @@ object DatabaseProvider {
             db.execSQL("ALTER TABLE `allergies` ADD COLUMN `allergyDate` TEXT NOT NULL DEFAULT ''")
             db.execSQL("ALTER TABLE `medications` ADD COLUMN `formulation` TEXT NOT NULL DEFAULT ''")
             db.execSQL("ALTER TABLE `medications` ADD COLUMN `prescriptionId` TEXT DEFAULT NULL")
+        }
+    }
+
+    private val MIGRATION_10_11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `testName` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `laboratoryName` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `radiologyModality` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `radiologyRegion` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `centreName` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `reportingDoctors` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `prescribingDoctor` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `doctorSpecialty` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `certificateType` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `validityStartDate` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `validityEndDate` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `bodyLocation` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `linkedSymptom` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `documents` ADD COLUMN `linkedCondition` TEXT NOT NULL DEFAULT ''")
         }
     }
 }

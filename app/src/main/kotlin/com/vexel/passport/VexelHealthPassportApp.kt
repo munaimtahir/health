@@ -502,7 +502,10 @@ class PassportViewModel @Inject constructor(
                     mimeType = preserved.mimeType,
                     byteCount = preserved.byteCount,
                     sha256 = preserved.sha256,
-                    createdAtEpochMillis = now
+                    createdAtEpochMillis = now,
+                    bodyLocation = bodyLocation.trim(),
+                    linkedSymptom = linkedSymptom.trim(),
+                    linkedCondition = linkedCondition.trim()
                 )
             )
             database.healthEventDao().insert(

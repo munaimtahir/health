@@ -62,7 +62,27 @@ class RecordsViewModel @Inject constructor(
         _operationError.value = null
     }
 
-    fun importDocument(uri: Uri, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
+    fun importDocument(
+        uri: Uri,
+        title: String,
+        category: String,
+        documentDate: String,
+        notes: String,
+        testName: String = "",
+        laboratoryName: String = "",
+        radiologyModality: String = "",
+        radiologyRegion: String = "",
+        centreName: String = "",
+        reportingDoctors: String = "",
+        prescribingDoctor: String = "",
+        doctorSpecialty: String = "",
+        certificateType: String = "",
+        validityStartDate: String = "",
+        validityEndDate: String = "",
+        bodyLocation: String = "",
+        linkedSymptom: String = "",
+        linkedCondition: String = "",
+    ) = viewModelScope.launch {
         try {
             val mimeType = appContext.contentResolver.getType(uri)
             if (mimeType == null) {
@@ -91,7 +111,21 @@ class RecordsViewModel @Inject constructor(
                     mimeType = preserved.mimeType,
                     byteCount = preserved.byteCount,
                     sha256 = preserved.sha256,
-                    createdAtEpochMillis = now
+                    createdAtEpochMillis = now,
+                    testName = testName.trim(),
+                    laboratoryName = laboratoryName.trim(),
+                    radiologyModality = radiologyModality.trim(),
+                    radiologyRegion = radiologyRegion.trim(),
+                    centreName = centreName.trim(),
+                    reportingDoctors = reportingDoctors.trim(),
+                    prescribingDoctor = prescribingDoctor.trim(),
+                    doctorSpecialty = doctorSpecialty.trim(),
+                    certificateType = certificateType.trim(),
+                    validityStartDate = validityStartDate.trim(),
+                    validityEndDate = validityEndDate.trim(),
+                    bodyLocation = bodyLocation.trim(),
+                    linkedSymptom = linkedSymptom.trim(),
+                    linkedCondition = linkedCondition.trim(),
                 )
             )
             _statusEvents.tryEmit("Document imported")
@@ -112,13 +146,47 @@ class RecordsViewModel @Inject constructor(
     suspend fun documentThumbnail(document: DocumentEntity) =
         secureFileStore.thumbnailFor(appContext, document.id, document.mimeType)
 
-    fun updateDocument(document: DocumentEntity, title: String, category: String, documentDate: String, notes: String) = viewModelScope.launch {
+    fun updateDocument(
+        document: DocumentEntity,
+        title: String,
+        category: String,
+        documentDate: String,
+        notes: String,
+        testName: String = "",
+        laboratoryName: String = "",
+        radiologyModality: String = "",
+        radiologyRegion: String = "",
+        centreName: String = "",
+        reportingDoctors: String = "",
+        prescribingDoctor: String = "",
+        doctorSpecialty: String = "",
+        certificateType: String = "",
+        validityStartDate: String = "",
+        validityEndDate: String = "",
+        bodyLocation: String = "",
+        linkedSymptom: String = "",
+        linkedCondition: String = "",
+    ) = viewModelScope.launch {
         database.documentDao().update(
             document.copy(
                 title = title.trim().ifBlank { document.title },
                 category = category.trim().ifBlank { document.category },
                 documentDate = documentDate.trim(),
-                notes = notes.trim()
+                notes = notes.trim(),
+                testName = testName.trim(),
+                laboratoryName = laboratoryName.trim(),
+                radiologyModality = radiologyModality.trim(),
+                radiologyRegion = radiologyRegion.trim(),
+                centreName = centreName.trim(),
+                reportingDoctors = reportingDoctors.trim(),
+                prescribingDoctor = prescribingDoctor.trim(),
+                doctorSpecialty = doctorSpecialty.trim(),
+                certificateType = certificateType.trim(),
+                validityStartDate = validityStartDate.trim(),
+                validityEndDate = validityEndDate.trim(),
+                bodyLocation = bodyLocation.trim(),
+                linkedSymptom = linkedSymptom.trim(),
+                linkedCondition = linkedCondition.trim(),
             )
         )
     }

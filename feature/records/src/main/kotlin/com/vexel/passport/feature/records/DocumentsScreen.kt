@@ -61,6 +61,16 @@ private enum class DocumentSort(val label: String, val value: String) {
     TYPE("Type", "TYPE")
 }
 
+private val CATEGORIES = listOf(
+    "ALL" to "All Files",
+    "LABORATORY_REPORT" to "Lab Reports",
+    "RADIOLOGY_IMAGE" to "Radiology & Imaging",
+    "PRESCRIPTION" to "Prescriptions",
+    "MEDICAL_CERTIFICATE" to "Certificates",
+    "HEALTH_MEDIA" to "Health Media",
+    "OTHER" to "Other Docs"
+)
+
 @Composable
 fun DocumentsScreen(
     modifier: Modifier = Modifier,
@@ -120,10 +130,17 @@ private fun DocumentsScreen(
     var pendingDelete by remember { mutableStateOf<DocumentEntity?>(null) }
     var pendingEdit by remember { mutableStateOf<DocumentEntity?>(null) }
     var pendingReplace by remember { mutableStateOf<DocumentEntity?>(null) }
+    var filterCategory by rememberSaveable { mutableStateOf("ALL") }
+
     val replaceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val document = pendingReplace
         if (uri != null && document != null) vm.replaceDocument(document, uri)
         pendingReplace = null
+    }
+
+    val filteredDocuments = remember(documents, filterCategory) {
+        if (filterCategory == "ALL") documents
+        else documents.filter { it.category == filterCategory }
     }
 
     val listState = rememberLazyListState()
@@ -151,10 +168,25 @@ private fun DocumentsScreen(
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Private document vault", style = MaterialTheme.typography.headlineSmall)
-                TextButton({ showImport = true }) { Text("Import") }
+                TextButton({ showImport = true }) { Text("Import File") }
             }
         }
-        item { Text("PDF, JPG, JPEG, and PNG files are copied into app-private storage.") }
+        item { Text("All medical documentation, media scans, and prescriptions are stored locally.") }
+        
+        // Category Filter Chips
+        item {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CATEGORIES.forEach { (catId, catLabel) ->
+                    FilterChip(
+                        selected = filterCategory == catId,
+                        onClick = { filterCategory = catId },
+                        label = { Text(catLabel) }
+                    )
+                }
+            }
+        }
+
+        // Sorting Chips
         item {
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Sort by:", modifier = Modifier.align(androidx.compose.ui.Alignment.CenterVertically), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -163,25 +195,81 @@ private fun DocumentsScreen(
                 }
             }
         }
-        if (documents.isEmpty()) item { EmptyState("Your vault is empty", "Import a PDF or image to keep a private copy on this device.", "Import a document", onAction = { showImport = true }) }
-        else items(documents, key = { it.id }) { document ->
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DocumentThumbnail(vm, document)
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(document.title, style = MaterialTheme.typography.titleMedium)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            StatusPill(document.category)
-                            Text("${document.mimeType.substringAfterLast('/')}, ${document.byteCount / 1024} KB", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        if (document.documentDate.isNotBlank()) Text("Document date: ${document.documentDate}")
-                        if (document.notes.isNotBlank()) Text(document.notes)
-                        Row {
-                            TextButton({ vm.openDocument(document) }) { Text("Open") }
-                            TextButton({ vm.shareDocument(document) }) { Text("Share") }
-                            TextButton({ pendingEdit = document }) { Text("Edit") }
-                            TextButton({ pendingReplace = document; replaceLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Replace") }
-                            TextButton({ pendingDelete = document }) { Text("Delete") }
+
+        if (filteredDocuments.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "No documents found",
+                    message = "Import files and medical scans to organize them securely on your device.",
+                    actionLabel = "Import a document",
+                    onAction = { showImport = true }
+                )
+            }
+        } else {
+            items(filteredDocuments, key = { it.id }) { document ->
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        DocumentThumbnail(vm, document)
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(document.title, style = MaterialTheme.typography.titleMedium)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                val readableCat = CATEGORIES.find { it.first == document.category }?.second ?: document.category
+                                StatusPill(readableCat)
+                                Text("${document.mimeType.substringAfterLast('/')}, ${document.byteCount / 1024} KB", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (document.documentDate.isNotBlank()) {
+                                Text("Document date: ${document.documentDate}", style = MaterialTheme.typography.bodySmall)
+                            }
+
+                            // Subtype Specific Metadata Display
+                            when (document.category) {
+                                "LABORATORY_REPORT" -> {
+                                    if (document.testName.isNotBlank() || document.laboratoryName.isNotBlank()) {
+                                        Text("Test: ${document.testName} · Lab: ${document.laboratoryName}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                "RADIOLOGY_IMAGE" -> {
+                                    if (document.radiologyModality.isNotBlank() || document.radiologyRegion.isNotBlank()) {
+                                        Text("Modality: ${document.radiologyModality} (${document.radiologyRegion})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    if (document.centreName.isNotBlank() || document.reportingDoctors.isNotBlank()) {
+                                        Text("Facility: ${document.centreName} · Doctor: ${document.reportingDoctors}", style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                                "PRESCRIPTION" -> {
+                                    if (document.prescribingDoctor.isNotBlank() || document.doctorSpecialty.isNotBlank()) {
+                                        Text("Prescribed by: Dr. ${document.prescribingDoctor} (${document.doctorSpecialty})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                "MEDICAL_CERTIFICATE" -> {
+                                    if (document.certificateType.isNotBlank() || document.reportingDoctors.isNotBlank()) {
+                                        Text("Type: ${document.certificateType} · Certifier: Dr. ${document.reportingDoctors}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    if (document.validityStartDate.isNotBlank() || document.validityEndDate.isNotBlank()) {
+                                        Text("Validity: ${document.validityStartDate} to ${document.validityEndDate}", style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                                "HEALTH_MEDIA" -> {
+                                    if (document.bodyLocation.isNotBlank() || document.linkedSymptom.isNotBlank()) {
+                                        Text("Location: ${document.bodyLocation} · Symptom: ${document.linkedSymptom}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                            }
+
+                            if (document.notes.isNotBlank()) {
+                                Text(document.notes, style = MaterialTheme.typography.bodySmall)
+                            }
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Row {
+                                    TextButton({ vm.openDocument(document) }) { Text("Open") }
+                                    TextButton({ vm.shareDocument(document) }) { Text("Share") }
+                                }
+                                Row {
+                                    TextButton({ pendingEdit = document }) { Text("Edit") }
+                                    TextButton({ pendingReplace = document; replaceLauncher.launch(arrayOf("application/pdf", "image/jpeg", "image/png")) }) { Text("Replace") }
+                                    TextButton({ pendingDelete = document }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                                }
+                            }
                         }
                     }
                 }
@@ -190,11 +278,25 @@ private fun DocumentsScreen(
     }
     if (showImport) DocumentImportDialog(vm) { showImport = false }
     pendingDelete?.let { document ->
-        AlertDialog(onDismissRequest = { pendingDelete = null }, title = { Text("Delete document?") }, text = { Text("The private file and its metadata will be removed from this device.") }, confirmButton = { Button({ vm.deleteDocument(document); pendingDelete = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } }, dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } })
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Delete document?") },
+            text = { Text("The private file and its metadata will be removed from this device.") },
+            confirmButton = {
+                Button(
+                    onClick = { vm.deleteDocument(document); pendingDelete = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = { TextButton({ pendingDelete = null }) { Text("Cancel") } }
+        )
     }
     pendingEdit?.let { document -> DocumentEditDialog(vm, document) { pendingEdit = null } }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DocumentEditDialog(vm: RecordsViewModel, document: DocumentEntity, onDismiss: () -> Unit) {
     var title by rememberSaveable(document.id) { mutableStateOf(document.title) }
@@ -202,51 +304,174 @@ private fun DocumentEditDialog(vm: RecordsViewModel, document: DocumentEntity, o
     var date by rememberSaveable(document.id) { mutableStateOf(document.documentDate) }
     var notes by rememberSaveable(document.id) { mutableStateOf(document.notes) }
 
+    // Subtype metadata states
+    var testName by rememberSaveable(document.id) { mutableStateOf(document.testName) }
+    var laboratoryName by rememberSaveable(document.id) { mutableStateOf(document.laboratoryName) }
+    var radiologyModality by rememberSaveable(document.id) { mutableStateOf(document.radiologyModality) }
+    var radiologyRegion by rememberSaveable(document.id) { mutableStateOf(document.radiologyRegion) }
+    var centreName by rememberSaveable(document.id) { mutableStateOf(document.centreName) }
+    var reportingDoctors by rememberSaveable(document.id) { mutableStateOf(document.reportingDoctors) }
+    var prescribingDoctor by rememberSaveable(document.id) { mutableStateOf(document.prescribingDoctor) }
+    var doctorSpecialty by rememberSaveable(document.id) { mutableStateOf(document.doctorSpecialty) }
+    var certificateType by rememberSaveable(document.id) { mutableStateOf(document.certificateType) }
+    var validityStartDate by rememberSaveable(document.id) { mutableStateOf(document.validityStartDate) }
+    var validityEndDate by rememberSaveable(document.id) { mutableStateOf(document.validityEndDate) }
+    var bodyLocation by rememberSaveable(document.id) { mutableStateOf(document.bodyLocation) }
+    var linkedSymptom by rememberSaveable(document.id) { mutableStateOf(document.linkedSymptom) }
+    var linkedCondition by rememberSaveable(document.id) { mutableStateOf(document.linkedCondition) }
+
     FullScreenDialog(
         title = "Edit document details",
         onDismiss = onDismiss,
         confirmButton = {
-            TextButton(onClick = { vm.updateDocument(document, title, category, date, notes); onDismiss() }) {
+            TextButton(
+                onClick = {
+                    vm.updateDocument(
+                        document = document,
+                        title = title,
+                        category = category,
+                        documentDate = date,
+                        notes = notes,
+                        testName = testName,
+                        laboratoryName = laboratoryName,
+                        radiologyModality = radiologyModality,
+                        radiologyRegion = radiologyRegion,
+                        centreName = centreName,
+                        reportingDoctors = if (category == "MEDICAL_CERTIFICATE") reportingDoctors else reportingDoctors,
+                        prescribingDoctor = prescribingDoctor,
+                        doctorSpecialty = doctorSpecialty,
+                        certificateType = certificateType,
+                        validityStartDate = validityStartDate,
+                        validityEndDate = validityEndDate,
+                        bodyLocation = bodyLocation,
+                        linkedSymptom = linkedSymptom,
+                        linkedCondition = linkedCondition
+                    )
+                    onDismiss()
+                }
+            ) {
                 Text("Save")
             }
         }
     ) {
-        OutlinedTextField(
-            value = title,
-            onValueChange = { title = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Title") }
-        )
-        OutlinedTextField(
-            value = category,
-            onValueChange = { category = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Category") }
-        )
-        OutlinedTextField(
-            value = date,
-            onValueChange = { date = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Document date") }
-        )
-        OutlinedTextField(
-            value = notes,
-            onValueChange = { notes = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Notes") }
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Title") }
+            )
+
+            Text("Document Category", style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CATEGORIES.filter { it.first != "ALL" }.forEach { (catId, catLabel) ->
+                    FilterChip(
+                        selected = category == catId,
+                        onClick = { category = catId },
+                        label = { Text(catLabel) }
+                    )
+                }
+            }
+
+            OutlinedTextField(
+                value = date,
+                onValueChange = { date = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Document Date (yyyy-MM-dd)") }
+            )
+
+            // Dynamic Forms
+            when (category) {
+                "LABORATORY_REPORT" -> {
+                    OutlinedTextField(testName, { testName = it }, Modifier.fillMaxWidth(), label = { Text("Test Name") })
+                    OutlinedTextField(laboratoryName, { laboratoryName = it }, Modifier.fillMaxWidth(), label = { Text("Laboratory Name") })
+                }
+                "RADIOLOGY_IMAGE" -> {
+                    OutlinedTextField(radiologyModality, { radiologyModality = it }, Modifier.fillMaxWidth(), label = { Text("Modality (e.g., X-ray, MRI, CT)") })
+                    OutlinedTextField(radiologyRegion, { radiologyRegion = it }, Modifier.fillMaxWidth(), label = { Text("Body Region") })
+                    OutlinedTextField(centreName, { centreName = it }, Modifier.fillMaxWidth(), label = { Text("Facility/Centre Name") })
+                    OutlinedTextField(reportingDoctors, { reportingDoctors = it }, Modifier.fillMaxWidth(), label = { Text("Reporting Doctor(s)") })
+                }
+                "PRESCRIPTION" -> {
+                    OutlinedTextField(prescribingDoctor, { prescribingDoctor = it }, Modifier.fillMaxWidth(), label = { Text("Prescribing Doctor") })
+                    OutlinedTextField(doctorSpecialty, { doctorSpecialty = it }, Modifier.fillMaxWidth(), label = { Text("Doctor Specialty") })
+                }
+                "MEDICAL_CERTIFICATE" -> {
+                    OutlinedTextField(certificateType, { certificateType = it }, Modifier.fillMaxWidth(), label = { Text("Certificate Type (e.g., Sick Leave)") })
+                    OutlinedTextField(reportingDoctors, { reportingDoctors = it }, Modifier.fillMaxWidth(), label = { Text("Certifying Doctor") })
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(validityStartDate, { validityStartDate = it }, Modifier.weight(1f), label = { Text("Start Date") })
+                        OutlinedTextField(validityEndDate, { validityEndDate = it }, Modifier.weight(1f), label = { Text("End Date") })
+                    }
+                }
+                "HEALTH_MEDIA" -> {
+                    OutlinedTextField(bodyLocation, { bodyLocation = it }, Modifier.fillMaxWidth(), label = { Text("Body Location") })
+                    OutlinedTextField(linkedSymptom, { linkedSymptom = it }, Modifier.fillMaxWidth(), label = { Text("Symptom/Condition Context") })
+                }
+            }
+
+            OutlinedTextField(
+                value = notes,
+                onValueChange = { notes = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Notes (optional)") }
+            )
+        }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DocumentImportDialog(vm: RecordsViewModel, onDismiss: () -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("OTHER") }
     var documentDate by rememberSaveable { mutableStateOf("") }
     var notes by rememberSaveable { mutableStateOf("") }
+
+    // Subtype metadata states
+    var testName by rememberSaveable { mutableStateOf("") }
+    var laboratoryName by rememberSaveable { mutableStateOf("") }
+    var radiologyModality by rememberSaveable { mutableStateOf("") }
+    var radiologyRegion by rememberSaveable { mutableStateOf("") }
+    var centreName by rememberSaveable { mutableStateOf("") }
+    var reportingDoctors by rememberSaveable { mutableStateOf("") }
+    var prescribingDoctor by rememberSaveable { mutableStateOf("") }
+    var doctorSpecialty by rememberSaveable { mutableStateOf("") }
+    var certificateType by rememberSaveable { mutableStateOf("") }
+    var validityStartDate by rememberSaveable { mutableStateOf("") }
+    var validityEndDate by rememberSaveable { mutableStateOf("") }
+    var bodyLocation by rememberSaveable { mutableStateOf("") }
+    var linkedSymptom by rememberSaveable { mutableStateOf("") }
+    var linkedCondition by rememberSaveable { mutableStateOf("") }
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.importDocument(uri, title, category, documentDate, notes)
-        if (uri != null) onDismiss()
+        if (uri != null) {
+            vm.importDocument(
+                uri = uri,
+                title = title,
+                category = category,
+                documentDate = documentDate,
+                notes = notes,
+                testName = testName,
+                laboratoryName = laboratoryName,
+                radiologyModality = radiologyModality,
+                radiologyRegion = radiologyRegion,
+                centreName = centreName,
+                reportingDoctors = reportingDoctors,
+                prescribingDoctor = prescribingDoctor,
+                doctorSpecialty = doctorSpecialty,
+                certificateType = certificateType,
+                validityStartDate = validityStartDate,
+                validityEndDate = validityEndDate,
+                bodyLocation = bodyLocation,
+                linkedSymptom = linkedSymptom,
+                linkedCondition = linkedCondition
+            )
+            onDismiss()
+        }
     }
 
     FullScreenDialog(
@@ -258,30 +483,73 @@ private fun DocumentImportDialog(vm: RecordsViewModel, onDismiss: () -> Unit) {
             }
         }
     ) {
-        Text("Choose a PDF or image. The original is preserved privately; unsupported types are rejected.")
-        OutlinedTextField(
-            value = title,
-            onValueChange = { title = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Title") }
-        )
-        OutlinedTextField(
-            value = category,
-            onValueChange = { category = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Category") }
-        )
-        OutlinedTextField(
-            value = documentDate,
-            onValueChange = { documentDate = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Document date (optional)") }
-        )
-        OutlinedTextField(
-            value = notes,
-            onValueChange = { notes = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Notes (optional)") }
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Choose a PDF or image. The original file is preserved privately inside the app's secure sandbox.")
+
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Title") }
+            )
+
+            Text("Document Category", style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CATEGORIES.filter { it.first != "ALL" }.forEach { (catId, catLabel) ->
+                    FilterChip(
+                        selected = category == catId,
+                        onClick = { category = catId },
+                        label = { Text(catLabel) }
+                    )
+                }
+            }
+
+            OutlinedTextField(
+                value = documentDate,
+                onValueChange = { documentDate = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Document Date (yyyy-MM-dd)") }
+            )
+
+            // Dynamic Forms based on Category
+            when (category) {
+                "LABORATORY_REPORT" -> {
+                    OutlinedTextField(testName, { testName = it }, Modifier.fillMaxWidth(), label = { Text("Test Name (e.g., Blood Panel)") })
+                    OutlinedTextField(laboratoryName, { laboratoryName = it }, Modifier.fillMaxWidth(), label = { Text("Laboratory Name") })
+                }
+                "RADIOLOGY_IMAGE" -> {
+                    OutlinedTextField(radiologyModality, { radiologyModality = it }, Modifier.fillMaxWidth(), label = { Text("Modality (e.g., MRI, CT, X-ray)") })
+                    OutlinedTextField(radiologyRegion, { radiologyRegion = it }, Modifier.fillMaxWidth(), label = { Text("Body Region") })
+                    OutlinedTextField(centreName, { centreName = it }, Modifier.fillMaxWidth(), label = { Text("Facility/Centre Name") })
+                    OutlinedTextField(reportingDoctors, { reportingDoctors = it }, Modifier.fillMaxWidth(), label = { Text("Reporting Doctor(s)") })
+                }
+                "PRESCRIPTION" -> {
+                    OutlinedTextField(prescribingDoctor, { prescribingDoctor = it }, Modifier.fillMaxWidth(), label = { Text("Prescribing Doctor") })
+                    OutlinedTextField(doctorSpecialty, { doctorSpecialty = it }, Modifier.fillMaxWidth(), label = { Text("Doctor Specialty") })
+                }
+                "MEDICAL_CERTIFICATE" -> {
+                    OutlinedTextField(certificateType, { certificateType = it }, Modifier.fillMaxWidth(), label = { Text("Certificate Type (e.g., sick leave, travel clearance)") })
+                    OutlinedTextField(reportingDoctors, { reportingDoctors = it }, Modifier.fillMaxWidth(), label = { Text("Certifying Doctor") })
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(validityStartDate, { validityStartDate = it }, Modifier.weight(1f), label = { Text("Start Date") })
+                        OutlinedTextField(validityEndDate, { validityEndDate = it }, Modifier.weight(1f), label = { Text("End Date") })
+                    }
+                }
+                "HEALTH_MEDIA" -> {
+                    OutlinedTextField(bodyLocation, { bodyLocation = it }, Modifier.fillMaxWidth(), label = { Text("Body Location") })
+                    OutlinedTextField(linkedSymptom, { linkedSymptom = it }, Modifier.fillMaxWidth(), label = { Text("Symptom/Condition Context") })
+                }
+            }
+
+            OutlinedTextField(
+                value = notes,
+                onValueChange = { notes = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Notes (optional)") }
+            )
+        }
     }
 }

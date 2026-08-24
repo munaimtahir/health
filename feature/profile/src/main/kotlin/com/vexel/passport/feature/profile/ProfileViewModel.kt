@@ -179,7 +179,7 @@ class ProfileViewModel @Inject constructor(
         root.put("events", JSONArray(events.value.filter { inRange(it.effectiveAtEpochMillis ?: it.createdAtEpochMillis) }.map { e -> JSONObject().put("id", e.id).put("title", e.title).put("details", e.details).put("kind", e.kind).put("effectiveAtEpochMillis", e.effectiveAtEpochMillis).put("createdAtEpochMillis", e.createdAtEpochMillis).put("status", e.status).put("severity", e.severity).put("durationMinutes", e.durationMinutes).put("startAtEpochMillis", e.startAtEpochMillis).put("endAtEpochMillis", e.endAtEpochMillis).put("ongoing", e.ongoing).put("bodyLocation", e.bodyLocation).put("associatedSymptoms", e.associatedSymptoms).put("possibleTrigger", e.possibleTrigger).put("relatedMedication", e.relatedMedication).put("imageAttachmentId", e.imageAttachmentId).put("episodeId", e.episodeId) }))
         root.put("medications", JSONArray(medications.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.startDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { m -> JSONObject().put("id", m.id).put("name", m.name).put("genericName", m.genericName).put("strength", m.strength).put("dose", m.dose).put("unit", m.unit).put("route", m.route).put("frequency", m.frequency).put("startDate", m.startDate).put("stopDate", m.stopDate).put("status", m.status).put("indication", m.indication).put("physician", m.physician).put("notes", m.notes).put("formulation", m.formulation).put("prescriptionId", m.prescriptionId) }))
         root.put("medicationChanges", JSONArray(medicationChanges.value.filter { inRange(it.changedAtEpochMillis) }.map { c -> JSONObject().put("id", c.id).put("medicationId", c.medicationId).put("changedAtEpochMillis", c.changedAtEpochMillis).put("changeType", c.changeType).put("strength", c.strength).put("dose", c.dose).put("unit", c.unit).put("frequency", c.frequency).put("status", c.status).put("notes", c.notes) }))
-        root.put("documents", JSONArray(documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256) }))
+        root.put("documents", JSONArray(documents.value.filter { inRange(runCatching { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.documentDate)?.time }.getOrNull() ?: it.createdAtEpochMillis) }.map { d -> JSONObject().put("id", d.id).put("title", d.title).put("category", d.category).put("documentDate", d.documentDate).put("notes", d.notes).put("originalFileName", d.originalFileName).put("mimeType", d.mimeType).put("byteCount", d.byteCount).put("sha256", d.sha256).put("testName", d.testName).put("laboratoryName", d.laboratoryName).put("radiologyModality", d.radiologyModality).put("radiologyRegion", d.radiologyRegion).put("centreName", d.centreName).put("reportingDoctors", d.reportingDoctors).put("prescribingDoctor", d.prescribingDoctor).put("doctorSpecialty", d.doctorSpecialty).put("certificateType", d.certificateType).put("validityStartDate", d.validityStartDate).put("validityEndDate", d.validityEndDate).put("bodyLocation", d.bodyLocation).put("linkedSymptom", d.linkedSymptom).put("linkedCondition", d.linkedCondition) }))
         root.put("reminders", JSONArray(reminders.value.filter { inRange(it.dueAtEpochMillis) }.map { r -> JSONObject().put("id", r.id).put("title", r.title).put("type", r.type).put("notes", r.notes).put("dueAtEpochMillis", r.dueAtEpochMillis).put("recurrence", r.recurrence).put("status", r.status) }))
         root.put("conditions", JSONArray(conditions.value.filter { inRange(it.createdAtEpochMillis) }.map { c -> JSONObject().put("id", c.id).put("name", c.name).put("status", c.status).put("diagnosisDate", c.diagnosisDate).put("resolvedDate", c.resolvedDate).put("notes", c.notes).put("treatingDoctor", c.treatingDoctor).put("tags", c.tags).put("createdAtEpochMillis", c.createdAtEpochMillis).put("updatedAtEpochMillis", c.updatedAtEpochMillis) }))
         root.put("allergyRecords", JSONArray(allergies.value.filter { inRange(it.createdAtEpochMillis) }.map { a -> JSONObject().put("id", a.id).put("allergen", a.allergen).put("category", a.category).put("reaction", a.reaction).put("severity", a.severity).put("notes", a.notes).put("status", a.status).put("allergyDate", a.allergyDate).put("createdAtEpochMillis", a.createdAtEpochMillis).put("updatedAtEpochMillis", a.updatedAtEpochMillis) }))
@@ -309,7 +309,32 @@ class ProfileViewModel @Inject constructor(
                     secureFileStore.preserveOriginal(input, source.getString("mimeType"), source.optString("originalFileName", "document"))
                 }
                 restoredDocumentIds[sourceId] = preserved.id
-                restoredDocuments += DocumentEntity(preserved.id, source.optString("title"), source.optString("category", "OTHER"), source.optString("documentDate"), source.optString("notes"), source.optString("originalFileName", "document"), preserved.mimeType, preserved.byteCount, preserved.sha256, System.currentTimeMillis())
+                restoredDocuments += DocumentEntity(
+                    id = preserved.id,
+                    title = source.optString("title"),
+                    category = source.optString("category", "OTHER"),
+                    documentDate = source.optString("documentDate"),
+                    notes = source.optString("notes"),
+                    originalFileName = source.optString("originalFileName", "document"),
+                    mimeType = preserved.mimeType,
+                    byteCount = preserved.byteCount,
+                    sha256 = preserved.sha256,
+                    createdAtEpochMillis = System.currentTimeMillis(),
+                    testName = source.optString("testName"),
+                    laboratoryName = source.optString("laboratoryName"),
+                    radiologyModality = source.optString("radiologyModality"),
+                    radiologyRegion = source.optString("radiologyRegion"),
+                    centreName = source.optString("centreName"),
+                    reportingDoctors = source.optString("reportingDoctors"),
+                    prescribingDoctor = source.optString("prescribingDoctor"),
+                    doctorSpecialty = source.optString("doctorSpecialty"),
+                    certificateType = source.optString("certificateType"),
+                    validityStartDate = source.optString("validityStartDate"),
+                    validityEndDate = source.optString("validityEndDate"),
+                    bodyLocation = source.optString("bodyLocation"),
+                    linkedSymptom = source.optString("linkedSymptom"),
+                    linkedCondition = source.optString("linkedCondition")
+                )
             }
             val scheduledReminders = mutableListOf<ReminderEntity>()
             try {
