@@ -12,5 +12,7 @@ interface MeasurementDao {
     @Query("SELECT * FROM measurements WHERE type = :type ORDER BY recordedAtEpochMillis DESC LIMIT :limit")
     fun observeLatest(type: String, limit: Int = 30): Flow<List<MeasurementEntity>>
     @Insert suspend fun insert(measurement: MeasurementEntity)
+    @androidx.room.Update suspend fun update(measurement: MeasurementEntity)
+    @Query("DELETE FROM measurements WHERE id = :id") suspend fun delete(id: String)
     @Query("DELETE FROM measurements") suspend fun deleteAll()
 }

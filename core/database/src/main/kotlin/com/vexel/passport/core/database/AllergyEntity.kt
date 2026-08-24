@@ -12,6 +12,7 @@ data class AllergyEntity(
     val severity: String = "",
     val notes: String = "",
     val status: String = "ACTIVE",
+    val allergyDate: String = "",
     val createdAtEpochMillis: Long,
     val updatedAtEpochMillis: Long,
 )

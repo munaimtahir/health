@@ -19,6 +19,8 @@ data class MedicationEntity(
     val indication: String = "",
     val physician: String = "",
     val notes: String = "",
+    val formulation: String = "",
+    val prescriptionId: String? = null,
     val createdAtEpochMillis: Long,
     val updatedAtEpochMillis: Long,
 )

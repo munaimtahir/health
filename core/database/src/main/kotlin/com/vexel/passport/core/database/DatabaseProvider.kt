@@ -16,6 +16,7 @@ object DatabaseProvider {
             .addMigrations(MIGRATION_6_7)
             .addMigrations(MIGRATION_7_8)
             .addMigrations(MIGRATION_8_9)
+            .addMigrations(MIGRATION_9_10)
             .build()
 
     private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -132,6 +133,72 @@ object DatabaseProvider {
             db.execSQL("""CREATE TABLE IF NOT EXISTS conditions (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'ACTIVE', diagnosisDate TEXT NOT NULL DEFAULT '', resolvedDate TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', treatingDoctor TEXT NOT NULL DEFAULT '', tags TEXT NOT NULL DEFAULT '', createdAtEpochMillis INTEGER NOT NULL, updatedAtEpochMillis INTEGER NOT NULL)""")
             db.execSQL("""CREATE TABLE IF NOT EXISTS allergies (id TEXT NOT NULL PRIMARY KEY, allergen TEXT NOT NULL, category TEXT NOT NULL DEFAULT 'OTHER', reaction TEXT NOT NULL DEFAULT '', severity TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'ACTIVE', createdAtEpochMillis INTEGER NOT NULL, updatedAtEpochMillis INTEGER NOT NULL)""")
             db.execSQL("""CREATE TABLE IF NOT EXISTS measurements (id TEXT NOT NULL PRIMARY KEY, type TEXT NOT NULL, primaryValue REAL NOT NULL, secondaryValue REAL, unit TEXT NOT NULL, context TEXT NOT NULL DEFAULT '', recordedAtEpochMillis INTEGER NOT NULL, notes TEXT NOT NULL DEFAULT '')""")
+        }
+    }
+
+    private val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""CREATE TABLE IF NOT EXISTS `procedures` (
+                `id` TEXT NOT NULL PRIMARY KEY,
+                `name` TEXT NOT NULL,
+                `date` TEXT NOT NULL DEFAULT '',
+                `hospital` TEXT NOT NULL DEFAULT '',
+                `doctor` TEXT NOT NULL DEFAULT '',
+                `indication` TEXT NOT NULL DEFAULT '',
+                `notes` TEXT NOT NULL DEFAULT '',
+                `linkedDocumentId` TEXT,
+                `createdAtEpochMillis` INTEGER NOT NULL,
+                `updatedAtEpochMillis` INTEGER NOT NULL
+            )""")
+            db.execSQL("""CREATE TABLE IF NOT EXISTS `hospitalisations` (
+                `id` TEXT NOT NULL PRIMARY KEY,
+                `admissionDate` TEXT NOT NULL DEFAULT '',
+                `dischargeDate` TEXT NOT NULL DEFAULT '',
+                `hospital` TEXT NOT NULL DEFAULT '',
+                `reason` TEXT NOT NULL DEFAULT '',
+                `diagnosis` TEXT NOT NULL DEFAULT '',
+                `notes` TEXT NOT NULL DEFAULT '',
+                `linkedDocumentId` TEXT,
+                `createdAtEpochMillis` INTEGER NOT NULL,
+                `updatedAtEpochMillis` INTEGER NOT NULL
+            )""")
+            db.execSQL("""CREATE TABLE IF NOT EXISTS `vaccinations` (
+                `id` TEXT NOT NULL PRIMARY KEY,
+                `vaccineName` TEXT NOT NULL,
+                `dose` TEXT NOT NULL DEFAULT '',
+                `date` TEXT NOT NULL DEFAULT '',
+                `provider` TEXT NOT NULL DEFAULT '',
+                `lotNumber` TEXT NOT NULL DEFAULT '',
+                `nextDueDate` TEXT NOT NULL DEFAULT '',
+                `linkedDocumentId` TEXT,
+                `notes` TEXT NOT NULL DEFAULT '',
+                `createdAtEpochMillis` INTEGER NOT NULL,
+                `updatedAtEpochMillis` INTEGER NOT NULL
+            )""")
+            db.execSQL("""CREATE TABLE IF NOT EXISTS `devices` (
+                `id` TEXT NOT NULL PRIMARY KEY,
+                `type` TEXT NOT NULL DEFAULT 'OTHER',
+                `name` TEXT NOT NULL,
+                `manufacturer` TEXT NOT NULL DEFAULT '',
+                `model` TEXT NOT NULL DEFAULT '',
+                `serialNumber` TEXT NOT NULL DEFAULT '',
+                `implantationDate` TEXT NOT NULL DEFAULT '',
+                `hospital` TEXT NOT NULL DEFAULT '',
+                `notes` TEXT NOT NULL DEFAULT '',
+                `createdAtEpochMillis` INTEGER NOT NULL,
+                `updatedAtEpochMillis` INTEGER NOT NULL
+            )""")
+            db.execSQL("""CREATE TABLE IF NOT EXISTS `family_history` (
+                `id` TEXT NOT NULL PRIMARY KEY,
+                `relationship` TEXT NOT NULL,
+                `condition` TEXT NOT NULL,
+                `notes` TEXT NOT NULL DEFAULT '',
+                `createdAtEpochMillis` INTEGER NOT NULL,
+                `updatedAtEpochMillis` INTEGER NOT NULL
+            )""")
+            db.execSQL("ALTER TABLE `allergies` ADD COLUMN `allergyDate` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `medications` ADD COLUMN `formulation` TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE `medications` ADD COLUMN `prescriptionId` TEXT DEFAULT NULL")
         }
     }
 }
