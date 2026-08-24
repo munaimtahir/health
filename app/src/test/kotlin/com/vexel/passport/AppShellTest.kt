@@ -6,13 +6,13 @@ import org.junit.Test
 class AppShellTest {
     @Test
     fun primaryDestinationsMatchCanonicalOrderAndRoutes() {
-        assertEquals(listOf("Health", "Timeline", "Plan", "Vault", "Profile"), primaryDestinationLabels)
+        assertEquals(listOf("Health", "Timeline", "+", "Vault", "Profile"), primaryDestinationLabels)
     }
 
     @Test
     fun routeConstantsAreUniqueAndStable() {
-        val routes = listOf(Routes.HOME, Routes.RECORDS, Routes.PLAN, Routes.VAULT, Routes.PROFILE)
+        val routes = listOf(Routes.HOME, Routes.RECORDS, Routes.ADD, Routes.VAULT, Routes.PROFILE)
         assertEquals(routes.size, routes.toSet().size)
-        assertEquals(listOf("home", "records", "plan", "vault", "profile"), routes)
+        assertEquals(listOf("home", "records", "add", "vault", "profile"), routes)
     }
 }

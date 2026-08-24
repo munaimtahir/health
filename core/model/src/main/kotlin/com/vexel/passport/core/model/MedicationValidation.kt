@@ -35,6 +35,8 @@ data class MedicationDraft(
     val indication: String = "",
     val physician: String = "",
     val notes: String = "",
+    val formulation: String = "",
+    val prescriptionId: String? = null,
 )
 
 fun MedicationDraft.validationErrors(): Map<String, String> = buildMap {
@@ -54,4 +56,6 @@ fun MedicationDraft.validationErrors(): Map<String, String> = buildMap {
     if (indication.length > 200) put("indication", "Indication must be 200 characters or fewer")
     if (physician.length > 160) put("physician", "Physician must be 160 characters or fewer")
     if (notes.length > 4000) put("notes", "Notes must be 4,000 characters or fewer")
+    if (formulation.length > 80) put("formulation", "Formulation must be 80 characters or fewer")
+    if ((prescriptionId?.length ?: 0) > 80) put("prescriptionId", "Prescription ID must be 80 characters or fewer")
 }

@@ -33,7 +33,25 @@ fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) -> Unit) {
     var indication by rememberSaveable { mutableStateOf("") }
     var physician by rememberSaveable { mutableStateOf("") }
     var notes by rememberSaveable { mutableStateOf("") }
-    val draft = MedicationDraft(name, genericName, strength, dose, unit, route, frequency, startDate, stopDate, status, indication, physician, notes)
+    var formulation by rememberSaveable { mutableStateOf("") }
+    var prescriptionId by rememberSaveable { mutableStateOf("") }
+    val draft = MedicationDraft(
+        name = name,
+        genericName = genericName,
+        strength = strength,
+        dose = dose,
+        unit = unit,
+        route = route,
+        frequency = frequency,
+        startDate = startDate,
+        stopDate = stopDate,
+        status = status,
+        indication = indication,
+        physician = physician,
+        notes = notes,
+        formulation = formulation,
+        prescriptionId = prescriptionId.ifBlank { null }
+    )
     val errors = draft.validationErrors()
 
     FullScreenDialog(
@@ -120,6 +138,22 @@ fun MedicationDialog(onDismiss: () -> Unit, onSave: (MedicationDraft) -> Unit) {
             onValueChange = { physician = it },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Physician (optional)") }
+        )
+        OutlinedTextField(
+            value = formulation,
+            onValueChange = { formulation = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Formulation (e.g. tablet, capsule) (optional)") },
+            isError = errors.containsKey("formulation"),
+            supportingText = { errors["formulation"]?.let { Text(it) } }
+        )
+        OutlinedTextField(
+            value = prescriptionId,
+            onValueChange = { prescriptionId = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Prescription ID (optional)") },
+            isError = errors.containsKey("prescriptionId"),
+            supportingText = { errors["prescriptionId"]?.let { Text(it) } }
         )
         OutlinedTextField(
             value = notes,

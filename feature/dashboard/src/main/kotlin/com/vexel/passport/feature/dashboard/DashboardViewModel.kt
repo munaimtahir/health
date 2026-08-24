@@ -13,6 +13,11 @@ import com.vexel.passport.core.database.ProfileEntity
 import com.vexel.passport.core.database.ConditionEntity
 import com.vexel.passport.core.database.AllergyEntity
 import com.vexel.passport.core.database.MeasurementEntity
+import com.vexel.passport.core.database.ProcedureEntity
+import com.vexel.passport.core.database.HospitalisationEntity
+import com.vexel.passport.core.database.VaccinationEntity
+import com.vexel.passport.core.database.DeviceEntity
+import com.vexel.passport.core.database.FamilyHistoryEntity
 import com.vexel.passport.core.files.SecureFileStore
 import com.vexel.passport.core.model.SymptomDraft
 import com.vexel.passport.core.model.MedicationDraft
@@ -47,6 +52,11 @@ class DashboardViewModel @Inject constructor(
     val conditions = database.conditionDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val allergies = database.allergyDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val measurements = database.measurementDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val procedures = database.procedureDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val hospitalisations = database.hospitalisationDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val vaccinations = database.vaccinationDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val devices = database.deviceDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val familyHistory = database.familyHistoryDao().observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun addCondition(name: String) = viewModelScope.launch {
         val now = System.currentTimeMillis()
@@ -157,6 +167,8 @@ class DashboardViewModel @Inject constructor(
                 indication = draft.indication.trim(),
                 physician = draft.physician.trim(),
                 notes = draft.notes.trim(),
+                formulation = draft.formulation.trim(),
+                prescriptionId = draft.prescriptionId?.trim()?.ifBlank { null },
                 createdAtEpochMillis = now,
                 updatedAtEpochMillis = now
             )
@@ -218,4 +230,30 @@ class DashboardViewModel @Inject constructor(
             )
         )
     }
+
+    fun updateCondition(entity: ConditionEntity) = viewModelScope.launch { database.conditionDao().update(entity) }
+    fun deleteCondition(id: String) = viewModelScope.launch { database.conditionDao().delete(id) }
+
+    fun updateAllergy(entity: AllergyEntity) = viewModelScope.launch { database.allergyDao().update(entity) }
+    fun deleteAllergy(id: String) = viewModelScope.launch { database.allergyDao().delete(id) }
+
+    fun updateMedication(entity: MedicationEntity) = viewModelScope.launch { database.medicationDao().update(entity) }
+    fun deleteMedication(id: String) = viewModelScope.launch { database.medicationDao().delete(id) }
+
+    fun updateProcedure(entity: ProcedureEntity) = viewModelScope.launch { database.procedureDao().update(entity) }
+    fun deleteProcedure(id: String) = viewModelScope.launch { database.procedureDao().delete(id) }
+
+    fun updateHospitalisation(entity: HospitalisationEntity) = viewModelScope.launch { database.hospitalisationDao().update(entity) }
+    fun deleteHospitalisation(id: String) = viewModelScope.launch { database.hospitalisationDao().delete(id) }
+
+    fun updateVaccination(entity: VaccinationEntity) = viewModelScope.launch { database.vaccinationDao().update(entity) }
+    fun deleteVaccination(id: String) = viewModelScope.launch { database.vaccinationDao().delete(id) }
+
+    fun updateDevice(entity: DeviceEntity) = viewModelScope.launch { database.deviceDao().update(entity) }
+    fun deleteDevice(id: String) = viewModelScope.launch { database.deviceDao().delete(id) }
+
+    fun updateFamilyHistory(entity: FamilyHistoryEntity) = viewModelScope.launch { database.familyHistoryDao().update(entity) }
+    fun deleteFamilyHistory(id: String) = viewModelScope.launch { database.familyHistoryDao().delete(id) }
+
+    fun deleteMeasurement(id: String) = viewModelScope.launch { database.measurementDao().delete(id) }
 }
