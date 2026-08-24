@@ -68,6 +68,8 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen(
+    onNavigateToReminders: () -> Unit,
+    onNavigateToTracking: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
@@ -96,6 +98,8 @@ fun HomeScreen(
         devices = devices,
         familyHistory = familyHistory,
         modifier = modifier,
+        onNavigateToReminders = onNavigateToReminders,
+        onNavigateToTracking = onNavigateToTracking,
         onUpdateCondition = viewModel::updateCondition,
         onDeleteCondition = viewModel::deleteCondition,
         onUpdateAllergy = viewModel::updateAllergy,
@@ -131,6 +135,8 @@ fun HomeScreen(
     devices: List<DeviceEntity>,
     familyHistory: List<FamilyHistoryEntity>,
     modifier: Modifier,
+    onNavigateToReminders: () -> Unit,
+    onNavigateToTracking: () -> Unit,
     onUpdateCondition: (ConditionEntity) -> Unit,
     onDeleteCondition: (String) -> Unit,
     onUpdateAllergy: (AllergyEntity) -> Unit,
@@ -385,6 +391,22 @@ fun HomeScreen(
                                 }
                             }
                         }
+                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = onNavigateToTracking, modifier = Modifier.fillMaxWidth()) {
+                            Text("View Trends & Full History Log")
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionHeader("Planner & Reminders")
+                    Text("Schedule follow-up visits, test reviews, and personalized care reminders.", style = MaterialTheme.typography.bodyMedium)
+                    Button(onClick = onNavigateToReminders, modifier = Modifier.fillMaxWidth()) {
+                        Text("Manage Reminders & Plan")
                     }
                 }
             }

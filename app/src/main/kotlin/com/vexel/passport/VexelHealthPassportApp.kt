@@ -19,6 +19,8 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Password
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,6 +87,7 @@ import com.vexel.passport.core.notifications.ReminderScheduler
 import com.vexel.passport.core.designsystem.VexelHealthPassportTheme
 import com.vexel.passport.feature.onboarding.OnboardingScreen
 import com.vexel.passport.feature.dashboard.HomeScreen
+import com.vexel.passport.feature.dashboard.TrackingScreen
 import com.vexel.passport.feature.timeline.TimelineScreen
 import com.vexel.passport.feature.reminders.RemindersScreen
 import com.vexel.passport.feature.records.DocumentsScreen
@@ -145,6 +148,7 @@ internal object Routes {
     const val PLAN = "plan"
     const val VAULT = "vault"
     const val PROFILE = "profile"
+    const val TRACKING = "tracking"
 }
 
 @HiltViewModel
@@ -567,10 +571,29 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = backStackEntry?.destination?.route ?: Routes.HOME
-                val currentLabel = if (currentRoute == Routes.ADD) "Add Capture" else destinations.firstOrNull { it.route == currentRoute }?.label ?: destinations.first().label
+                val currentLabel = if (currentRoute == Routes.ADD) {
+                    "Add Capture"
+                } else if (currentRoute == Routes.PLAN) {
+                    "Reminders & Plans"
+                } else if (currentRoute == Routes.TRACKING) {
+                    "Metric Trends & Log"
+                } else {
+                    destinations.firstOrNull { it.route == currentRoute }?.label ?: destinations.first().label
+                }
                 val snackbarHostState = remember { SnackbarHostState() }
                 Scaffold(
-                    topBar = { TopAppBar(title = { Text(currentLabel) }) },
+                    topBar = {
+                        TopAppBar(
+                            title = { Text(currentLabel) },
+                            navigationIcon = {
+                                if (currentRoute == Routes.PLAN || currentRoute == Routes.TRACKING) {
+                                    IconButton(onClick = { navController.navigateUp() }) {
+                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                    }
+                                }
+                            }
+                        )
+                    },
                     snackbarHost = { SnackbarHost(snackbarHostState) },
                     bottomBar = { NavigationBar(
                         containerColor = MaterialTheme.colorScheme.surface,
@@ -596,7 +619,11 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                 ) { padding ->
                     NavHost(navController = navController, startDestination = Routes.HOME) {
                         composable(Routes.HOME) {
-                            HomeScreen(modifier = Modifier.padding(padding))
+                            HomeScreen(
+                                onNavigateToReminders = { navController.navigate(Routes.PLAN) },
+                                onNavigateToTracking = { navController.navigate(Routes.TRACKING) },
+                                modifier = Modifier.padding(padding)
+                            )
                         }
                         composable(Routes.RECORDS) {
                             TimelineScreen(modifier = Modifier.padding(padding))
@@ -609,6 +636,9 @@ fun VexelHealthPassportApp(viewModel: PassportViewModel = hiltViewModel()) {
                         }
                         composable(Routes.PROFILE) {
                             ProfileScreen(modifier = Modifier.padding(padding))
+                        }
+                        composable(Routes.TRACKING) {
+                            TrackingScreen(modifier = Modifier.padding(padding))
                         }
                     }
                 }
